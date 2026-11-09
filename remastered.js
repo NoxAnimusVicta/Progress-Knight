@@ -173,11 +173,27 @@ function list(){
   return '<h3>'+g+'</h3>'+rows;
  }).join('');
 }
+const amuletStory = {
+  "found": "<h3>ON YOUR 25TH BIRTHDAY...</h3><p>You stumble across a strange looking amulet.</p><p>It does not look like it has any worth on the market given that it's made from cheap-looking copper. However, you feel a weird urge to keep the amulet, so you slip it into your pocket for safekeeping.</p>",
+  "etching": "<h3>ON YOUR 45TH BIRTHDAY...</h3><p>You feel the amulet shiver uncontrollably in your pocket.</p><p>You take it out and the constant shivering suddenly stops. More to your bizarre surprise, you notice a strange etching on the centre of the amulet.</p>",
+  "eye": "<h3>ON YOUR 65TH BIRTHDAY...</h3><p>You once again encounter the strange, unexplained shivering from your amulet.</p><p>But this time, a living eyeball emerges from the centre. Although terribly frightened, you realise you do not have many years to live left anyway so you consider touching the eye to see what happens.</p>",
+  "paths": "<h3>ON YOUR 200TH BIRTHDAY...</h3><p>The moment you hit the grand age of 200, you hear an ominous hum coming from the amulet.</p><p>A mouth emerges from its surface and begins to cackle, and proceeds to say: 'So you've made it this far... Are you ready to embrace evil?</p><p>Will you succumb to the allure of darkness, wielding its destructive powers? Or will you resist its temptations and embark on a path of light, using your abilities to foster harmony?</p>",
+  "evil": "<h3>ON YOUR 200TH BIRTHDAY...</h3><p>The moment you hit the grand age of 200, the ominous hum is coming back.</p><p>You can choose to become more evil than never...</p><p>Or keep your current evil level but increase your XP bonus....</p>",
+  "angelic": "<h3>ON YOUR 200TH BIRTHDAY...</h3><p>The moment you hit the grand age of 200, the ominous hum is coming back.</p><p>You can choose to become more angelic than never...</p><p>Or keep your current angelic level but increase your XP bonus....</p>",
+  "broken": "<h3>ON YOUR 300TH BIRTHDAY...</h3><p>Many ages have passed, and the amulet has endured the test of time, only to finally break apart.</p><p>You attempt to separate the center from the remaining debris of the amulet.</p>",
+  "ending": "<h3>The legend seems to be true...</h3><p>You have completed both arcs and gathered the two orbs. You have already completed a long journey.</p><p>Stay tuned for the upcoming evolutions and the next realm....</p>"
+};
+let inspectingAmulet=false;
 function amulet(){
  const side=state.Evil?'evil':'angelic';
  const art=age()>=300&&(state.Evil||state.Angelic)?'broken_'+side:age()>=200?'200_'+side+'_transparent':age()>=65?'65':age()>=45?'45':'25';
  const actions=choices();
- return sprite(artIndex['icons_amulet_'+art],90)+'<h2>Amulet</h2><p>'+ (age()<25?'The amulet appears at age 25.':age()<45?'A strange amulet has appeared.':age()<65?'The eye is stirring.': 'Choose what to carry into the next life.')+'</p>'+
+ const years=age();
+ const chapter=actions.includes('Ending')?'ending':years>=300&&(state.Evil||state.Angelic)?'broken':years>=200?(state.Evil?'evil':state.Angelic?'angelic':'paths'):years>=65?'eye':years>=45?'etching':'found';
+ const inspection=years<65?'<p>Nothing happens...</p>':chapter==='eye'?"<p>By touching the eyeball, you will be reborn and have to restart life again, losing all your levels and coins.</p><p>However, you will gain xp multipliers for your jobs and skills equivalent to 1 + the max level of the skill or job / 10 :</p>"+'<p>Concentration · ×'+(1+level('Concentration')/10).toFixed(1)+' XP</p>'+ "<p>This means you will learn everything again much more quickly than you did in your previous life.</p><p>Something tells you that the amulet might transform even further after living for 2 whole centuries...</p>":'';
+ const artwork=sprite(artIndex['icons_amulet_'+art],90);
+ return '<h2>Amulet</h2>'+(inspection?button('inspect',artwork+'<br>Inspect amulet'):artwork)+amuletStory[chapter]+
+ (inspectingAmulet?inspection:'')+
  actions.map(a=>button('ask:'+a,a==='Rebirth'?'Touch the eye':a==='Ending'?'Bring the two orbs together':a.endsWith('orb')?'Take the '+a:'Embrace '+a+' (+'+alignmentGain(a).toFixed(2)+')')).join(' ')+
  (pending?'<div class="card"><p>'+(pending==='Rebirth'?'Your current levels become your next life’s XP memories.':pending==='Ending'?'Complete this journey with both orbs.':'This resets your current levels and XP memories. Your earned orbs carry forward.')+'</p>'+button('accept','Confirm '+pending)+' '+button('cancel','Keep playing')+'</div>':'')+
  '<p>Lives lived · '+state.life+'<br>Evil · '+state.Evil.toFixed(2)+'　Angelic · '+state.Angelic.toFixed(2)+'</p>'+Object.keys(state.orbs).map(o=>sprite(artIndex['icons_'+o.toLowerCase()+'orb'])+' '+o+' orb').join(' ');
@@ -195,7 +211,7 @@ function draw(){
    return;
  }
  const rested=Date.now()<(state.restedUntil||0)?' · Rested speed ×'+state.restedSpeed.toFixed(2):'';const top='<div class="card profile">'+portrait()+'<div><b>'+state.hero+'</b> · Life '+state.life+'<br><span data-clock>Age '+age()+' · '+Math.floor(state.days%365)+' days</span> · Lifespan '+Math.floor(lifespan())+'<br><span class="gold">◉ <span data-coins>'+fmt(state.coins)+'</span> · '+fmt(pay(state.job)-upkeep())+'/day</span><br>Happiness ×'+happy().toFixed(2)+rested+'</div></div>';
- if(state.finished){screen.innerHTML=top+sprite(artIndex.endgame,144)+'<h1>Both orbs recovered</h1><p>Your journey through Evil and Angelic magic is complete.</p>';return}
+ if(state.finished){screen.innerHTML=top+sprite(artIndex.endgame,144)+'<h1>Both orbs recovered</h1><p>Your journey through Evil and Angelic magic is complete.</p>'+amuletStory.ending;return}
  if(dead())tab='Amulet';
  const nav=['Jobs','Skills','Shop',...(age()>=25?['Amulet']:[])];
  screen.innerHTML=top+'<nav>'+nav.map(t=>button('tab:'+t,t,t===tab)).join('')+'</nav><section class="card">'+(tab==='Amulet'?amulet():list())+'</section><footer>'+state.job+' · Lv. '+level(state.job)+'　'+state.skill+' · Lv. '+level(state.skill)+'<p>'+button('pause',state.paused?'Resume':'Pause')+' '+(level('Time warping')?button('warp','Time warping '+(state.warp?'on':'off')):'')+'</p>'+['happiness','accelerating'].map(k=>button('potion:'+k,(k==='happiness'?'Happiness':'Speed')+' ×2 · '+(potionActive(k)?Math.ceil((state[k+'Until']-Date.now())/1000)+'s':'10 min'),potionActive(k))).join(' ')+'<p>Developer speed　'+[1,5,20].map(v=>button('devSpeed:'+v,v+'×',state.devSpeed===v)).join(' ')+'</p><p><a href="./previous.html">Earlier prototype save</a></p>'+statusText+'</footer>';
@@ -215,10 +231,12 @@ function advance(){
 screen.onclick=e=>{
  const b=e.target.closest('button');if(!b||b.disabled)return;advance();
  const [a,v]=b.dataset.act.split(':');
+ if(a==='inspect')inspectingAmulet=!inspectingAmulet;
+ if(a==='tab'||a==='accept')inspectingAmulet=false;
  if(a==='choose')chosen=v;
  if(a==='begin'&&!state.hero)state.hero=chosen;
  if(a==='tab'){tab=v;pending=''}
- if(a==='ask'&&choices().includes(v))pending=v;
+ if(a==='ask'&&choices().includes(v)){pending=v;if(v==='Rebirth')inspectingAmulet=true}
  if(a==='cancel')pending='';
  if(a==='accept'&&pending){reset(pending);pending='';tab='Jobs'}
  if(a==='pause')state.paused=!state.paused;
