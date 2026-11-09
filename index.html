@@ -1,0 +1,48 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="manifest" href="./manifest.webmanifest"><link rel="apple-touch-icon" href="./icon-192.png"><meta name="theme-color" content="#211e26"><meta name="apple-mobile-web-app-capable" content="yes"><title>Progress Knight · Personal Chronicle</title><style>
+*{box-sizing:border-box}body{margin:0;color:#efe9de;background:radial-gradient(ellipse at 50% 15%,#34303e,#17161d 65%);min-height:100vh;font:16px/1.5 "Segoe UI",sans-serif}main{max-width:860px;margin:auto;padding:5vh 22px}header{display:flex;align-items:center;gap:15px;border-bottom:1px solid #514a55;padding-bottom:18px;color:#cbb889;font:small-caps 21px Georgia}header span{margin-left:auto;font:12px sans-serif;letter-spacing:.13em}h1,h2,h3{font-family:Georgia,serif;font-weight:normal}h1{font-size:clamp(38px,7vw,66px);margin:35px 0 2px}p,small{color:#c0bac6}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(230px,100%),1fr));gap:14px}.hero{padding:0;overflow:hidden;text-align:left}.hero img{width:100%;height:215px;object-fit:contain;background:radial-gradient(ellipse,#37323c,#131318)}.hero section{padding:18px}.hero strong{display:block;font:30px Georgia}.gold{color:#e4ca88}button{border:1px solid #504851;border-radius:8px;background:#28242d;color:inherit;padding:12px 16px;cursor:pointer;font:inherit}button:hover:enabled,button.on{border-color:#b8cf88;background:#33352f}button:disabled{opacity:.52;cursor:default}.primary{background:#bfd78e;color:#172012;margin-top:20px;font-weight:650}.card{background:#211e26;border:1px solid #49424f;border-radius:12px;padding:16px;margin-top:16px}.profile{display:flex;gap:16px;align-items:center}.profile img{width:80px;border-radius:8px}.profile h2{margin:0}.row{display:flex;justify-content:space-between;gap:12px;align-items:center;width:100%;text-align:left;margin:6px 0}.row small{display:block}nav{display:flex;gap:6px;flex-wrap:wrap;margin-top:16px}.bar{height:4px;background:#49444b;margin-top:6px}.bar i{display:block;height:100%;background:#c1d893}.right{min-width:80px;text-align:right}footer{margin-top:22px;color:#b8adba;font-size:13px}@media(max-width:545px){main{padding:20px 12px}.hero{display:flex;align-items:center}.hero img{width:95px;height:125px}.hero section{padding:10px}.hero strong{font-size:23px}header span{font-size:9px}}
+</style><main><header>⚔ &nbsp; Progress Knight <span>PERSONAL CHRONICLE</span></header><div id="screen"></div></main><script>
+const jobs=[['Farmer',4],['Fisherman',12,'Farmer',8],['Miner',30,'Fisherman',10],['Squire',13,'Strength',5],['Knight',45,'Squire',12],['Archmage',65,'Concentration',18]];
+const skills=[['Concentration','Skill XP'],['Productivity','Job XP'],['Bargaining','Lower expenses'],['Strength','Military pay']];
+const homes=[['Homeless',0,1],['Tent',13,1.4],['Wooden hut',89,2]];
+const chapters=[['Dark Path','Open the black gate','Knight',15,4000],['Light Path','Restore the dawn','Archmage',20,8000]];
+const fresh=()=>({hero:'',day:0,coins:0,job:'Farmer',skill:'Concentration',xp:{},home:0,book:false,life:1,memory:{},chapter:0,paused:false,speed:1,time:Date.now()});
+const key='personal-knight-v1';let s=fresh(),tab='Jobs',choice='Magnus',notice='';
+try{s=JSON.parse(localStorage.getItem(key))||s}catch{}
+function save(){try{localStorage.setItem(key,JSON.stringify(s))}catch{notice='Browser saving is unavailable.'}}
+const level=n=>Math.floor(Math.sqrt((s.xp[n]||0)/8));
+const bonus=n=>1+level(n)/100;
+function income(n=s.job){return jobs.find(j=>j[0]===n)[1]*(1+level(n)*.08)*(['Knight','Squire'].includes(n)?bonus('Strength'):1)}
+function cost(){return (homes[s.home][1]+(s.book?9:0))/bonus('Bargaining')}
+function day(){if(s.day>=56*365||s.chapter===2)return;
+if(s.coins+income()<cost()){s.home=0;s.book=false;notice='Your coin ran out. Upkeep has ended.'}
+s.coins+=income()-cost();for(const n of [s.job,s.skill]){
+let rate=homes[s.home][2]*(1+(s.memory[n]||0)*.1);
+if(n===s.job){rate*=bonus('Productivity');if((s.hero==='Magnus'&&n==='Archmage')||(s.hero==='Isabella'&&['Knight','Squire'].includes(n)))rate*=1.1}
+else rate*=bonus('Concentration')*(s.book?1.5:1);
+s.xp[n]=(s.xp[n]||0)+rate}
+s.day++}
+function advance(){let now=Date.now(),ticks=Math.min(86400,Math.floor((now-s.time)/1000));if(ticks<=0)return;s.time=now-(now-s.time)%1000;if(s.hero&&!s.paused)for(let i=0;i<ticks*s.speed*4&&s.chapter<2&&s.day<20440;i++)day();save()}
+const money=n=>Math.floor(n).toLocaleString();
+const btn=(action,label,active=false,disabled=false)=>'<button data-act="'+action+'" class="'+(active?'on':'')+'" '+(disabled?'disabled':'')+'>'+label+'</button>';
+function row(action,name,info,side,active,locked=false){return '<button class="row '+(active?'on':'')+'" data-act="'+action+'" '+(locked?'disabled':'')+'><span><b>'+name+'</b><small>'+info+'</small></span><span class="right">'+side+'</span></button>'}
+function meter(n){let l=level(n),pct=100*((s.xp[n]||0)/8-l*l)/(2*l+1);return 'Lv. '+l+'<div class="bar"><i style="width:'+pct+'%"></i></div>'}
+function render(){let body='';
+if(!s.hero){screenEl.innerHTML='<h1>Choose your character</h1><p>Begin at age fourteen. Your calling shapes what you learn fastest.</p><div class="grid">'+['Magnus','Isabella'].map((n,i)=>'<button class="hero '+(choice===n?'on':'')+'" data-act="choose:'+n+'"><img src="'+n+'.png" alt=""><section><strong>'+n+'</strong><small>'+['Student of the arcane arts','Aspiring knight of the realm'][i]+'</small><br><span class="gold">'+['Magic','Military'][i]+' jobs XP ×1.1</span></section></button>').join('')+'</div><button class="primary" data-act="begin">Begin as '+choice+' →</button>';return}
+if(s.chapter===2)body='<h1>The dawn returns.</h1><p>'+s.hero+' carried the light home. Both paths are complete.</p><p>Life '+s.life+' · Age '+(14+Math.floor(s.day/365))+' · '+money(s.coins)+' coins remaining</p>';
+else if(s.day>=20440)body='<h2>A life remembered</h2><p>Begin again at fourteen. Each remembered level grants 10% faster learning in that activity. Your path milestones carry forward.</p>'+btn('rebirth','Begin the next life');
+else if(tab==='Jobs')body=jobs.map(([n,p,r,l],i)=>([0,3,5].includes(i)?'<h3>'+({0:'Common jobs',3:'Military',5:'The Arcane Association'}[i])+'</h3>':'')+row('job:'+n,n,r&&level(r)<l?'Requires '+r+' '+level(r)+'/'+l:money(income(n))+' coins / day',meter(n),s.job===n,r&&level(r)<l)).join('');
+else if(tab==='Skills')body='<p>Train one skill alongside your job. Every learned bonus stays active.</p>'+skills.map(([n,b])=>row('skill:'+n,n,b+' · ×'+(n==='Bargaining'?1/bonus(n):bonus(n)).toFixed(2),meter(n),s.skill===n)).join('');
+else if(tab==='Shop')body='<h3>Property</h3>'+homes.map(([n,c,h],i)=>row('home:'+i,n,'×'+h+' learning',c+' / day',s.home===i)).join('')+'<h3>Equipment</h3>'+row('book','Book','×1.5 skill XP',s.book?'Equipped':'9 / day',s.book);
+else {let [title,act,n,l,c]=chapters[s.chapter];body='<h2>'+title+'</h2><p>'+[ 'A black gate stands beyond the fields. Earn your spurs and gather coin for the crossing.','Beyond the gate, a pale flame waits. Master the arcane arts to carry it home.' ][s.chapter]+'</p>'+row('path',act,n+' '+level(n)+'/'+l+' · '+money(s.coins)+'/'+money(c)+' coins','→',false,level(n)<l||s.coins<c)}
+screenEl.innerHTML='<section class="card profile"><img src="'+s.hero+'.png" alt=""><div><h2>'+s.hero+'</h2>Age '+(14+Math.floor(s.day/365))+' · Day '+s.day%365+' · Lifespan 70<br><span class="gold">◉ '+money(s.coins)+' &nbsp; '+(income()-cost()).toFixed(1)+' / day</span></div></section>'+(s.chapter<2&&s.day<20440?'<nav>'+['Jobs','Skills','Shop','Paths'].map(n=>btn('tab:'+n,n,n===tab)).join('')+'</nav>':'')+'<section class="card">'+body+'</section>'+(s.chapter<2&&s.day<20440?'<nav>'+btn('pause',s.paused?'Resume':'Pause')+btn('speed','Speed ×'+s.speed)+'</nav>':'')+'<footer>Life '+s.life+' · '+(notice||'Progress saves on this browser.')+'</footer>'}
+const screenEl=document.querySelector('#screen');
+screenEl.onclick=e=>{let b=e.target.closest('button');if(!b||b.disabled)return;advance();let [a,v]=b.dataset.act.split(':');
+if(a==='choose')choice=v;if(a==='begin'){s.hero=choice;s.time=Date.now()}
+if(a==='tab')tab=v;if(a==='job')s.job=v;if(a==='skill')s.skill=v;if(a==='home')s.home=Number(v);if(a==='book')s.book=!s.book;
+if(a==='pause')s.paused=!s.paused;if(a==='speed')s.speed=s.speed===1?5:1;
+if(a==='path'&&s.chapter<2){let [,,n,l,c]=chapters[s.chapter];if(level(n)>=l&&s.coins>=c){s.coins-=c;s.chapter++}}
+if(a==='rebirth'){for(const n in s.xp)s.memory[n]=Math.max(s.memory[n]||0,level(n));s={...fresh(),hero:s.hero,chapter:s.chapter,life:s.life+1,memory:s.memory};tab='Jobs'}
+save();render()};
+advance();render();setInterval(()=>{advance();if(s.hero&&!document.querySelector('button:active'))render()},1000);
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});</script></html>
+
