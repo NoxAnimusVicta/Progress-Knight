@@ -1,8 +1,8 @@
 const prefix = 'progress-knight-' + self.registration.scope + '-';
-const cacheName = prefix + 'remastered-baseline-1';
+const cacheName = prefix + 'remastered-logo-1';
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(cacheName).then(cache => cache.addAll([
-    './', './index.html', './previous.html','./centenarians.jpg','./isabella-100.jpg','./save-tools.js','./balance.js','./remastered.js','./remastered-art.jpg','./game.js', './late-art.jpg', './activity-art.jpg', './Magnus.png', './Isabella.png', './icon-192.png', './icon-512.png', './manifest.webmanifest'
+    './', './index.html', './previous.html','./centenarians.jpg','./isabella-100.jpg','./save-tools.js','./balance.js','./remastered.js','./remastered-art.jpg','./game.js', './late-art.jpg', './activity-art.jpg', './Magnus.png', './Isabella.png', './icon-180.png','./icon-192.png', './icon-512.png', './manifest.webmanifest'
   ].map(url=>new Request(url,{cache:"reload"})))));
 });
 self.addEventListener('activate', event => {
