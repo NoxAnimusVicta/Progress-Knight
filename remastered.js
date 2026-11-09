@@ -225,7 +225,7 @@ screen.onclick=e=>{
 advance();render();setInterval(()=>{advance();save();if(!document.querySelector('button:active'))render()},1000);
 addEventListener('pagehide',()=>{advance();save()});
 if(document.addEventListener)document.addEventListener('visibilitychange',()=>{if(!document.hidden){advance();render()}else{advance();save()}});
-if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});
+
 
 
 

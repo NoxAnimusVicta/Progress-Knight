@@ -17,3 +17,12 @@ Generate the artwork from a local copy of the Android 1.9.1 APK with Python and 
 ## Verification
 
 Run node verify.cjs from this directory. The checks cover the screenshot at Concentration 26, Productivity 17, Bargaining 7 and Strength 15, each displayed wage and upkeep example, an earned first promotion, the ordinary and alignment resets, both orbs and the final amulet. Boundary tests use explicit late-game fixtures.
+
+## Baseline release and updates
+
+The remastered-baseline-1 release adds versioned JSON campaign backup and restore under Save & backup. This format belongs to the personal web app. The earlier prototype and the native mobile app use other save formats. Expiration times for temporary effects follow wall-clock time. The importer validates and previews the selected character before replacing a save.
+
+The installed app checks for a new service worker on launch, on returning online or to the foreground, and once a minute during use. Each release must have a unique cacheName in sw.js. Precache every new runtime asset before deployment. A successfully installed release activates and the client saves before reloading. An open backup panel or pending amulet confirmation defers the reload.
+
+The complete baseline ZIP contains the static app and its personal artwork. Extract it and serve the directory over HTTPS (or localhost). Player saves are exported separately from the running game. Changes for expansions belong on main; retain the baseline commit and branch for recovery.
+
