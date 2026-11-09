@@ -101,9 +101,9 @@ function voidArt(tile,size,label){
 }
 function portrait(){
  if(state.voidPath){
-   const female=state.hero==='Isabella',years=age();
-   const tile=years>=100?(female?7:6):(female?3:0)+(years>=65?2:years>=30?1:0);
-   return voidArt(tile,76,state.hero+' · Void · age '+years);
+   const years=age(),stage=years>=100?4:years>=65?3:years>=45?2:years>=30?1:0;
+   const row=state.hero==='Isabella'?100:0;
+   return '<span role="img" aria-label="'+state.hero+' · Void · age '+years+'" style="display:inline-block;flex:none;width:76px;height:76px;border-radius:5px;background:url(./void-forms.svg) '+(stage*25)+'% '+row+'%/500% 200%"></span>';
  }
  const alignment=state.Evil?'_evil':state.Angelic?'_angelic':'';
  const years=age();
