@@ -26,6 +26,7 @@ function readBackup(text) {
   }
   check(['','Magnus','Isabella'].includes(src.hero),'character'); dst.hero=src.hero;
   check([1,5,20].includes(src.devSpeed??1),'developer speed');dst.devSpeed=src.devSpeed??1;
+  check(typeof (src.voidPath??false)==='boolean','Void path');dst.voidPath=src.voidPath??false;
   const hasEntry=n=>typeof n==='string' && Object.hasOwn(entries,n);
   for(const [field,test] of [['job',e=>e.income],['skill',e=>e.maxXp&&!e.income],['home',e=>e.group==='Properties']]) {
     check(hasEntry(src[field])&&test(entries[src[field]]),field);dst[field]=src[field];
@@ -33,7 +34,7 @@ function readBackup(text) {
   for(const field of ['equipment','unlocked','levels','xp','memory','orbs']){
     check(plain(src[field]),field);
     for(const [name,value] of Object.entries(src[field])){
-      if(field==='orbs')check(['Evil','Angelic'].includes(name)&&value===true,field);
+      if(field==='orbs')check(['Evil','Angelic','Void'].includes(name)&&value===true,field);
       else {
         check(hasEntry(name),field);
         if(field==='equipment')check(entries[name].group==='Misc'&&value===true,field);
