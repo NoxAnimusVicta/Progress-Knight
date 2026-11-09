@@ -1,8 +1,8 @@
 const prefix = 'progress-knight-' + self.registration.scope + '-';
-const cacheName = prefix + 'void-portraits-2';
+const cacheName = prefix + 'void-forms-4';
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(cacheName).then(cache => cache.addAll([
-    './', './index.html', './previous.html','./centenarians.jpg','./isabella-100.jpg','./save-tools.js','./balance.js','./remastered.js','./remastered-art.jpg','./void-art.webp','./game.js', './late-art.jpg', './activity-art.jpg', './Magnus.png', './Isabella.png', './icon-180.png','./icon-192.png', './icon-512.png', './manifest.webmanifest'
+    './', './index.html', './previous.html','./centenarians.jpg','./isabella-100.jpg','./save-tools.js','./balance.js','./remastered.js','./remastered-art.jpg','./void-art.webp','./void-forms.svg','./game.js', './late-art.jpg', './activity-art.jpg', './Magnus.png', './Isabella.png', './icon-180.png','./icon-192.png', './icon-512.png', './manifest.webmanifest'
   ].map(url=>new Request(url,{cache:"reload"})))));
 });
 self.addEventListener('activate', event => {
