@@ -3,7 +3,7 @@ const catalog = Object.values(entries);
 function newLife() {
   return {days:5110, coins:0, job:'Beggar', skill:'Concentration', home:'Homeless',
     equipment:{}, levels:{}, xp:{}, unlocked:{}, memory:{}, hero:'', life:1,
-    Evil:0, Angelic:0, orbs:{}, finished:false, paused:false, warp:true, clock:Date.now()};
+    Evil:0, Angelic:0, orbs:{}, finished:false, paused:false, warp:true, devSpeed:1, clock:Date.now()};
 }
 let state = newLife();
 try {Object.assign(state,JSON.parse(localStorage.getItem(saveKey)))} catch {}
@@ -83,7 +83,7 @@ function reset(action){
   else if(action==='Evil'){Evil+=alignmentGain('Evil');Angelic=0}
   else if(action==='Angelic'){Angelic+=alignmentGain('Angelic');Evil=0}
   else {orbs={...orbs,[action.split(' ')[0]]:true};Evil=0;Angelic=0}
-  state={...newLife(),hero,life:life+1,Evil,Angelic,orbs,memory};
+  state={...newLife(),hero,devSpeed:state.devSpeed,life:life+1,Evil,Angelic,orbs,memory};
 }
 function save(){try{localStorage.setItem(saveKey,JSON.stringify(state))}catch{statusText='Save unavailable in this browser.'}}
 let tab='Jobs',chosen='Magnus',pending='',statusText='';
@@ -93,8 +93,14 @@ function sprite(i,size=54){
  return '<span aria-hidden="true" class="sprite" style="width:'+size+'px;height:'+size+'px;background-size:'+size*10+'px '+size*atlasRows+'px;background-position:'+(-size*(i%10))+'px '+(-size*Math.floor(i/10))+'px"></span>';
 }
 function portrait(){
- const stage=dead()?'dead':age()>=120&&(state.Evil||state.Angelic)?120:age()>=60?60:age()>=45?45:age()>=30?30:14;
- return artIndex['avatar_'+state.hero.toLowerCase()+'_'+stage+(state.Evil?'_evil':state.Angelic?'_angelic':'')];
+ const alignment=state.Evil?'_evil':state.Angelic?'_angelic':'';
+ const years=age();
+ if(!dead() && years>=100 && !alignment){
+   const x=state.hero==='Magnus'?'left':'right';
+   return '<span role="img" aria-label="'+state.hero+', age '+years+'" class="centenarian" style="background-position:'+x+' center"></span>';
+ }
+ const stage=dead()?'dead':years>=100?120:years>=65?60:years>=45?45:years>=30?30:14;
+ return sprite(artIndex['avatar_'+state.hero.toLowerCase()+'_'+stage+alignment],76);
 }
 function button(a,label,on=false){return '<button data-act="'+a+'" class="'+(on?'on':'')+'">'+label+'</button>'}
 function meter(n){
@@ -103,9 +109,9 @@ function meter(n){
 }
 function daysPerSecond(now){
  const rested=now<(state.restedUntil||0)?state.restedSpeed:1;
- return 5*rested*(potionActive('accelerating')?2:1)*(state.warp?effect('Time warping'):1);
+ return 5*state.devSpeed*rested*(potionActive('accelerating')?2:1)*(state.warp?effect('Time warping'):1);
 }
-const riverModes=new Map();
+
 let animatedBars=[], clockLabel, coinLabel, animationId;
 function bindMotion(){
  if(!screen.querySelectorAll)return;
@@ -114,11 +120,7 @@ function bindMotion(){
    return n===state.job||n===state.skill;
  }).map(el=>{
    const n=el.dataset.meter;
-   const seconds=threshold(n)/(rate(n)*daysPerSecond(Date.now()));
-   const flowing=seconds<(riverModes.get(n)?0.45:0.30);
-   riverModes.set(n,flowing);
-   el.classList.toggle('river',flowing);
-   return {el,n,flowing, speed:rate(n), maximum:threshold(n)};
+   return {el,n,speed:rate(n),maximum:threshold(n)};
  });
  clockLabel=screen.querySelector('[data-clock]');
  coinLabel=screen.querySelector('[data-coins]');
@@ -131,24 +133,17 @@ function paintMotion(timestamp){
  const date=state.days+days;
  clockLabel.textContent='Age '+Math.floor(date/365)+' · '+Math.floor(date%365)+' days';
  coinLabel.textContent=fmt(Math.max(0,state.coins+days*(pay(state.job)-upkeep())));
- if(animatedBars.some(bar=>bar.flowing)&&!state.paused&&!dead()&&!state.finished){
-   screen.style.setProperty('--stream-offset',((timestamp/75)%48)+'px');
- }
- for(const {el,n,flowing,speed,maximum} of animatedBars){
-   const total=(state.xp[n]||0)+days*speed;
-   // Predict the wrap using the same XP curve between simulation ticks.
-      let progress=total, limit=maximum, shownLevel=level(n);
-   if(!flowing){
-     while(progress>=limit){
-       progress-=limit;
-       shownLevel++;
-       limit=Math.round(entries[n].maxXp*(shownLevel+1)*1.01**shownLevel);
-     }
-     const label=el.previousElementSibling;
-     if(label)label.textContent='Lv. '+shownLevel;
+ for(const {el,n,speed,maximum} of animatedBars){
+   let progress=(state.xp[n]||0)+days*speed;
+   let limit=maximum, shownLevel=level(n);
+   while(progress>=limit){
+     progress-=limit;
+     shownLevel++;
+     limit=Math.round(entries[n].maxXp*(shownLevel+1)*1.01**shownLevel);
    }
-   const fraction=flowing?1:progress/limit;
-   el.firstElementChild.style.transform='scaleX('+fraction+')';
+   const label=el.previousElementSibling;
+   if(label)label.textContent='Lv. '+shownLevel;
+   el.firstElementChild.style.transform='scaleX('+progress/limit+')';
  }
 }
 function scheduleMotion(){
@@ -190,11 +185,11 @@ function amulet(){
 function render(){draw();bindMotion();scheduleMotion()}
 function draw(){
  if(!state.hero){screen.innerHTML='<h1>Choose your character</h1><div class="grid">'+['Magnus','Isabella'].map(n=>button('choose:'+n,sprite(artIndex['avatar_'+n.toLowerCase()+'_14'],96)+'<strong>'+n+'</strong><small>Age 14 · '+(n==='Magnus'?'Magic':'Military')+' jobs XP ×1.1</small>',chosen===n)).join('')+'</div><p>'+button('begin','Continue as '+chosen)+'</p><a href="./previous.html">Earlier prototype save</a>';return}
- const rested=Date.now()<(state.restedUntil||0)?' · Rested speed ×'+state.restedSpeed.toFixed(2):'';const top='<div class="card profile">'+sprite(portrait(),76)+'<div><b>'+state.hero+'</b> · Life '+state.life+'<br><span data-clock>Age '+age()+' · '+Math.floor(state.days%365)+' days</span> · Lifespan '+Math.floor(lifespan())+'<br><span class="gold">◉ <span data-coins>'+fmt(state.coins)+'</span> · '+fmt(pay(state.job)-upkeep())+'/day</span><br>Happiness ×'+happy().toFixed(2)+rested+'</div></div>';
+ const rested=Date.now()<(state.restedUntil||0)?' · Rested speed ×'+state.restedSpeed.toFixed(2):'';const top='<div class="card profile">'+portrait()+'<div><b>'+state.hero+'</b> · Life '+state.life+'<br><span data-clock>Age '+age()+' · '+Math.floor(state.days%365)+' days</span> · Lifespan '+Math.floor(lifespan())+'<br><span class="gold">◉ <span data-coins>'+fmt(state.coins)+'</span> · '+fmt(pay(state.job)-upkeep())+'/day</span><br>Happiness ×'+happy().toFixed(2)+rested+'</div></div>';
  if(state.finished){screen.innerHTML=top+sprite(artIndex.endgame,144)+'<h1>Both orbs recovered</h1><p>Your journey through Evil and Angelic magic is complete.</p>';return}
  if(dead())tab='Amulet';
  const nav=['Jobs','Skills','Shop',...(age()>=25?['Amulet']:[])];
- screen.innerHTML=top+'<nav>'+nav.map(t=>button('tab:'+t,t,t===tab)).join('')+'</nav><section class="card">'+(tab==='Amulet'?amulet():list())+'</section><footer>'+state.job+' · Lv. '+level(state.job)+'　'+state.skill+' · Lv. '+level(state.skill)+'<p>'+button('pause',state.paused?'Resume':'Pause')+' '+(level('Time warping')?button('warp','Time warping '+(state.warp?'on':'off')):'')+'</p>'+['happiness','accelerating'].map(k=>button('potion:'+k,(k==='happiness'?'Happiness':'Speed')+' ×2 · '+(potionActive(k)?Math.ceil((state[k+'Until']-Date.now())/1000)+'s':'10 min'),potionActive(k))).join(' ')+'<p><a href="./previous.html">Earlier prototype save</a></p>'+statusText+'</footer>';
+ screen.innerHTML=top+'<nav>'+nav.map(t=>button('tab:'+t,t,t===tab)).join('')+'</nav><section class="card">'+(tab==='Amulet'?amulet():list())+'</section><footer>'+state.job+' · Lv. '+level(state.job)+'　'+state.skill+' · Lv. '+level(state.skill)+'<p>'+button('pause',state.paused?'Resume':'Pause')+' '+(level('Time warping')?button('warp','Time warping '+(state.warp?'on':'off')):'')+'</p>'+['happiness','accelerating'].map(k=>button('potion:'+k,(k==='happiness'?'Happiness':'Speed')+' ×2 · '+(potionActive(k)?Math.ceil((state[k+'Until']-Date.now())/1000)+'s':'10 min'),potionActive(k))).join(' ')+'<p>Developer speed　'+[1,5,20].map(v=>button('devSpeed:'+v,v+'×',state.devSpeed===v)).join(' ')+'</p><p><a href="./previous.html">Earlier prototype save</a></p>'+statusText+'</footer>';
 }
 function advance(){
  const now=Date.now(),elapsed=Math.max(0,(now-state.clock)/1000);state.clock=now;
@@ -219,6 +214,7 @@ screen.onclick=e=>{
  if(a==='accept'&&pending){reset(pending);pending='';tab='Jobs'}
  if(a==='pause')state.paused=!state.paused;
  if(a==='potion'&&['happiness','accelerating'].includes(v))drink(v);
+ if(a==='devSpeed'&&[1,5,20].includes(Number(v)))state.devSpeed=Number(v);
  if(a==='warp')state.warp=!state.warp;
  if(entries[v]&&!remaining(v).length&&!dead()){
   if(['job','skill','home'].includes(a))state[a]=v;
