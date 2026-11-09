@@ -96,8 +96,8 @@ function portrait(){
  const alignment=state.Evil?'_evil':state.Angelic?'_angelic':'';
  const years=age();
  if(!dead() && years>=100 && !alignment){
-   const x=state.hero==='Magnus'?'left':'right';
-   return '<span role="img" aria-label="'+state.hero+', age '+years+'" class="centenarian" style="background-position:'+x+' center"></span>';
+   const variant=state.hero==='Isabella'?' isabella-100':'';
+   return '<span role="img" aria-label="'+state.hero+', age '+years+'" class="centenarian'+variant+'"></span>';
  }
  const stage=dead()?'dead':years>=100?120:years>=65?60:years>=45?45:years>=30?30:14;
  return sprite(artIndex['avatar_'+state.hero.toLowerCase()+'_'+stage+alignment],76);
