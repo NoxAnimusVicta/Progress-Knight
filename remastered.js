@@ -184,7 +184,16 @@ function amulet(){
 }
 function render(){draw();bindMotion();scheduleMotion()}
 function draw(){
- if(!state.hero){screen.innerHTML='<h1>Choose your character</h1><div class="grid">'+['Magnus','Isabella'].map(n=>button('choose:'+n,sprite(artIndex['avatar_'+n.toLowerCase()+'_14'],96)+'<strong>'+n+'</strong><small>Age 14 · '+(n==='Magnus'?'Magic':'Military')+' jobs XP ×1.1</small>',chosen===n)).join('')+'</div><p>'+button('begin','Continue as '+chosen)+'</p><a href="./previous.html">Earlier prototype save</a>';return}
+ if(!state.hero){
+   const cards=['Magnus','Isabella'].map(name=>{
+     const selected=chosen===name;
+     const talent=name==='Magnus'?'Magic':'Military';
+     const portrait=sprite(artIndex['avatar_'+name.toLowerCase()+'_14'],72);
+     return `<button type="button" class="candidate ${selected?'on':''}" aria-pressed="${selected}" data-act="choose:${name}">${portrait}<span><strong>${name}</strong><small>Age 14</small><small class="talent">${talent} jobs XP ×1.1</small></span><span class="mark" aria-hidden="true">${selected?'✓':''}</span></button>`;
+   }).join('');
+   screen.innerHTML=`<section class="launch"><h1>Choose your character</h1><div class="roster">${cards}</div><button type="button" class="primary" data-act="begin">Continue as ${chosen}</button></section>`;
+   return;
+ }
  const rested=Date.now()<(state.restedUntil||0)?' · Rested speed ×'+state.restedSpeed.toFixed(2):'';const top='<div class="card profile">'+portrait()+'<div><b>'+state.hero+'</b> · Life '+state.life+'<br><span data-clock>Age '+age()+' · '+Math.floor(state.days%365)+' days</span> · Lifespan '+Math.floor(lifespan())+'<br><span class="gold">◉ <span data-coins>'+fmt(state.coins)+'</span> · '+fmt(pay(state.job)-upkeep())+'/day</span><br>Happiness ×'+happy().toFixed(2)+rested+'</div></div>';
  if(state.finished){screen.innerHTML=top+sprite(artIndex.endgame,144)+'<h1>Both orbs recovered</h1><p>Your journey through Evil and Angelic magic is complete.</p>';return}
  if(dead())tab='Amulet';
