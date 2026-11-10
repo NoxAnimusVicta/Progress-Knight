@@ -42,10 +42,16 @@ state.days=200*365;state.levels['Void Heart']=10;state.levels['Void attunement']
 for(const [name,,target] of relicRequirements('Second Heart')){
  if(name==='Age')state.days=target*365;else if(name!=='Banked Void')state.levels[name]=target;
 }
-assert(!choices().includes('Second Heart'));state.Void=10;reset('Second Heart');assert(state.heartPair&&!state.superHeart&&age()===14);
+assert(!choices().includes('Second Heart'));state.Void=499;reset('Second Heart');assert(!state.heartPair);state.Void=500;reset('Second Heart');assert(state.heartPair&&!state.superHeart&&age()===14);
 assert.deepEqual(choices(),['Super Void Heart']);const lifeBefore=state.life;reset('Super Void Heart');
 assert(state.superHeart&&!state.heartPair&&state.life===lifeBefore);assert(!choices().includes('Super Void Heart'));
-state.days=200*365;reset('Rebirth');assert(state.superHeart&&state.Void===10);
+state.days=200*365;reset('Rebirth');assert(state.superHeart&&state.Void===500);
+state.days=600*365;state.levels={'Void regent':100,'Void Heart':150};state.Void=1999;assert(!choices().includes('Cross the Rift'));
+state.Void=2000;state.days=599*365;assert(!choices().includes('Cross the Rift'));state.days=600*365;
+state.levels['Void regent']=99;assert(!choices().includes('Cross the Rift'));state.levels['Void regent']=100;
+state.levels['Void Heart']=149;assert(!choices().includes('Cross the Rift'));state.levels['Void Heart']=150;
+assert.equal(voidGain(),96);reset('Cross the Rift');assert(state.crossedRift);assert(!choices().includes('Cross the Rift'));
+reset('Collect Void');assert.equal(state.Void,2096);assert.equal(state.memory['Void Heart'],150);assert(state.crossedRift);
 assert(migrateVoid({orbs:{Void:true}}).voidHeart);
 console.log('Verified base progression, orb collectibles and cumulative skill XP, Void jobs, Heart, legacy conversion and Void collection.');
 `,ctx);
