@@ -10,6 +10,22 @@ for(const [name,tile,effect,description,maxXp,requirements] of [
  ['Void attunement',7,.05,'Void collected',1500,{'Void resonance':12}],
  ['Void Heart',8,.10,'Void collected',2000,{}]
 ])entries[name]={name,tile,effect,description,maxXp,requirements,group:'Void magic'};
+for(const [name,tile,income,maxXp,requirements] of [
+ ['Night courier',0,12,120,{}],['Relay technician',1,90,500,{'Night courier':15,'Neural link':10}],
+ ['Grid engineer',2,460,1500,{'Relay technician':25,'Circuit design':20}]
+])entries[name]={name,tile,income,maxXp,requirements,group:'City contracts'};
+for(const [name,tile,effect,description,maxXp,requirements] of [
+ ['Neural link',3,.03,'training XP',120,{}],['Circuit design',4,.04,'contract pay',300,{'Neural link':10}],
+ ['Life support',5,.04,'lifespan',500,{'Circuit design':15}]
+])entries[name]={name,tile,effect,description,maxXp,requirements,group:'Augmentations'};
+entries['Transit bunk']={name:'Transit bunk',tile:6,expense:0,effect:1,requirements:{},group:'City housing'};
+entries['Skyline apartment']={name:'Skyline apartment',tile:7,expense:60,effect:2,requirements:{'Relay technician':5},group:'City housing'};
+function cityLoadout(s){
+ if(!s.crossedRift)return;
+ if(entries[s.job]?.group!=='City contracts'){s.job='Night courier';s.equipment={}}
+ if(entries[s.skill]?.group!=='Augmentations')s.skill='Neural link';
+ if(entries[s.home]?.group!=='City housing')s.home='Transit bunk';
+}
 const catalog = Object.values(entries);
 function newLife() {
   return {days:5110, coins:0, job:'Beggar', skill:'Concentration', home:'Homeless',
@@ -26,6 +42,7 @@ function removeOrbTraining(s){
 }
 function migrateVoid(s){
  removeOrbTraining(s);
+ cityLoadout(s);
  if(s.orbs?.Void){s.voidHeart=true;delete s.orbs.Void}
  return s;
 }
@@ -45,10 +62,14 @@ const potionActive=kind=>Date.now()<(state[kind+'Until']||0);
 function drink(kind){if(!potionActive(kind))state[kind+'Until']=Date.now()+600000}
 const happy=()=>(potionActive('happiness')?2:1)*entries[state.home].effect*effect('Meditation')*item('Butler');
 const age=()=>Math.floor(state.days/365);
-const lifespan=()=>70*effect('Immortality')*effect('Super immortality')*(state.voidPath?effect('Timelessness'):1);
+const lifespan=()=>70*(state.crossedRift?effect('Life support'):1)*effect('Immortality')*effect('Super immortality')*(state.voidPath?effect('Timelessness'):1);
 const dead=()=>state.days>=lifespan()*365;
 function rate(n){
   const e=entries[n];
+  if(state.crossedRift){
+    const heartBonus=e.group==='Augmentations'?1+state.Void/10:1;
+    return Math.round(30*(1+(state.memory[n]||0)/10)*happy()*effect('Neural link')*heartBonus);
+  }
   // Remastered adds a constant x3 to every task XP multiplier list (1.9.1).
   let gain=30*(1+(state.memory[n]||0)/10)*happy()*effect('Dark influence')*effect('Demon training')*effect('Divine Blessing')*effect("Angel's Guidance");
   if(e.income)gain*=effect('Productivity')*item('Personal squire');
@@ -63,7 +84,7 @@ function rate(n){
   if(e.group==='Light magic')gain*=state.Angelic;
   return Math.round(gain);
 }
-function pay(n){return Math.round(entries[n].income*(entries[n].group==='Void work'?effect('Void resonance'):1)*(1+Math.log10(level(n)+1))*effect("Demon's wealth")*effect('Bountiful Grace')*(entries[n].group==='Military'?effect('Strength'):1))}
+function pay(n){return Math.round(entries[n].income*(state.crossedRift?effect('Circuit design'):1)*(entries[n].group==='Void work'?effect('Void resonance'):1)*(1+Math.log10(level(n)+1))*effect("Demon's wealth")*effect('Bountiful Grace')*(entries[n].group==='Military'?effect('Strength'):1))}
 function price(n){return Math.round(entries[n].expense*effect('Bargaining')*effect('Intimidation')*effect('Healing Aura'))}
 function upkeep(){return Object.keys(state.equipment).reduce((sum,n)=>sum+price(n),price(state.home))}
 function gain(n,amount){
@@ -84,7 +105,7 @@ function step(days){
   if(!days||state.finished)return;
   const jobRate=rate(state.job),skillRate=rate(state.skill),net=pay(state.job)-upkeep();
   state.days+=days;state.coins+=net*days;
-  if(state.coins<0){state.coins=0;state.home='Homeless';state.equipment={}}
+  if(state.coins<0){state.coins=0;state.home=state.crossedRift?'Transit bunk':'Homeless';state.equipment={}}
   gain(state.job,jobRate*days);gain(state.skill,skillRate*days);
 }
 function alignmentGain(side){return side==='Evil'?(effect('Evil control')+effect('Blood meditation')):(effect('Pure Heart')+effect('Spiritual Meditation'))}
@@ -121,7 +142,7 @@ function choices(){
 }
 function reset(action){
   if(!choices().includes(action))return;
-  if(action==='Cross the Rift'){state.crossedRift=true;return}
+  if(action==='Cross the Rift'){state.crossedRift=true;cityLoadout(state);return}
   if(action==='Super Void Heart'){state.superHeart=true;state.heartPair=false;return}
   if(action==='Ending'){state.finished=true;return}
   let {hero,life,Evil,Angelic,orbs}=state;
@@ -134,6 +155,7 @@ function reset(action){
   else if(action==='Void Heart')state.voidHeart=true;
   else if(action.endsWith(' orb')){orbs={...orbs,[action.split(' ')[0]]:true};Evil=0;Angelic=0}
   state={...newLife(),hero,crossedRift:state.crossedRift,heartPair:state.heartPair,superHeart:state.superHeart,Void:state.Void,voidHeart:state.voidHeart,voidPath:state.voidPath||action==='Void',devSpeed:state.devSpeed,life:life+1,Evil,Angelic,orbs,memory};
+  cityLoadout(state);
 }
 function save(){try{localStorage.setItem(saveKey,JSON.stringify(state))}catch{statusText='Save unavailable in this browser.'}}
 let tab='Jobs',chosen='Magnus',pending='',statusText='';
@@ -144,6 +166,16 @@ function sprite(i,size=54){
 }
 function voidArt(tile,size,label){
  return '<span role="img" aria-label="'+label+'" style="display:inline-block;flex:none;border-radius:6px;width:'+size+'px;height:'+size+'px;background:url(./void-icons.webp) '+(tile%3*50)+'% '+(Math.floor(tile/3)*50)+'%/300% 300%"></span>';
+}
+function cityIcon(tile,size){
+ return '<span aria-hidden="true" style="display:inline-block;flex:none;width:'+size+'px;height:'+size+'px;border-radius:4px;background:url(./neon-city.webp) '+(tile%3*50)+'% '+(Math.floor(tile/3)*50)+'%/300% 300%"></span>';
+}
+function cityTerminal(){
+ const actions=choices();
+ return '<h2>Relay terminal</h2><p>Rain hisses on the elevated tracks. A courier hands you a dead receiver. “Get the grid talking again and there’s a bed upstairs.” Inside your coat, both orbs have gone cold. The Super Void Heart still beats.</p>'+
+ '<p>Banked Void · '+fmt(state.Void)+' · Augment XP ×'+(1+state.Void/10).toFixed(1)+' · Orb bonuses sealed</p>'+
+ (actions.length?actions.map(a=>button('ask:'+a,a==='Collect Void'?'Bank '+voidGain()+' Void and reboot':'Reboot with XP memories')).join(' '):'<p>Memory reboot available at age 65. Void banking available from age 200.</p>')+
+ (pending?'<p>Start a new city life with your XP memories'+(pending==='Collect Void'?' and '+voidGain()+' more Void':'')+'?</p>'+button('accept','Confirm reboot')+' '+button('cancel','Stay here'):'');
 }
 function portrait(){
  if(state.voidPath){
@@ -215,7 +247,7 @@ function scheduleMotion(){
  animationId=requestAnimationFrame(frame);
 }
 function list(){
- const groups=tab==='Jobs'?['Common work','Military','The Arcane Association',...(state.voidPath?['Void work']:[])]:tab==='Skills'?['Fundamentals','Combat','Magic','Dark magic','Light magic',...(state.voidPath?['Void magic']:[])]:['Properties','Misc'];
+ const groups=state.crossedRift?[{Jobs:'City contracts',Skills:'Augmentations',Shop:'City housing'}[tab]]:tab==='Jobs'?['Common work','Military','The Arcane Association',...(state.voidPath?['Void work']:[])]:tab==='Skills'?['Fundamentals','Combat','Magic','Dark magic','Light magic',...(state.voidPath?['Void magic']:[])]:['Properties','Misc'];
  return groups.filter(g=>g!=='Dark magic'||state.Evil).filter(g=>g!=='Light magic'||state.Angelic).map(g=>{
   let lockedShown=false;
   const rows=catalog.filter(e=>e.group===g&&(e.name!=='Void Heart'||state.voidHeart)).map(e=>{
@@ -224,9 +256,9 @@ function list(){
    if(missing.length)lockedShown=true;
    const selected=[state.job,state.skill,state.home].includes(n)||state.equipment[n];
    const xpNote=e.maxXp?' · '+fmt(rate(n))+' XP/day':'';
-   const info=e.income?fmt(pay(n))+' coins/day':e.maxXp?(e.isPlusDescription?'+':'×')+effect(n).toFixed(2)+' '+e.description:'×'+e.effect+' '+(e.description||'Happiness');
-   const action=e.income?'job':e.maxXp?'skill':g==='Properties'?'home':'gear';
-   return '<button class="row '+(selected?'on':'')+'" aria-pressed="'+Boolean(selected)+'" data-act="'+action+':'+n+'" '+(missing.length?'disabled':'')+'>'+(g.startsWith('Void ')?voidArt(e.tile,54,n):sprite(e.tile))+'<span><b>'+n+'</b><small>'+(missing.length?missing.join(' · '):info+xpNote)+'</small></span><span class="right">'+(action==='gear'?(selected?'On · ':'Off · '):'')+(e.maxXp?'<span>Lv. '+level(n)+'</span>'+meter(n):fmt(price(n))+' / day')+'</span></button>';
+   const info=e.income?fmt(pay(n))+(state.crossedRift?' credits/day':' coins/day'):e.maxXp?(e.isPlusDescription?'+':'×')+effect(n).toFixed(2)+' '+e.description:'×'+e.effect+' '+(e.description||'Happiness');
+   const action=e.income?'job':e.maxXp?'skill':(g==='Properties'||g==='City housing')?'home':'gear';
+   return '<button class="row '+(selected?'on':'')+'" aria-pressed="'+Boolean(selected)+'" data-act="'+action+':'+n+'" '+(missing.length?'disabled':'')+'>'+(state.crossedRift?cityIcon(e.tile,54):g.startsWith('Void ')?voidArt(e.tile,54,n):sprite(e.tile))+'<span><b>'+n+'</b><small>'+(missing.length?missing.join(' · '):info+xpNote)+'</small></span><span class="right">'+(action==='gear'?(selected?'On · ':'Off · '):'')+(e.maxXp?'<span>Lv. '+level(n)+'</span>'+meter(n):fmt(price(n))+' / day')+'</span></button>';
   }).join('');
   return '<h3>'+g+'</h3>'+rows;
  }).join('');
@@ -254,7 +286,7 @@ function amulet(){
    };
    const title=state.superHeart?'Super Void Heart':state.heartPair?'Two Void Hearts':'Void Heart';
    const story=state.crossedRift?'You have crossed the rift. Collecting Void now carries this life’s job and skill levels into the next as XP memories.':state.superHeart?'The Super Void Heart doubles every Void collection. Across the rift, something answers its beat.':state.heartPair?'Two Hearts rest in the amulet. Turn them together to seal the bond.':state.voidHeart?'The fused orbs beat as one. Bank Void and master the path again to grow a second Heart.':'The Evil Orb warms your palm. The Angelic Orb draws cold against it. The amulet has a socket for each.';
-   const details=pending==='Cross the Rift'?'This life continues. Future Void collections also preserve this life’s levels as XP memories.':pending==='Super Void Heart'?'The two Hearts become one. Void collection doubles permanently. This life continues.':pending==='Collect Void'&&state.crossedRift?'Bank the Void and begin a new life with your current levels as XP memories.':pending==='Rebirth'?'Begin a new life with your current levels as XP memories.':'Begin a new life. Current levels and XP memories reset. Banked Void and permanent bonuses carry over.';
+   const details=pending==='Cross the Rift'?'Enter the neon city in this life. Both orb XP bonuses go dormant. The Super Void Heart carries over, and collecting Void also preserves XP memories.':pending==='Super Void Heart'?'The two Hearts become one. Void collection doubles permanently. This life continues.':pending==='Collect Void'&&state.crossedRift?'Bank the Void and begin a new life with your current levels as XP memories.':pending==='Rebirth'?'Begin a new life with your current levels as XP memories.':'Begin a new life. Current levels and XP memories reset. Banked Void and permanent bonuses carry over.';
    return '<h2>'+title+'</h2>'+voidArt(8,90,title)+'<p>'+story+'</p><p>Void collected · '+fmt(state.Void)+'<br>Void skill XP ×'+(1+state.Void/10).toFixed(1)+'</p>'+
      (!state.voidHeart?relicProgress('Void'):!state.heartPair&&!state.superHeart?relicProgress('Second Heart'):state.superHeart&&!state.crossedRift?relicProgress('Rift'):'')+
      available.map(a=>button('ask:'+a,titles[a])).join(' ')+
@@ -278,6 +310,7 @@ function amulet(){
 }
 function render(){draw();bindMotion();scheduleMotion()}
 function draw(){
+ if(document.body)document.body.classList.toggle('city',!!state.crossedRift);
  if(!state.hero){
    const cards=['Magnus','Isabella'].map(name=>{
      const selected=chosen===name;
@@ -289,6 +322,13 @@ function draw(){
    return;
  }
  const rested=Date.now()<(state.restedUntil||0)?' · Rested speed ×'+state.restedSpeed.toFixed(2):'';const top='<div class="card profile">'+portrait()+'<div><b>'+state.hero+'</b> · Life '+state.life+'<br><span data-clock>Age '+age()+' · '+Math.floor(state.days%365)+' days</span> · Lifespan '+Math.floor(lifespan())+'<br><span class="gold">◉ <span data-coins>'+fmt(state.coins)+'</span> · '+fmt(pay(state.job)-upkeep())+' net/day</span><br>Happiness ×'+happy().toFixed(2)+rested+'</div></div>';
+ if(state.crossedRift){
+   if(dead())tab='Amulet';
+   const where=tab==='Amulet'?'Terminal':tab==='Jobs'?'Contracts':tab==='Skills'?'Augments':'Housing';
+   const tabs=[['Jobs','Contracts'],['Skills','Augments'],['Shop','Housing'],['Amulet','Terminal']];
+   screen.innerHTML=top.replace('◉','₡')+'<div class="city-banner">'+cityIcon(8,66)+'<div><small>RIFT DISTRICT</small><h1>Night Shift</h1></div></div><nav>'+tabs.map(([key,label])=>button('tab:'+key,label,where===label)).join('')+'</nav><section class="card">'+(tab==='Amulet'?cityTerminal():list())+'</section><footer>'+button('pause',state.paused?'Resume':'Pause')+' · Test speed '+[1,5,20].map(v=>button('devSpeed:'+v,v+'×',state.devSpeed===v)).join(' ')+'</footer>';
+   return;
+ }
  if(state.finished){screen.innerHTML=top+sprite(artIndex.endgame,144)+'<h1>Both orbs recovered</h1><p>Your journey through Evil and Angelic magic is complete.</p>'+amuletStory.ending+button('ask:Void','Embrace the Void')+(pending==='Void'?'<p>Start a new life at age 14 with both orbs. Master Void jobs and skills to claim the Void Heart from age 400.</p>'+button('accept','Enter the Void')+' '+button('cancel','Stay here'):'');return}
  if(dead())tab='Amulet';
  const nav=['Jobs','Skills','Shop',...(age()>=25||state.voidPath?['Amulet']:[])];
@@ -323,7 +363,7 @@ screen.onclick=e=>{
  if(a==='warp')state.warp=!state.warp;
  if(entries[v]&&!remaining(v).length&&!dead()){
   if(['job','skill'].includes(a))state[a]=v;
-  if(a==='home')state.home=state.home===v?'Homeless':v;
+  if(a==='home')state.home=state.home===v?(state.crossedRift?'Transit bunk':'Homeless'):v;
   if(a==='gear'){if(state.equipment[v])delete state.equipment[v];else state.equipment[v]=true}
  }
  save();render();

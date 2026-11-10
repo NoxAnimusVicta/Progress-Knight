@@ -3,9 +3,9 @@ const root={}, storage={};const ctx={assert,console,document:{querySelector:()=>
 vm.createContext(ctx);for(const file of ['balance.js','remastered.js'])vm.runInContext(fs.readFileSync(require('path').join(__dirname,file),'utf8'),ctx);
 vm.runInContext(`
 state.hero='Magnus';
-assert.equal(catalog.filter(e=>e.income&&e.group!=="Void work").length,20);
-assert.equal(catalog.filter(e=>e.maxXp&&!e.income&&e.group!=="Void magic").length,23);
-assert.equal(catalog.filter(e=>e.expense!==undefined).length,17);
+assert.equal(catalog.filter(e=>e.group!=="City contracts"&&e.income&&e.group!=="Void work").length,20);
+assert.equal(catalog.filter(e=>e.group!=="Augmentations"&&e.maxXp&&!e.income&&e.group!=="Void magic").length,23);
+assert.equal(catalog.filter(e=>e.group!=="City housing"&&e.expense!==undefined).length,17);
 for(const e of catalog)assert.equal(typeof e.tile,'number');
 for(let i=0;i<1000&&level('Beggar')<10;i++)step(1);
 assert(remaining('Farmer').length===0);assert(state.coins>0);assert(level('Concentration')>0);
@@ -51,7 +51,10 @@ state.Void=2000;state.days=599*365;assert(!choices().includes('Cross the Rift'))
 state.levels['Void regent']=99;assert(!choices().includes('Cross the Rift'));state.levels['Void regent']=100;
 state.levels['Void Heart']=149;assert(!choices().includes('Cross the Rift'));state.levels['Void Heart']=150;
 assert.equal(voidGain(),96);reset('Cross the Rift');assert(state.crossedRift);assert(!choices().includes('Cross the Rift'));
-reset('Collect Void');assert.equal(state.Void,2096);assert.equal(state.memory['Void Heart'],150);assert(state.crossedRift);
+assert.equal(state.job,'Night courier');assert.equal(state.skill,'Neural link');assert.equal(state.home,'Transit bunk');
+const cityRate=rate(state.skill);const records=state.orbs;state.orbs={};assert.equal(rate(state.skill),cityRate);state.orbs=records;
+state.levels['Neural link']=10;state.levels['Night courier']=15;assert.equal(remaining('Relay technician').length,0);
+reset('Collect Void');assert.equal(state.Void,2096);assert.equal(state.memory['Void Heart'],150);assert(state.crossedRift&&state.job==='Night courier'&&state.home==='Transit bunk');
 assert(migrateVoid({orbs:{Void:true}}).voidHeart);
 console.log('Verified base progression, orb collectibles and cumulative skill XP, Void jobs, Heart, legacy conversion and Void collection.');
 `,ctx);

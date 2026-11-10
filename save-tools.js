@@ -29,7 +29,7 @@ function readBackup(text) {
   check([1,5,20].includes(src.devSpeed??1),'developer speed');dst.devSpeed=src.devSpeed??1;
   check(typeof (src.voidPath??false)==='boolean','Void path');dst.voidPath=src.voidPath??false;
   const hasEntry=n=>typeof n==='string' && Object.hasOwn(entries,n);
-  for(const [field,test] of [['job',e=>e.income],['skill',e=>e.maxXp&&!e.income],['home',e=>e.group==='Properties']]) {
+  for(const [field,test] of [['job',e=>e.income],['skill',e=>e.maxXp&&!e.income],['home',e=>['Properties','City housing'].includes(e.group)]]) {
     check(hasEntry(src[field])&&test(entries[src[field]]),field);dst[field]=src[field];
   }
   for(const field of ['equipment','unlocked','levels','xp','memory','orbs']){
