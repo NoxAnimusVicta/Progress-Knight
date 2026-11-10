@@ -178,10 +178,11 @@ function cityTerminal(){
  (pending?'<p>Start a new city life with your XP memories'+(pending==='Collect Void'?' and '+voidGain()+' more Void':'')+'?</p>'+button('accept','Confirm reboot')+' '+button('cancel','Stay here'):'');
 }
 function portrait(){
- if(state.voidPath){
+ if(state.crossedRift||state.voidPath){
+   const city=state.crossedRift;
    const years=age(),stage=years>=100?4:years>=65?3:years>=45?2:years>=30?1:0;
    const row=state.hero==='Isabella'?100:0;
-   return '<span role="img" aria-label="'+state.hero+' · Void · age '+years+'" style="display:inline-block;flex:none;width:76px;height:76px;border-radius:5px;background:url(./void-forms.svg) '+(stage*25)+'% '+row+'%/500% 200%"></span>';
+   return '<span role="img" aria-label="'+state.hero+(city?' · Night Shift · age ':' · Void · age ')+years+'" style="display:inline-block;flex:none;width:76px;height:76px;border-radius:5px;background:url(./'+(city?'city-portraits.webp':'void-forms.svg')+') '+(stage*25)+'% '+row+'%/500% 200%"></span>';
  }
  const alignment=state.Evil?'_evil':state.Angelic?'_angelic':'';
  const years=age();
