@@ -52,9 +52,10 @@ function readBackup(text) {
   check(!dst.restedUntil||dst.restedSpeed>=1,'rested speed');
   check(typeof (src.voidHeart??false)==='boolean','Void Heart');
   dst.voidHeart=src.voidHeart??false;
-  for(const key of ['heartPair','superHeart']){
+  for(const key of ['heartPair','superHeart','crossedRift']){
     check(typeof (src[key]??false)==='boolean',key);dst[key]=src[key]??false;
   }
+  check(!dst.crossedRift||dst.superHeart,'rift progression');
   check(!(dst.heartPair&&dst.superHeart)&&(!(dst.heartPair||dst.superHeart)||(dst.voidHeart&&dst.voidPath)),'Heart progression');
   check(Number.isSafeInteger(src.Void??0)&&numeric(src.Void??0),'Void');
   dst.Void=src.Void??0;
