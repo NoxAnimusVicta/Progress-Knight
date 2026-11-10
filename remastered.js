@@ -1,14 +1,35 @@
 const saveKey = 'pk-remastered-191';
-entries['Rift keeper']={name:'Rift keeper',group:'Void work',tile:18,income:1200,maxXp:800,requirements:{}};
-entries['Timelessness']={name:'Timelessness',group:'Void magic',tile:29,effect:0.01,description:'Longer lifespan',maxXp:800,requirements:{}};
+for(const [name,tile,income,maxXp,requirements] of [
+ ['Rift keeper',0,1200,800,{}],['Rift scout',1,3600,1600,{'Rift keeper':20}],
+ ['Breach warden',2,10800,3200,{'Rift scout':30,'Rift weaving':12}],
+ ['Void regent',3,32400,6400,{'Breach warden':40,'Void resonance':20}]
+])entries[name]={name,tile,income,maxXp,requirements,group:'Void work'};
+for(const [name,tile,effect,description,maxXp,requirements] of [
+ ['Timelessness',4,.01,'lifespan',800,{}],['Rift weaving',5,.025,'Void job XP',900,{}],
+ ['Void resonance',6,.025,'Void wages',1200,{'Rift weaving':12}],
+ ['Void attunement',7,.05,'Void collected',1500,{'Void resonance':12}],
+ ['Void Heart',8,.10,'Void collected',2000,{}]
+])entries[name]={name,tile,effect,description,maxXp,requirements,group:'Void magic'};
 const catalog = Object.values(entries);
 function newLife() {
   return {days:5110, coins:0, job:'Beggar', skill:'Concentration', home:'Homeless',
     equipment:{}, levels:{}, xp:{}, unlocked:{}, memory:{}, hero:'', life:1,
-    voidPath:false, Evil:0, Angelic:0, orbs:{}, finished:false, paused:false, warp:true, devSpeed:1, clock:Date.now()};
+    voidPath:false, voidHeart:false, heartPair:false, superHeart:false, Void:0, Evil:0, Angelic:0, orbs:{}, finished:false, paused:false, warp:true, devSpeed:1, clock:Date.now()};
 }
 let state = newLife();
 try {Object.assign(state,JSON.parse(localStorage.getItem(saveKey)))} catch {}
+function removeOrbTraining(s){
+ for(const name of ['Good Orb','Evil Orb']){
+   if(s.skill===name)s.skill='Concentration';
+   for(const key of ['levels','xp','memory','unlocked'])if(s[key])delete s[key][name];
+ }
+}
+function migrateVoid(s){
+ removeOrbTraining(s);
+ if(s.orbs?.Void){s.voidHeart=true;delete s.orbs.Void}
+ return s;
+}
+migrateVoid(state);
 function level(name){return state.levels[name] || 0}
 function threshold(name){const l=level(name);return Math.round(entries[name].maxXp*(l+1)*1.01**l)}
 function effect(name){
@@ -31,16 +52,18 @@ function rate(n){
   // Remastered adds a constant x3 to every task XP multiplier list (1.9.1).
   let gain=30*(1+(state.memory[n]||0)/10)*happy()*effect('Dark influence')*effect('Demon training')*effect('Divine Blessing')*effect("Angel's Guidance");
   if(e.income)gain*=effect('Productivity')*item('Personal squire');
-  else gain*=effect('Concentration')*item('Book')*item('Study desk')*item('Library')*5**Object.keys(state.orbs).length;
+  else gain*=effect('Concentration')*item('Book')*item('Study desk')*item('Library')*(state.orbs.Evil?5:1)*(state.orbs.Angelic?5:1);
   if(e.group==='Military')gain*=effect('Battle tactics')*item('Steel longsword')*(state.hero==='Isabella'?1.1:1);
   if(e.group==='The Arcane Association')gain*=effect('Mana control')*(state.hero==='Magnus'?1.1:1);
+  if(e.group==='Void work')gain*=effect('Rift weaving');
+  if(e.group==='Void magic')gain*=1+state.Void/10;
   if(n==='Strength')gain*=effect('Muscle memory')*item('Dumbbells');
   if(e.group==='Magic')gain*=item('Sapphire charm');
   if(e.group==='Dark magic')gain*=state.Evil;
   if(e.group==='Light magic')gain*=state.Angelic;
   return Math.round(gain);
 }
-function pay(n){return Math.round(entries[n].income*(1+Math.log10(level(n)+1))*effect("Demon's wealth")*effect('Bountiful Grace')*(entries[n].group==='Military'?effect('Strength'):1))}
+function pay(n){return Math.round(entries[n].income*(entries[n].group==='Void work'?effect('Void resonance'):1)*(1+Math.log10(level(n)+1))*effect("Demon's wealth")*effect('Bountiful Grace')*(entries[n].group==='Military'?effect('Strength'):1))}
 function price(n){return Math.round(entries[n].expense*effect('Bargaining')*effect('Intimidation')*effect('Healing Aura'))}
 function upkeep(){return Object.keys(state.equipment).reduce((sum,n)=>sum+price(n),price(state.home))}
 function gain(n,amount){
@@ -64,30 +87,50 @@ function step(days){
   if(state.coins<0){state.coins=0;state.home='Homeless';state.equipment={}}
   gain(state.job,jobRate*days);gain(state.skill,skillRate*days);
 }
-function alignmentGain(side){return side==='Evil'?effect('Evil control')+effect('Blood meditation'):effect('Pure Heart')+effect('Spiritual Meditation')}
+function alignmentGain(side){return side==='Evil'?(effect('Evil control')+effect('Blood meditation')):(effect('Pure Heart')+effect('Spiritual Meditation'))}
+function voidGain(){return Math.floor(age()/200*effect('Void attunement')*effect('Void Heart'))}
+// All levels are earned in the life in which the relic is claimed.
+function relicRequirements(path){
+ if(path==='Second Heart')return [...relicRequirements('Void'),['Void Heart',level('Void Heart'),100],['Banked Void',state.Void,10]];
+ if(path==='Void')return [['Age',age(),400],['Void regent',level('Void regent'),50],...catalog.filter(e=>e.group==='Void magic'&&e.name!=='Void Heart').map(e=>[e.name,level(e.name),e.name==='Void attunement'?100:50])];
+ const group=path==='Evil'?'Dark magic':'Light magic';
+ return [['Age',age(),300],[path,state[path],400],...catalog.filter(e=>e.group===group).map(e=>[e.name,level(e.name),e.name==="Demon's wealth"||e.name==='Bountiful Grace'?100:50])];
+}
+function relicReady(path){return relicRequirements(path).every(([,current,target])=>current>=target)}
+function relicProgress(path){
+ const name=path==='Void'?'Void Heart':path==='Second Heart'?'Second Void Heart':path+' Orb';
+ return '<section class="card"><h3>'+name+' requirements · this life</h3><ul>'+relicRequirements(path).map(([label,current,target])=>'<li>'+(current>=target?'✓ ':'')+label+' · '+fmt(current)+' / '+target+'</li>').join('')+'</ul></section>';
+}
 function choices(){
   if(state.finished)return state.orbs.Evil&&state.orbs.Angelic&&!state.voidPath?['Void']:[];
+  if(state.voidPath&&state.heartPair&&!state.superHeart)return ['Super Void Heart'];
   if(age()<65)return [];
-  if(state.voidPath)return age()>=400&&!state.orbs.Void?['Void orb','Rebirth']:['Rebirth'];
-  if(age()>=200&&state.orbs.Evil&&state.orbs.Angelic)return ['Ending'];
+  if(state.voidPath&&state.voidHeart&&!state.superHeart&&relicReady('Second Heart'))return ['Second Heart','Collect Void','Rebirth'];
+  if(state.voidPath)return !state.voidHeart&&state.orbs.Evil&&state.orbs.Angelic&&relicReady('Void')?['Void Heart','Rebirth']:state.voidHeart&&age()>=200?['Collect Void','Rebirth']:['Rebirth'];
+  
   const actions=['Rebirth'];
+  if(age()>=200&&state.orbs.Evil&&state.orbs.Angelic)return ['Ending'];
   if(age()>=200){
     const side=state.Evil?'Evil':state.Angelic?'Angelic':null;
-    if(side){actions.push(side);if(age()>=300&&!state.orbs[side])actions.push(side+' orb')}
+    if(side){actions.push(side);if(!state.orbs[side]&&relicReady(side))actions.push(side+' orb')}
     else for(const path of ['Evil','Angelic'])if(!state.orbs[path])actions.push(path);
   }
   return actions;
 }
 function reset(action){
   if(!choices().includes(action))return;
+  if(action==='Super Void Heart'){state.superHeart=true;state.heartPair=false;return}
   if(action==='Ending'){state.finished=true;return}
   let {hero,life,Evil,Angelic,orbs}=state;
   const memory={};
   if(action==='Rebirth')Object.assign(memory,state.levels);
   else if(action==='Evil'){Evil+=alignmentGain('Evil');Angelic=0}
   else if(action==='Angelic'){Angelic+=alignmentGain('Angelic');Evil=0}
+  else if(action==='Collect Void')state.Void+=voidGain();
+  else if(action==='Second Heart')state.heartPair=true;
+  else if(action==='Void Heart')state.voidHeart=true;
   else if(action.endsWith(' orb')){orbs={...orbs,[action.split(' ')[0]]:true};Evil=0;Angelic=0}
-  state={...newLife(),hero,voidPath:state.voidPath||action==='Void',devSpeed:state.devSpeed,life:life+1,Evil,Angelic,orbs,memory};
+  state={...newLife(),hero,heartPair:state.heartPair,superHeart:state.superHeart,Void:state.Void,voidHeart:state.voidHeart,voidPath:state.voidPath||action==='Void',devSpeed:state.devSpeed,life:life+1,Evil,Angelic,orbs,memory};
 }
 function save(){try{localStorage.setItem(saveKey,JSON.stringify(state))}catch{statusText='Save unavailable in this browser.'}}
 let tab='Jobs',chosen='Magnus',pending='',statusText='';
@@ -97,7 +140,7 @@ function sprite(i,size=54){
  return '<span aria-hidden="true" class="sprite" style="width:'+size+'px;height:'+size+'px;background-size:'+size*10+'px '+size*atlasRows+'px;background-position:'+(-size*(i%10))+'px '+(-size*Math.floor(i/10))+'px"></span>';
 }
 function voidArt(tile,size,label){
- return '<span role="img" aria-label="'+label+'" style="display:inline-block;flex:none;border-radius:6px;width:'+size+'px;height:'+size+'px;background:url(./void-art.webp) '+(tile%3*50)+'% '+(Math.floor(tile/3)*50)+'%/300% 300%"></span>';
+ return '<span role="img" aria-label="'+label+'" style="display:inline-block;flex:none;border-radius:6px;width:'+size+'px;height:'+size+'px;background:url(./void-icons.webp) '+(tile%3*50)+'% '+(Math.floor(tile/3)*50)+'%/300% 300%"></span>';
 }
 function portrait(){
  if(state.voidPath){
@@ -172,15 +215,15 @@ function list(){
  const groups=tab==='Jobs'?['Common work','Military','The Arcane Association',...(state.voidPath?['Void work']:[])]:tab==='Skills'?['Fundamentals','Combat','Magic','Dark magic','Light magic',...(state.voidPath?['Void magic']:[])]:['Properties','Misc'];
  return groups.filter(g=>g!=='Dark magic'||state.Evil).filter(g=>g!=='Light magic'||state.Angelic).map(g=>{
   let lockedShown=false;
-  const rows=catalog.filter(e=>e.group===g).map(e=>{
+  const rows=catalog.filter(e=>e.group===g&&(e.name!=='Void Heart'||state.voidHeart)).map(e=>{
    const n=e.name,missing=remaining(n);
-   if(missing.length&&lockedShown)return '';
+   if(missing.length&&lockedShown&&g!=='Dark magic'&&g!=='Light magic')return '';
    if(missing.length)lockedShown=true;
    const selected=[state.job,state.skill,state.home].includes(n)||state.equipment[n];
    const xpNote=e.maxXp?' · '+fmt(rate(n))+' XP/day':'';
    const info=e.income?fmt(pay(n))+' coins/day':e.maxXp?(e.isPlusDescription?'+':'×')+effect(n).toFixed(2)+' '+e.description:'×'+e.effect+' '+(e.description||'Happiness');
    const action=e.income?'job':e.maxXp?'skill':g==='Properties'?'home':'gear';
-   return '<button class="row '+(selected?'on':'')+'" data-act="'+action+':'+n+'" '+(missing.length?'disabled':'')+'>'+sprite(e.tile)+'<span><b>'+n+'</b><small>'+(missing.length?missing.join(' · '):info+xpNote)+'</small></span><span class="right">'+(e.maxXp?'<span>Lv. '+level(n)+'</span>'+meter(n):fmt(price(n))+' / day')+'</span></button>';
+   return '<button class="row '+(selected?'on':'')+'" aria-pressed="'+Boolean(selected)+'" data-act="'+action+':'+n+'" '+(missing.length?'disabled':'')+'>'+(g.startsWith('Void ')?voidArt(e.tile,54,n):sprite(e.tile))+'<span><b>'+n+'</b><small>'+(missing.length?missing.join(' · '):info+xpNote)+'</small></span><span class="right">'+(action==='gear'?(selected?'On · ':'Off · '):'')+(e.maxXp?'<span>Lv. '+level(n)+'</span>'+meter(n):fmt(price(n))+' / day')+'</span></button>';
   }).join('');
   return '<h3>'+g+'</h3>'+rows;
  }).join('');
@@ -198,10 +241,22 @@ const amuletStory = {
 let inspectingAmulet=false;
 function amulet(){
  if(state.voidPath){
-   const ready=choices().includes('Void orb');
-   return '<h2>Void orb</h2>'+voidArt(8,90,'Void orb')+'<p>'+(state.orbs.Void?'Void orb recovered · ×5 skill XP.':ready?'The orb is within reach.':'Reach age 400 in the Void to claim the orb.')+'</p>'+
-     (ready?button('ask:Void orb','Take the Void orb'):'')+(choices().includes('Rebirth')?button('ask:Rebirth','Touch the eye'):'')+
-     (pending?'<p>'+(pending==='Void orb'?'Begin a new Void life with all three orbs. Your current levels and XP memories reset.':'Begin a new Void life with your current levels as XP memories.')+'</p>'+button('accept','Confirm '+pending)+' '+button('cancel','Keep playing'):'');
+   const available=choices();
+   const titles={'Void Heart':'Fuse the Evil and Angelic Orbs','Second Heart':'Draw out the second Heart','Super Void Heart':'Combine both Void Hearts','Collect Void':'Collect '+voidGain()+' Void',Rebirth:'Touch the eye'};
+   const passages={
+     'Void Heart':'You press the Evil Orb into one socket of the amulet and the Angelic Orb into the other. The red light beats first. The white answers. When the two beats fall together, a small violet heart stirs between your hands.',
+     'Second Heart':'For a lifetime you have heard a second beat just behind your own. You open the amulet. Beside the first Heart, another has taken shape around a grain of Void.',
+     'Super Void Heart':'You cradle one Heart in each hand. They beat against one another until you turn the second to fit the first. The seam closes. Somewhere beyond the amulet, something knocks once in reply.'
+   };
+   const title=state.superHeart?'Super Void Heart':state.heartPair?'Two Void Hearts':'Void Heart';
+   const story=state.superHeart?'The Super Void Heart beats steadily. The way to the next milestone is open.':state.heartPair?'Two Hearts rest in the amulet. Turn them together to seal the bond.':state.voidHeart?'The fused orbs beat as one. Bank Void and master the path again to grow a second Heart.':'The Evil Orb warms your palm. The Angelic Orb draws cold against it. The amulet has a socket for each.';
+   const details=pending==='Super Void Heart'?'The two Hearts become one. This life continues.':pending==='Rebirth'?'Begin a new life with your current levels as XP memories.':'Begin a new life. Current levels and XP memories reset. Banked Void and permanent bonuses carry over.';
+   return '<h2>'+title+'</h2>'+voidArt(8,90,title)+'<p>'+story+'</p><p>Void collected · '+fmt(state.Void)+'<br>Void skill XP ×'+(1+state.Void/10).toFixed(1)+'</p>'+
+     (!state.voidHeart?relicProgress('Void'):!state.heartPair&&!state.superHeart?relicProgress('Second Heart'):'')+
+     available.map(a=>button('ask:'+a,titles[a])).join(' ')+
+     (pending?'<section class="card"><p>'+(passages[pending]||titles[pending])+'</p><p>'+details+'</p>'+button('accept','Confirm '+pending)+' '+button('cancel','Keep playing')+'</section>':'');
+
+
  }
  const side=state.Evil?'evil':'angelic';
  const art=age()>=300&&(state.Evil||state.Angelic)?'broken_'+side:age()>=200?'200_'+side+'_transparent':age()>=65?'65':age()>=45?'45':'25';
@@ -211,8 +266,9 @@ function amulet(){
  const inspection=years<65?'<p>Nothing happens...</p>':chapter==='eye'?"<p>By touching the eyeball, you will be reborn and have to restart life again, losing all your levels and coins.</p><p>However, you will gain xp multipliers for your jobs and skills equivalent to 1 + the max level of the skill or job / 10 :</p>"+'<p>Concentration · ×'+(1+level('Concentration')/10).toFixed(1)+' XP</p>'+ "<p>This means you will learn everything again much more quickly than you did in your previous life.</p><p>Something tells you that the amulet might transform even further after living for 2 whole centuries...</p>":'';
  const artwork=sprite(artIndex['icons_amulet_'+art],90);
  return '<h2>Amulet</h2>'+(inspection?button('inspect',artwork+'<br>Inspect amulet'):artwork)+amuletStory[chapter]+
+ (state.Evil&&!state.orbs.Evil?relicProgress('Evil'):state.Angelic&&!state.orbs.Angelic?relicProgress('Angelic'):'')+
  (inspectingAmulet?inspection:'')+
- actions.map(a=>button('ask:'+a,a==='Rebirth'?'Touch the eye':a==='Ending'?'Bring the two orbs together':a.endsWith('orb')?'Take the '+a:'Embrace '+a+' (+'+alignmentGain(a).toFixed(2)+')')).join(' ')+
+ actions.map(a=>button('ask:'+a,a==='Rebirth'?'Touch the eye':a==='Ending'?'Bring the two orbs together':a.endsWith('orb')?sprite(artIndex['icons_'+a.split(' ')[0].toLowerCase()+'orb'],44)+' Claim '+(a==='Angelic orb'?'Angelic Orb':'Evil Orb')+' · ×5 skill XP':'Embrace '+a+' (+'+alignmentGain(a).toFixed(2)+')')).join(' ')+
  (pending?'<div class="card"><p>'+(pending==='Rebirth'?'Your current levels become your next life’s XP memories.':pending==='Ending'?'Complete this journey with both orbs.':'This resets your current levels and XP memories. Your earned orbs carry forward.')+'</p>'+button('accept','Confirm '+pending)+' '+button('cancel','Keep playing')+'</div>':'')+
  '<p>Lives lived · '+state.life+'<br>Evil · '+state.Evil.toFixed(2)+'　Angelic · '+state.Angelic.toFixed(2)+'</p>'+Object.keys(state.orbs).map(o=>sprite(artIndex['icons_'+o.toLowerCase()+'orb'])+' '+o+' orb').join(' ');
 }
@@ -228,10 +284,10 @@ function draw(){
    screen.innerHTML=`<section class="launch"><h1>Choose your character</h1><div class="roster">${cards}</div><button type="button" class="primary" data-act="begin">Continue as ${chosen}</button></section>`;
    return;
  }
- const rested=Date.now()<(state.restedUntil||0)?' · Rested speed ×'+state.restedSpeed.toFixed(2):'';const top='<div class="card profile">'+portrait()+'<div><b>'+state.hero+'</b> · Life '+state.life+'<br><span data-clock>Age '+age()+' · '+Math.floor(state.days%365)+' days</span> · Lifespan '+Math.floor(lifespan())+'<br><span class="gold">◉ <span data-coins>'+fmt(state.coins)+'</span> · '+fmt(pay(state.job)-upkeep())+'/day</span><br>Happiness ×'+happy().toFixed(2)+rested+'</div></div>';
- if(state.finished){screen.innerHTML=top+sprite(artIndex.endgame,144)+'<h1>Both orbs recovered</h1><p>Your journey through Evil and Angelic magic is complete.</p>'+amuletStory.ending+button('ask:Void','Embrace the Void')+(pending==='Void'?'<p>Start a new life at age 14 with both orbs. Reach age 400 to earn the Void orb.</p>'+button('accept','Enter the Void')+' '+button('cancel','Stay here'):'');return}
+ const rested=Date.now()<(state.restedUntil||0)?' · Rested speed ×'+state.restedSpeed.toFixed(2):'';const top='<div class="card profile">'+portrait()+'<div><b>'+state.hero+'</b> · Life '+state.life+'<br><span data-clock>Age '+age()+' · '+Math.floor(state.days%365)+' days</span> · Lifespan '+Math.floor(lifespan())+'<br><span class="gold">◉ <span data-coins>'+fmt(state.coins)+'</span> · '+fmt(pay(state.job)-upkeep())+' net/day</span><br>Happiness ×'+happy().toFixed(2)+rested+'</div></div>';
+ if(state.finished){screen.innerHTML=top+sprite(artIndex.endgame,144)+'<h1>Both orbs recovered</h1><p>Your journey through Evil and Angelic magic is complete.</p>'+amuletStory.ending+button('ask:Void','Embrace the Void')+(pending==='Void'?'<p>Start a new life at age 14 with both orbs. Master Void jobs and skills to claim the Void Heart from age 400.</p>'+button('accept','Enter the Void')+' '+button('cancel','Stay here'):'');return}
  if(dead())tab='Amulet';
- const nav=['Jobs','Skills','Shop',...(age()>=25?['Amulet']:[])];
+ const nav=['Jobs','Skills','Shop',...(age()>=25||state.voidPath?['Amulet']:[])];
  screen.innerHTML=top+'<nav>'+nav.map(t=>button('tab:'+t,t,t===tab)).join('')+'</nav><section class="card">'+(tab==='Amulet'?amulet():list())+'</section><footer>'+state.job+' · Lv. '+level(state.job)+'　'+state.skill+' · Lv. '+level(state.skill)+'<p>'+button('pause',state.paused?'Resume':'Pause')+' '+(level('Time warping')?button('warp','Time warping '+(state.warp?'on':'off')):'')+'</p>'+['happiness','accelerating'].map(k=>button('potion:'+k,(k==='happiness'?'Happiness':'Speed')+' ×2 · '+(potionActive(k)?Math.ceil((state[k+'Until']-Date.now())/1000)+'s':'10 min'),potionActive(k))).join(' ')+'<p>Developer speed　'+[1,5,20].map(v=>button('devSpeed:'+v,v+'×',state.devSpeed===v)).join(' ')+'</p><p><a href="./previous.html">Earlier prototype save</a></p>'+statusText+'</footer>';
 }
 function advance(){
@@ -256,18 +312,24 @@ screen.onclick=e=>{
  if(a==='tab'){tab=v;pending=''}
  if(a==='ask'&&choices().includes(v)){pending=v;if(v==='Rebirth')inspectingAmulet=true}
  if(a==='cancel')pending='';
- if(a==='accept'&&pending){reset(pending);pending='';tab='Jobs'}
+ if(a==='accept'&&pending){reset(pending);tab=pending==='Second Heart'||pending==='Super Void Heart'?'Amulet':'Jobs';pending=''}
  if(a==='pause')state.paused=!state.paused;
  if(a==='potion'&&['happiness','accelerating'].includes(v))drink(v);
  if(a==='devSpeed'&&[1,5,20].includes(Number(v)))state.devSpeed=Number(v);
  if(a==='warp')state.warp=!state.warp;
  if(entries[v]&&!remaining(v).length&&!dead()){
-  if(['job','skill','home'].includes(a))state[a]=v;
+  if(['job','skill'].includes(a))state[a]=v;
+  if(a==='home')state.home=state.home===v?'Homeless':v;
   if(a==='gear'){if(state.equipment[v])delete state.equipment[v];else state.equipment[v]=true}
  }
  save();render();
 };
-advance();render();setInterval(()=>{advance();save();if(!document.querySelector('button:active'))render()},1000);
+let pressingControl=false;
+if(screen.addEventListener){
+ screen.addEventListener('pointerdown',e=>{pressingControl=Boolean(e.target.closest('button'))});
+ for(const event of ['pointerup','pointercancel','blur'])addEventListener(event,()=>{pressingControl=false});
+}
+advance();render();setInterval(()=>{advance();save();if(!pressingControl&&!document.querySelector('button:active'))render()},1000);
 addEventListener('pagehide',()=>{advance();save()});
 if(document.addEventListener)document.addEventListener('visibilitychange',()=>{if(!document.hidden){advance();render()}else{advance();save()}});
 

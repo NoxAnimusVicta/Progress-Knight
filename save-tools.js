@@ -14,6 +14,7 @@ function readBackup(text) {
   const src = file.campaign;
   const plain = obj => obj !== null && typeof obj === 'object' && !Array.isArray(obj);
   if (!plain(src)) throw Error('Missing campaign.');
+  removeOrbTraining(src);
   const dst = newLife();
   function check(ok, field) { if (!ok) throw Error('Invalid backup field: '+field); }
   function numeric(v, max=Number.MAX_SAFE_INTEGER) { return Number.isFinite(v) && v>=0 && v<=max; }
@@ -49,7 +50,15 @@ function readBackup(text) {
     if(src[field]!==undefined){check(numeric(src[field],field==='restedSpeed'?8:Number.MAX_SAFE_INTEGER),field);dst[field]=src[field];}
   }
   check(!dst.restedUntil||dst.restedSpeed>=1,'rested speed');
-  return dst;
+  check(typeof (src.voidHeart??false)==='boolean','Void Heart');
+  dst.voidHeart=src.voidHeart??false;
+  for(const key of ['heartPair','superHeart']){
+    check(typeof (src[key]??false)==='boolean',key);dst[key]=src[key]??false;
+  }
+  check(!(dst.heartPair&&dst.superHeart)&&(!(dst.heartPair||dst.superHeart)||(dst.voidHeart&&dst.voidPath)),'Heart progression');
+  check(Number.isSafeInteger(src.Void??0)&&numeric(src.Void??0),'Void');
+  dst.Void=src.Void??0;
+  return migrateVoid(dst);
 }
 
 el('export-save').onclick=()=>{

@@ -15,13 +15,37 @@ assert.deepEqual(['Book','Tent','Wooden hut','Dumbbells','Personal squire'].map(
 state.days=64*365;assert(!choices().length);state.days=65*365;reset('Rebirth');assert.equal(state.memory.Farmer,18);
 for(const side of ['Evil','Angelic']){
  state.days=200*365;assert(choices().includes(side));reset(side);assert.equal(state[side],1);assert.deepEqual(Object.keys(state.memory),[]);
+ assert(!entries['Good Orb']&&!entries['Evil Orb']);assert.equal(alignmentGain(side),1);
+ tab='Skills';const pathName=side==='Evil'?'Dark magic':'Light magic';
+ const pathSkills=catalog.filter(e=>e.group===pathName);assert.equal(pathSkills.length,6);
+ const skillMenu=list();for(const skill of pathSkills)assert(skillMenu.includes('data-act="skill:'+skill.name+'"'));
  const first=side==='Evil'?'Dark influence':'Divine Blessing';assert.equal(remaining(first).length,0);
- state.days=299*365;assert(!choices().includes(side+' orb'));state.days=300*365;reset(side+' orb');assert(state.orbs[side]);
+ state.days=299*365;assert(!choices().includes(side+' orb'));state.days=300*365;reset(side+' orb');assert(!state.orbs[side]);
+ for(const [name,,target] of relicRequirements(side)){if(name===side)state[side]=target;else if(name!=='Age')state.levels[name]=Math.max(target,200)}
+ for(const [name,,target] of relicRequirements(side)){if(name==='Age')state.days=299*365;else if(name===side)state[side]=target-1;else state.levels[name]=target-1;
+ assert(!choices().includes(side+' orb'));if(name==='Age')state.days=300*365;else if(name===side)state[side]=target;else state.levels[name]=Math.max(target,200)}
+ reset(side+' orb');assert(state.orbs[side]);
 }
+const normal={...state.orbs};state.orbs={};const skillBase=rate('Concentration'),jobBase=rate('Beggar');
+state.orbs={Evil:true};assert.equal(rate('Concentration'),skillBase*5);
+state.orbs=normal;assert.equal(rate('Concentration'),skillBase*25);assert.equal(rate('Beggar'),jobBase);
 state.days=200*365;reset('Ending');assert(state.finished);render();assert(screen.innerHTML.includes('Both orbs recovered'));
 reset('Void');assert(state.voidPath&&!state.finished);assert.equal(age(),14);
 for(const hero of ['Magnus','Isabella']){state.hero=hero;const portraits=new Set();for(const years of [14,30,65,100]){state.days=years*365;portraits.add(portrait().split('style=')[1])}assert.equal(portraits.size,4)}
-state.days=399*365;assert(!choices().includes('Void orb'));state.days=400*365;reset('Void orb');assert(state.orbs.Void&&state.orbs.Angelic&&state.orbs.Evil&&state.voidPath);
-console.log('Release catalog, earned promotion, screenshot balances, rebirth memory, both arc transitions and ending passed.');
+assert.equal(remaining('Rift scout').length,1);state.levels['Rift keeper']=20;assert.equal(remaining('Rift scout').length,0);
+state.levels['Rift scout']=30;state.levels['Rift weaving']=12;assert.equal(remaining('Breach warden').length,0);
+state.levels['Breach warden']=40;state.levels['Void resonance']=20;assert.equal(remaining('Void regent').length,0);
+state.days=399*365;assert(!choices().includes('Void Heart'));state.days=400*365;reset('Void Heart');assert(!state.voidHeart);for(const [name,,target] of relicRequirements('Void'))if(name!=='Age')state.levels[name]=target;
+ for(const [name,,target] of relicRequirements('Void')){if(name==='Age')state.days=399*365;else state.levels[name]=target-1;assert(!choices().includes('Void Heart'));if(name==='Age')state.days=400*365;else state.levels[name]=target}
+ reset('Void Heart');assert(state.voidHeart&&state.orbs.Angelic&&state.orbs.Evil&&state.voidPath);
+state.days=200*365;state.levels['Void Heart']=10;state.levels['Void attunement']=20;assert.equal(voidGain(),4);reset('Collect Void');assert.equal(state.Void,4);assert(state.voidHeart);assert.equal(age(),14);
+for(const [name,,target] of relicRequirements('Second Heart')){
+ if(name==='Age')state.days=target*365;else if(name!=='Banked Void')state.levels[name]=target;
+}
+assert(!choices().includes('Second Heart'));state.Void=10;reset('Second Heart');assert(state.heartPair&&!state.superHeart&&age()===14);
+assert.deepEqual(choices(),['Super Void Heart']);const lifeBefore=state.life;reset('Super Void Heart');
+assert(state.superHeart&&!state.heartPair&&state.life===lifeBefore);assert(!choices().includes('Super Void Heart'));
+state.days=200*365;reset('Rebirth');assert(state.superHeart&&state.Void===10);
+assert(migrateVoid({orbs:{Void:true}}).voidHeart);
+console.log('Verified base progression, orb collectibles and cumulative skill XP, Void jobs, Heart, legacy conversion and Void collection.');
 `,ctx);
-
