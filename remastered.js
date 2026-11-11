@@ -20,12 +20,78 @@ for(const [name,tile,effect,description,maxXp,requirements] of [
 ])entries[name]={name,tile,effect,description,maxXp,requirements,group:'Augmentations'};
 entries['Transit bunk']={name:'Transit bunk',tile:6,expense:0,effect:1,requirements:{},group:'City housing'};
 entries['Skyline apartment']={name:'Skyline apartment',tile:7,expense:60,effect:2,requirements:{'Relay technician':5},group:'City housing'};
+const heartCost=400;
+for(const [name,tile,expense,effect,requirements] of [
+ ['Watch hut',0,300,4,{}],['Veiled cloister',1,1800,9,{'Rift keeper':20}],['Chasm keep',2,6500,18,{'Breach warden':25}]
+])entries[name]={name,tile,expense,effect,requirements,group:'Void estates'};
 function cityLoadout(s){
  if(!s.crossedRift)return;
  if(entries[s.job]?.group!=='City contracts'){s.job='Night courier';s.equipment={}}
  if(entries[s.skill]?.group!=='Augmentations')s.skill='Neural link';
  if(entries[s.home]?.group!=='City housing')s.home='Transit bunk';
 }
+const baseLore = {
+  "Beggar": "The baker leaves the back step dry for you. On good mornings he leaves a heel of bread there too.",
+  "Farmer": "You learn the weight of rain by the way the barley bends.",
+  "Fisherman": "While the village sleeps, you mend yesterday’s nets by touch.",
+  "Miner": "You can hear a hollow seam one tap before the pick breaks through.",
+  "Blacksmith": "People recognise your work by the little crescent your hammer leaves in a hinge.",
+  "Merchant": "By winter you know which villages will trade flour for lamp oil.",
+  "Squire": "The knight remembers the charge. You remember which buckle nearly failed.",
+  "Footman": "At dusk you can find your place in the line by the sound of the boots beside you.",
+  "Veteran footman": "The recruits watch your hands when the first horn sounds.",
+  "Knight": "A village sends a horse for you before it sends word to the crown.",
+  "Veteran knight": "You walk the field before dawn and count the places a frightened rider might fall.",
+  "Elite knight": "Your orders arrive sealed. The stable hands have already saddled your horse.",
+  "Holy knight": "Someone ties a strip of linen to your bridle for every soldier you bring home.",
+  "Legendary knight": "Children play at being you in towns you have never visited.",
+  "Student": "The first spell you copy is a light small enough to read the second by.",
+  "Apprentice mage": "Your master lets you wind the clock whose hands run backwards.",
+  "Mage": "The tower gives you a key and asks that you record everything you hear behind its door.",
+  "Wizard": "A candle burns blue for three days before you find the error in the margin.",
+  "Master wizard": "Former pupils send you their impossible questions. Some arrive decades before they are posted.",
+  "Chairman": "At the head of the long table, you finally recognise the handwriting in the oldest minutes.",
+  "Concentration": "You follow a single rain drop down the pane while the whole room argues.",
+  "Productivity": "Lay out tomorrow’s tools before you put out tonight’s lamp.",
+  "Bargaining": "A patient silence has bought you more than a clever speech.",
+  "Meditation": "You sit until the chapel bell sounds like part of the wind.",
+  "Strength": "By harvest the water pails hang straight from your hands.",
+  "Battle tactics": "On a kitchen table, beans and a salt cellar become a hill worth defending.",
+  "Muscle memory": "Your hands remember the knot after your tongue forgets its name.",
+  "Mana control": "Hold a spark between finger and thumb until the paper beneath it stays cool.",
+  "Immortality": "The physician counts your pulse twice, then asks to borrow your notebook.",
+  "Time warping": "For one breath you hear both ends of the bell stroke.",
+  "Super immortality": "The tree you planted as a child has fallen. You plant another in its place.",
+  "Dark influence": "People lower their voices before you enter the room.",
+  "Intimidation": "The toll keeper returns your coin and lifts the bar himself.",
+  "Evil control": "You teach the thing behind your temper to wait for a word.",
+  "Demon training": "Your shadow finishes the exercise after you have laid the sword down.",
+  "Blood meditation": "Under your palm, the red stone keeps time with a slower pulse.",
+  "Demon's wealth": "In your counting house the scales tip before the last coin lands.",
+  "Divine Blessing": "A traveller lights a candle for you in a town whose name you never learned.",
+  "Healing Aura": "The fever breaks while you are changing the water at the bedside.",
+  "Pure Heart": "You return a purse anonymously. Years later its owner does the same.",
+  "Angel's Guidance": "You wake with the last line of a prayer you heard only once.",
+  "Spiritual Meditation": "At the end of the vigil you can pick out every voice in the chorus.",
+  "Bountiful Grace": "One sack of grain feeds the whole street. The miller quietly brings another.",
+  "Homeless": "A stone warmed by the bakery wall marks your place for the night.",
+  "Tent": "For the first time you can listen to rain without getting up.",
+  "Wooden hut": "You cut a notch in the doorpost for the first winter you spend here.",
+  "Cottage": "Thyme grows between the kitchen step and the well.",
+  "House": "There is a second chair by the fire, even when you live alone.",
+  "Large house": "Morning reaches the east bedroom long before it finds the kitchen.",
+  "Small palace": "From the balcony you can still make out the road where you started.",
+  "Grand palace": "It takes the lamplighter half an hour to cross your courtyard.",
+  "Mansion": "There is a room here for every life you remember.",
+  "Book": "Someone before you has argued with the author in the margins.",
+  "Dumbbells": "The iron is worn smooth exactly where your fingers settle.",
+  "Personal squire": "Your squire can tell from the mud on your boots which kit to lay out.",
+  "Steel longsword": "The balance point sits a finger’s breadth above the guard.",
+  "Butler": "You reach for your travelling coat and find the torn cuff already mended.",
+  "Sapphire charm": "Held to the light, its blue centre turns as slowly as a tide.",
+  "Study desk": "A shallow groove in the wood keeps your quill from rolling.",
+  "Library": "At last the note that baffled you at fourteen has a book to answer it."
+};
 const catalog = Object.values(entries);
 function newLife() {
   return {days:5110, coins:0, job:'Beggar', skill:'Concentration', home:'Homeless',
@@ -44,6 +110,14 @@ function migrateVoid(s){
  removeOrbTraining(s);
  cityLoadout(s);
  if(s.orbs?.Void){s.voidHeart=true;delete s.orbs.Void}
+ if(s.voidHeart){
+   s.voidPath=true;
+   delete s.orbs.Evil;delete s.orbs.Angelic;
+ }else if(s.orbs?.Evil&&s.orbs.Angelic){
+   s.voidPath=true;s.finished=false;
+   if(entries[s.job]?.group==='Void work')s.job='Beggar';
+   if(entries[s.skill]?.group==='Void magic')s.skill='Concentration';
+ }
  return s;
 }
 migrateVoid(state);
@@ -62,7 +136,7 @@ const potionActive=kind=>Date.now()<(state[kind+'Until']||0);
 function drink(kind){if(!potionActive(kind))state[kind+'Until']=Date.now()+600000}
 const happy=()=>(potionActive('happiness')?2:1)*entries[state.home].effect*effect('Meditation')*item('Butler');
 const age=()=>Math.floor(state.days/365);
-const lifespan=()=>70*(state.crossedRift?effect('Life support'):1)*effect('Immortality')*effect('Super immortality')*(state.voidPath?effect('Timelessness'):1);
+const lifespan=()=>70*(state.crossedRift?effect('Life support'):1)*effect('Immortality')*effect('Super immortality')*(state.voidHeart?effect('Timelessness'):1);
 const dead=()=>state.days>=lifespan()*365;
 function rate(n){
   const e=entries[n];
@@ -110,12 +184,14 @@ function step(days){
   gain(state.job,jobRate*days);gain(state.skill,skillRate*days);
 }
 function alignmentGain(side){return side==='Evil'?(effect('Evil control')+effect('Blood meditation')):(effect('Pure Heart')+effect('Spiritual Meditation'))}
-function voidGain(){return Math.floor(age()/200*effect('Void attunement')*effect('Void Heart')*(state.superHeart?2:1)*(state.chrono===5?2:1))}
+function voidGain(){
+ if(!state.voidHeart&&state.orbs.Evil&&state.orbs.Angelic)return Math.max(0,Math.floor((age()-100)/2));
+ return Math.floor(age()/200*effect('Void attunement')*effect('Void Heart')*(state.superHeart?2:1)*(state.chrono===5?2:1))}
 // All levels are earned in the life in which the relic is claimed.
 function relicRequirements(path){
  if(path==='Second Heart')return [['Age',age(),500],['Void regent',level('Void regent'),75],['Void attunement',level('Void attunement'),125],['Void Heart',level('Void Heart'),100],['Banked Void',state.Void,500]];
  if(path==='Rift')return [['Age',age(),600],['Void regent',level('Void regent'),100],['Void Heart',level('Void Heart'),150],['Banked Void',state.Void,2000]];
- if(path==='Void')return [['Age',age(),400],['Void regent',level('Void regent'),50],...catalog.filter(e=>e.group==='Void magic'&&e.name!=='Void Heart').map(e=>[e.name,level(e.name),e.name==='Void attunement'?100:50])];
+ if(path==='Void')return [['Age',age(),400],['Void to spend',state.Void,heartCost],['Evil Orb',Number(!!state.orbs.Evil),1],['Angelic Orb',Number(!!state.orbs.Angelic),1]];
  const group=path==='Evil'?'Dark magic':'Light magic';
  return [['Age',age(),300],[path,state[path],400],...catalog.filter(e=>e.group===group).map(e=>[e.name,level(e.name),e.name==="Demon's wealth"||e.name==='Bountiful Grace'?100:50])];
 }
@@ -142,15 +218,20 @@ function cityChoices(){
 }
 function choices(){
   if(state.crossedRift)return cityChoices();
-  if(state.finished)return state.orbs.Evil&&state.orbs.Angelic&&!state.voidPath?['Void']:[];
+
   if(state.voidPath&&state.heartPair&&!state.superHeart)return ['Super Void Heart'];
   if(age()<65)return [];
   if(state.voidPath&&state.superHeart&&!state.crossedRift&&relicReady('Rift'))return ['Cross the Rift','Collect Void','Rebirth'];
   if(state.voidPath&&state.voidHeart&&!state.superHeart&&relicReady('Second Heart'))return ['Second Heart','Collect Void','Rebirth'];
-  if(state.voidPath)return !state.voidHeart&&state.orbs.Evil&&state.orbs.Angelic&&relicReady('Void')?['Void Heart','Rebirth']:state.voidHeart&&age()>=200?['Collect Void','Rebirth']:['Rebirth'];
+  if(state.voidPath){
+    const actions=['Rebirth'];
+    if(age()>=200)actions.unshift('Collect Void');
+    if(!state.voidHeart&&relicReady('Void'))actions.unshift('Void Heart');
+    return actions;
+  }
   
   const actions=['Rebirth'];
-  if(age()>=200&&state.orbs.Evil&&state.orbs.Angelic)return ['Ending'];
+
   if(age()>=200){
     const side=state.Evil?'Evil':state.Angelic?'Angelic':null;
     if(side){actions.push(side);if(!state.orbs[side]&&relicReady(side))actions.push(side+' orb')}
@@ -165,7 +246,7 @@ function reset(action){
   if(upgrade)state.chrono++;
   if(action==='Cross the Rift'){state.crossedRift=true;cityLoadout(state);return}
   if(action==='Super Void Heart'){state.superHeart=true;state.heartPair=false;return}
-  if(action==='Ending'){state.finished=true;return}
+
   let {hero,life,Evil,Angelic,orbs}=state;
   const memory={};
   if(upgrade||action==='Rebirth'||(action==='Collect Void'&&state.crossedRift)){
@@ -176,9 +257,9 @@ function reset(action){
   else if(action==='Angelic'){Angelic+=alignmentGain('Angelic');Evil=0}
   if(action==='Collect Void')state.Void+=voidGain();
   else if(action==='Second Heart')state.heartPair=true;
-  else if(action==='Void Heart')state.voidHeart=true;
+  else if(action==='Void Heart'){state.voidHeart=true;state.Void-=heartCost;orbs={};Evil=0;Angelic=0}
   else if(action.endsWith(' orb')){orbs={...orbs,[action.split(' ')[0]]:true};Evil=0;Angelic=0}
-  state={...newLife(),hero,chrono:state.chrono,crossedRift:state.crossedRift,heartPair:state.heartPair,superHeart:state.superHeart,Void:state.Void,voidHeart:state.voidHeart,voidPath:state.voidPath||action==='Void',devSpeed:state.devSpeed,life:life+1,Evil,Angelic,orbs,memory};
+  state={...newLife(),hero,chrono:state.chrono,crossedRift:state.crossedRift,heartPair:state.heartPair,superHeart:state.superHeart,Void:state.Void,voidHeart:state.voidHeart,voidPath:state.voidPath||Boolean(orbs.Evil&&orbs.Angelic),devSpeed:state.devSpeed,life:life+1,Evil,Angelic,orbs,memory};
   cityLoadout(state);
 }
 function save(){try{localStorage.setItem(saveKey,JSON.stringify(state))}catch{statusText='Save unavailable in this browser.'}}
@@ -188,6 +269,7 @@ const fmt=n=>Math.floor(n).toLocaleString();
 function sprite(i,size=54){
  return '<span aria-hidden="true" class="sprite" style="width:'+size+'px;height:'+size+'px;background-size:'+size*10+'px '+size*atlasRows+'px;background-position:'+(-size*(i%10))+'px '+(-size*Math.floor(i/10))+'px"></span>';
 }
+function estateArt(tile){return '<span aria-hidden="true" style="display:inline-block;flex:none;width:54px;height:54px;background:url(./void-estates.webp) '+tile*50+'% 0/300% 100%"></span>'}
 function voidArt(tile,size,label){
  return '<span role="img" aria-label="'+label+'" style="display:inline-block;flex:none;border-radius:6px;width:'+size+'px;height:'+size+'px;background:url(./void-icons.webp) '+(tile%3*50)+'% '+(Math.floor(tile/3)*50)+'%/300% 300%"></span>';
 }
@@ -210,12 +292,12 @@ function cityTerminal(){
  const needs=step?[['Age',age(),step.age],...Object.entries(step.skills).map(([name,target])=>[name,level(name),target])]:[];
  const progress=step?'<h3>'+step.name+'</h3><p>'+step.benefit+'</p><ul>'+needs.map(([n,v,t])=>'<li>'+(v>=t?'✓ ':'')+n+' · '+v+' / '+t+'</li>').join('')+'</ul>':'';
  const confirm=pending==='Transmit construct'?'Enter the Still Observatory. Your current life continues, and your city uplink stays active.':pending==='Fuse Continuum Heart'?'Bind the completed construct to the Super Void Heart. Its existing bonuses carry into the Continuum Heart. This life continues.':'Start a new life at age 14 with XP memories'+(pending==='Collect Void'?' and '+voidGain()+' more Void':'')+(step?.action===pending?' and the '+step.name:'')+'?';
- return '<h2>'+ (state.chrono>=4?'Observatory relay':'Relay terminal')+'</h2>'+art+'<h3>'+chronoNames[state.chrono]+'</h3><p>'+notes[state.chrono]+'</p><p>Banked Void · '+fmt(state.Void)+' · Augment XP ×'+(1+state.Void/10).toFixed(1)+' · Orb bonuses sealed</p>'+progress+
+ return '<h2>'+ (state.chrono>=4?'Observatory relay':'Relay terminal')+'</h2>'+art+'<h3>'+chronoNames[state.chrono]+'</h3><p>'+notes[state.chrono]+'</p><p>Banked Void · '+fmt(state.Void)+' · Augment XP ×'+(1+state.Void/10).toFixed(1)+' · Void Heart lineage</p>'+progress+
  actions.map(a=>button('ask:'+a,labels[a]||a)).join(' ')+(pending?'<section class="card"><p>'+confirm+'</p>'+button('accept','Confirm')+' '+button('cancel','Cancel')+'</section>':'');
 
 }
 function portrait(){
- if(state.crossedRift||state.voidPath){
+ if(state.crossedRift||state.voidHeart){
    const city=state.crossedRift;
    const years=age(),stage=years>=100?4:years>=65?3:years>=45?2:years>=30?1:0;
    const row=state.hero==='Isabella'?100:0;
@@ -285,7 +367,7 @@ function scheduleMotion(){
  animationId=requestAnimationFrame(frame);
 }
 function list(){
- const groups=state.crossedRift?[{Jobs:'City contracts',Skills:'Augmentations',Shop:'City housing'}[tab]]:tab==='Jobs'?['Common work','Military','The Arcane Association',...(state.voidPath?['Void work']:[])]:tab==='Skills'?['Fundamentals','Combat','Magic','Dark magic','Light magic',...(state.voidPath?['Void magic']:[])]:['Properties','Misc'];
+ const groups=state.crossedRift?[{Jobs:'City contracts',Skills:'Augmentations',Shop:'City housing'}[tab]]:tab==='Jobs'?['Common work','Military','The Arcane Association',...(state.voidHeart?['Void work']:[])]:tab==='Skills'?['Fundamentals','Combat','Magic','Dark magic','Light magic',...(state.voidHeart?['Void magic']:[])]:['Properties',...(state.voidHeart?['Void estates']:[]),'Misc'];
  return groups.filter(g=>g!=='Dark magic'||state.Evil).filter(g=>g!=='Light magic'||state.Angelic).map(g=>{
   let lockedShown=false;
   const rows=catalog.filter(e=>e.group===g&&(e.name!=='Void Heart'||state.voidHeart)).map(e=>{
@@ -295,37 +377,36 @@ function list(){
    const selected=[state.job,state.skill,state.home].includes(n)||state.equipment[n];
    const xpNote=e.maxXp?' · '+fmt(rate(n))+' XP/day':'';
    const info=e.income?fmt(pay(n))+(state.crossedRift?' credits/day':' coins/day'):e.maxXp?(e.isPlusDescription?'+':'×')+effect(n).toFixed(2)+' '+e.description:'×'+e.effect+' '+(e.description||'Happiness');
-   const action=e.income?'job':e.maxXp?'skill':(g==='Properties'||g==='City housing')?'home':'gear';
-   return '<button class="row '+(selected?'on':'')+'" aria-pressed="'+Boolean(selected)+'" data-act="'+action+':'+n+'" '+(missing.length?'disabled':'')+'>'+(state.crossedRift?cityIcon(e.tile,54):g.startsWith('Void ')?voidArt(e.tile,54,n):sprite(e.tile))+'<span><b>'+n+'</b><small>'+(missing.length?missing.join(' · '):info+xpNote)+'</small></span><span class="right">'+(action==='gear'?(selected?'On · ':'Off · '):'')+(e.maxXp?'<span>Lv. '+level(n)+'</span>'+meter(n):fmt(price(n))+' / day')+'</span></button>';
+   const action=e.income?'job':e.maxXp?'skill':(g==='Properties'||g==='City housing'||g==='Void estates')?'home':'gear';
+   return '<button class="row '+(selected?'on':'')+'" aria-pressed="'+Boolean(selected)+'" data-act="'+action+':'+n+'" '+(missing.length?'disabled':'')+'>'+(state.crossedRift?cityIcon(e.tile,54):g==='Void estates'?estateArt(e.tile):g.startsWith('Void ')?voidArt(e.tile,54,n):sprite(e.tile))+'<span><b>'+n+'</b>'+(selected&&baseLore[n]?'<small>'+baseLore[n]+'</small>':'')+'<small>'+(missing.length?missing.join(' · '):info+xpNote)+'</small></span><span class="right">'+(action==='gear'?(selected?'On · ':'Off · '):'')+(e.maxXp?'<span>Lv. '+level(n)+'</span>'+meter(n):fmt(price(n))+' / day')+'</span></button>';
   }).join('');
   return '<h3>'+g+'</h3>'+rows;
  }).join('');
 }
-const amuletStory = {
-  "found": "<h3>ON YOUR 25TH BIRTHDAY...</h3><p>You stumble across a strange looking amulet.</p><p>It does not look like it has any worth on the market given that it's made from cheap-looking copper. However, you feel a weird urge to keep the amulet, so you slip it into your pocket for safekeeping.</p>",
-  "etching": "<h3>ON YOUR 45TH BIRTHDAY...</h3><p>You feel the amulet shiver uncontrollably in your pocket.</p><p>You take it out and the constant shivering suddenly stops. More to your bizarre surprise, you notice a strange etching on the centre of the amulet.</p>",
-  "eye": "<h3>ON YOUR 65TH BIRTHDAY...</h3><p>You once again encounter the strange, unexplained shivering from your amulet.</p><p>But this time, a living eyeball emerges from the centre. Although terribly frightened, you realise you do not have many years to live left anyway so you consider touching the eye to see what happens.</p>",
-  "paths": "<h3>ON YOUR 200TH BIRTHDAY...</h3><p>The moment you hit the grand age of 200, you hear an ominous hum coming from the amulet.</p><p>A mouth emerges from its surface and begins to cackle, and proceeds to say: 'So you've made it this far... Are you ready to embrace evil?</p><p>Will you succumb to the allure of darkness, wielding its destructive powers? Or will you resist its temptations and embark on a path of light, using your abilities to foster harmony?</p>",
-  "evil": "<h3>ON YOUR 200TH BIRTHDAY...</h3><p>The moment you hit the grand age of 200, the ominous hum is coming back.</p><p>You can choose to become more evil than never...</p><p>Or keep your current evil level but increase your XP bonus....</p>",
-  "angelic": "<h3>ON YOUR 200TH BIRTHDAY...</h3><p>The moment you hit the grand age of 200, the ominous hum is coming back.</p><p>You can choose to become more angelic than never...</p><p>Or keep your current angelic level but increase your XP bonus....</p>",
-  "broken": "<h3>ON YOUR 300TH BIRTHDAY...</h3><p>Many ages have passed, and the amulet has endured the test of time, only to finally break apart.</p><p>You attempt to separate the center from the remaining debris of the amulet.</p>",
-  "ending": "<h3>The legend seems to be true...</h3><p>You have completed both arcs and gathered the two orbs. You have already completed a long journey.</p><p>Stay tuned for the upcoming evolutions and the next realm....</p>"
+const amuletStory={
+ found:'<h3>The copper eye · Age 25</h3><p>A peddler takes your last bent penny for a copper eye. That night you find the penny under your pillow. The eye is still around your neck.</p>',
+ etching:'<h3>The inscription · Age 45</h3><p>The copper ticks against your collarbone. Under the tarnish is a date in your handwriting. It is the day you turned fourteen.</p>',
+ eye:'<h3>A familiar room · Age 65</h3><p>The lid opens. Through it you see a narrow bed, a patched blanket, and your own young hand reaching for the morning light.</p>',
+ paths:'<h3>Two centuries</h3><p>Two voices come through the eye. One belongs to someone you once fed. The other belongs to someone who feared you. Each remembers a different life you could have lived.</p>',
+ evil:'<h3>The debt</h3><p>In the copper you can see every door that opened because its keeper feared your name. A red bead gathers on the rim. There is room for more.</p>',
+ angelic:'<h3>The vigil</h3><p>The eye opens onto a bedside vigil. A stranger holds the lamp exactly as you taught her. The white spark above the wick follows you home.</p>',
+ broken:'<h3>The setting cracks · Age 300</h3><p>A hairline split runs across the copper. Underneath, a stone has taken the colour of this life. The last thread holding it fast gives a little each time you practise your craft.</p>'
 };
 let inspectingAmulet=false;
 function amulet(){
  if(state.voidPath){
    const available=choices();
-   const titles={'Cross the Rift':'Step through the rift','Void Heart':'Fuse the Evil and Angelic Orbs','Second Heart':'Draw out the second Heart','Super Void Heart':'Combine both Void Hearts','Collect Void':'Collect '+voidGain()+' Void',Rebirth:'Touch the eye'};
+   const titles={'Cross the Rift':'Step through the rift','Void Heart':'Fuse amulet and orbs · 400 Void','Second Heart':'Draw out the second Heart','Super Void Heart':'Combine both Void Hearts','Collect Void':'Collect '+voidGain()+' Void',Rebirth:'Touch the eye'};
    const passages={
-     'Void Heart':'You press the Evil Orb into one socket of the amulet and the Angelic Orb into the other. The red light beats first. The white answers. When the two beats fall together, a small violet heart stirs between your hands.',
+     'Void Heart':'You pour the Void through the eye, a measure for every year of this long life. The copper softens around the two stones. The chain slips through your fingers as a violet heart takes its first beat beneath your ribs.',
      'Cross the Rift':'The knock comes again. This time you answer. A thin line opens in the glass of the amulet, wide enough for a hand, then a shoulder. You step through carrying the memory of every year it took to get here.',
      'Second Heart':'For a lifetime you have heard a second beat just behind your own. You open the amulet. Beside the first Heart, another has taken shape around a grain of Void.',
      'Super Void Heart':'You cradle one Heart in each hand. They beat against one another until you turn the second to fit the first. The seam closes. Somewhere beyond the amulet, something knocks once in reply.'
    };
-   const title=state.superHeart?'Super Void Heart':state.heartPair?'Two Void Hearts':'Void Heart';
-   const story=state.crossedRift?'You have crossed the rift. Collecting Void now carries this life’s job and skill levels into the next as XP memories.':state.superHeart?'The Super Void Heart doubles every Void collection. Across the rift, something answers its beat.':state.heartPair?'Two Hearts rest in the amulet. Turn them together to seal the bond.':state.voidHeart?'The fused orbs beat as one. Bank Void and master the path again to grow a second Heart.':'The Evil Orb warms your palm. The Angelic Orb draws cold against it. The amulet has a socket for each.';
-   const details=pending==='Cross the Rift'?'Enter the neon city in this life. Both orb XP bonuses go dormant. The Super Void Heart carries over, and collecting Void also preserves XP memories.':pending==='Super Void Heart'?'The two Hearts become one. Void collection doubles permanently. This life continues.':pending==='Collect Void'&&state.crossedRift?'Bank the Void and begin a new life with your current levels as XP memories.':pending==='Rebirth'?'Begin a new life with your current levels as XP memories.':'Begin a new life. Current levels and XP memories reset. Banked Void and permanent bonuses carry over.';
-   return '<h2>'+title+'</h2>'+voidArt(8,90,title)+'<p>'+story+'</p><p>Void collected · '+fmt(state.Void)+'<br>Void skill XP ×'+(1+state.Void/10).toFixed(1)+'</p>'+
+   const title=state.superHeart?'Super Void Heart':state.heartPair?'Two Void Hearts':state.voidHeart?'Void Heart':'The twin sockets';
+   const story=state.crossedRift?'You have crossed the rift. Collecting Void now carries this life’s job and skill levels into the next as XP memories.':state.superHeart?'The Super Void Heart doubles every Void collection. Across the rift, something answers its beat.':state.heartPair?'Two Hearts rest in the amulet. Turn them together to seal the bond.':state.voidHeart?'The fused orbs beat as one. Bank Void and master the path again to grow a second Heart.':'Held apart, the two orbs cast ordinary shadows. Held together, they leave a darkness that stays on your fingers. From age 200, collect that Void at rebirth. At age 400, the copper can hold both stones.';
+   const details=pending==='Void Heart'?'Spend 400 Void and consume the amulet and both orbs. Both orb XP bonuses end. Be reborn at 14 with the Void Heart and '+fmt(state.Void-heartCost)+' Void. Current levels, possessions and XP memories reset.':pending==='Cross the Rift'?'Enter the neon city in this life. The Super Void Heart carries over, and collecting Void also preserves XP memories.':pending==='Super Void Heart'?'The two Hearts become one. Void collection doubles permanently. This life continues.':pending==='Collect Void'&&state.crossedRift?'Bank the Void and begin a new life with your current levels as XP memories.':pending==='Rebirth'?'Begin a new life with your current levels as XP memories.':'Begin a new life. Current levels and XP memories reset. Banked Void and permanent bonuses carry over.';
+   return '<h2>'+title+'</h2>'+(state.voidHeart?voidArt(8,90,title):sprite(artIndex.icons_amulet_65,76)+sprite(artIndex.icons_angelicorb,50)+sprite(artIndex.icons_evilorb,50))+'<p>'+story+'</p><p>Void collected · '+fmt(state.Void)+(state.voidHeart?'<br>Void skill XP ×'+(1+state.Void/10).toFixed(1):'')+'</p>'+
      (!state.voidHeart?relicProgress('Void'):!state.heartPair&&!state.superHeart?relicProgress('Second Heart'):state.superHeart&&!state.crossedRift?relicProgress('Rift'):'')+
      available.map(a=>button('ask:'+a,titles[a])).join(' ')+
      (pending?'<section class="card"><p>'+(passages[pending]||titles[pending])+'</p><p>'+details+'</p>'+button('accept','Confirm '+pending)+' '+button('cancel','Keep playing')+'</section>':'');
@@ -336,14 +417,14 @@ function amulet(){
  const art=age()>=300&&(state.Evil||state.Angelic)?'broken_'+side:age()>=200?'200_'+side+'_transparent':age()>=65?'65':age()>=45?'45':'25';
  const actions=choices();
  const years=age();
- const chapter=actions.includes('Ending')?'ending':years>=300&&(state.Evil||state.Angelic)?'broken':years>=200?(state.Evil?'evil':state.Angelic?'angelic':'paths'):years>=65?'eye':years>=45?'etching':'found';
- const inspection=years<65?'<p>Nothing happens...</p>':chapter==='eye'?"<p>By touching the eyeball, you will be reborn and have to restart life again, losing all your levels and coins.</p><p>However, you will gain xp multipliers for your jobs and skills equivalent to 1 + the max level of the skill or job / 10 :</p>"+'<p>Concentration · ×'+(1+level('Concentration')/10).toFixed(1)+' XP</p>'+ "<p>This means you will learn everything again much more quickly than you did in your previous life.</p><p>Something tells you that the amulet might transform even further after living for 2 whole centuries...</p>":'';
+ const chapter=years>=300&&(state.Evil||state.Angelic)?'broken':years>=200?(state.Evil?'evil':state.Angelic?'angelic':'paths'):years>=65?'eye':years>=45?'etching':'found';
+ const inspection=years<65?'<p>The lid holds fast under your thumb.</p>':chapter==='eye'?'<p>Touch the eye to wake at fourteen. Your coins and equipment stay behind. Each remembered job or skill grants ×(1 + its level / 10) XP in your next life.</p><p>Concentration · ×'+(1+level('Concentration')/10).toFixed(1)+' next life. Around the rim are two hundred small notches.</p>':'';
  const artwork=sprite(artIndex['icons_amulet_'+art],90);
  return '<h2>Amulet</h2>'+(inspection?button('inspect',artwork+'<br>Inspect amulet'):artwork)+amuletStory[chapter]+
  (state.Evil&&!state.orbs.Evil?relicProgress('Evil'):state.Angelic&&!state.orbs.Angelic?relicProgress('Angelic'):'')+
  (inspectingAmulet?inspection:'')+
- actions.map(a=>button('ask:'+a,a==='Rebirth'?'Touch the eye':a==='Ending'?'Bring the two orbs together':a.endsWith('orb')?sprite(artIndex['icons_'+a.split(' ')[0].toLowerCase()+'orb'],44)+' Claim '+(a==='Angelic orb'?'Angelic Orb':'Evil Orb')+' · ×5 skill XP':'Embrace '+a+' (+'+alignmentGain(a).toFixed(2)+')')).join(' ')+
- (pending?'<div class="card"><p>'+(pending==='Rebirth'?'Your current levels become your next life’s XP memories.':pending==='Ending'?'Complete this journey with both orbs.':'This resets your current levels and XP memories. Your earned orbs carry forward.')+'</p>'+button('accept','Confirm '+pending)+' '+button('cancel','Keep playing')+'</div>':'')+
+ actions.map(a=>button('ask:'+a,a==='Rebirth'?'Touch the eye':a.endsWith('orb')?sprite(artIndex['icons_'+a.split(' ')[0].toLowerCase()+'orb'],44)+' Claim '+(a==='Angelic orb'?'Angelic Orb':'Evil Orb')+' · ×5 skill XP':'Embrace '+a+' (+'+alignmentGain(a).toFixed(2)+')')).join(' ')+
+ (pending?'<div class="card"><p>'+(pending==='Rebirth'?'Your current levels become your next life’s XP memories.':'This resets your current levels and XP memories. Your earned orbs carry forward.')+'</p>'+button('accept','Confirm '+pending)+' '+button('cancel','Keep playing')+'</div>':'')+
  '<p>Lives lived · '+state.life+'<br>Evil · '+state.Evil.toFixed(2)+'　Angelic · '+state.Angelic.toFixed(2)+'</p>'+Object.keys(state.orbs).map(o=>sprite(artIndex['icons_'+o.toLowerCase()+'orb'])+' '+o+' orb').join(' ');
 }
 function render(){draw();bindMotion();scheduleMotion()}
@@ -367,10 +448,10 @@ function draw(){
    screen.innerHTML=top.replace('◉','₡')+'<div class="city-banner">'+cityIcon(8,66)+(state.chrono>=4?'<div><small>CITY UPLINK ACTIVE</small><h1>Still Observatory</h1></div>':'<div><small>RIFT DISTRICT</small><h1>Night Shift</h1></div>')+'</div><nav>'+tabs.map(([key,label])=>button('tab:'+key,label,where===label)).join('')+'</nav><section class="card">'+(tab==='Amulet'?cityTerminal():list())+'</section><footer>'+button('pause',state.paused?'Resume':'Pause')+' · Test speed '+[1,5,20].map(v=>button('devSpeed:'+v,v+'×',state.devSpeed===v)).join(' ')+'</footer>';
    return;
  }
- if(state.finished){screen.innerHTML=top+sprite(artIndex.endgame,144)+'<h1>Both orbs recovered</h1><p>Your journey through Evil and Angelic magic is complete.</p>'+amuletStory.ending+button('ask:Void','Embrace the Void')+(pending==='Void'?'<p>Start a new life at age 14 with both orbs. Master Void jobs and skills to claim the Void Heart from age 400.</p>'+button('accept','Enter the Void')+' '+button('cancel','Stay here'):'');return}
+
  if(dead())tab='Amulet';
  const nav=['Jobs','Skills','Shop',...(age()>=25||state.voidPath?['Amulet']:[])];
- screen.innerHTML=top+'<nav>'+nav.map(t=>button('tab:'+t,t,t===tab)).join('')+'</nav><section class="card">'+(tab==='Amulet'?amulet():list())+'</section><footer>'+state.job+' · Lv. '+level(state.job)+'　'+state.skill+' · Lv. '+level(state.skill)+'<p>'+button('pause',state.paused?'Resume':'Pause')+' '+(level('Time warping')?button('warp','Time warping '+(state.warp?'on':'off')):'')+'</p>'+['happiness','accelerating'].map(k=>button('potion:'+k,(k==='happiness'?'Happiness':'Speed')+' ×2 · '+(potionActive(k)?Math.ceil((state[k+'Until']-Date.now())/1000)+'s':'10 min'),potionActive(k))).join(' ')+'<p>Developer speed　'+[1,5,20].map(v=>button('devSpeed:'+v,v+'×',state.devSpeed===v)).join(' ')+'</p><p><a href="./previous.html">Earlier prototype save</a></p>'+statusText+'</footer>';
+ screen.innerHTML=top+'<nav>'+nav.map(t=>button('tab:'+t,t==='Amulet'&&state.voidHeart?'Heart':t,t===tab)).join('')+'</nav><section class="card">'+(tab==='Amulet'?amulet():list())+'</section><footer>'+state.job+' · Lv. '+level(state.job)+'　'+state.skill+' · Lv. '+level(state.skill)+'<p>'+button('pause',state.paused?'Resume':'Pause')+' '+(level('Time warping')?button('warp','Time warping '+(state.warp?'on':'off')):'')+'</p>'+['happiness','accelerating'].map(k=>button('potion:'+k,(k==='happiness'?'Happiness':'Speed')+' ×2 · '+(potionActive(k)?Math.ceil((state[k+'Until']-Date.now())/1000)+'s':'10 min'),potionActive(k))).join(' ')+'<p>Developer speed　'+[1,5,20].map(v=>button('devSpeed:'+v,v+'×',state.devSpeed===v)).join(' ')+'</p><p><a href="./previous.html">Earlier prototype save</a></p>'+statusText+'</footer>';
 }
 function advance(){
  const now=Date.now(),elapsed=Math.max(0,(now-state.clock)/1000);state.clock=now;
@@ -399,7 +480,7 @@ screen.onclick=e=>{
  if(a==='potion'&&['happiness','accelerating'].includes(v))drink(v);
  if(a==='devSpeed'&&[1,5,20].includes(Number(v)))state.devSpeed=Number(v);
  if(a==='warp')state.warp=!state.warp;
- if(entries[v]&&!remaining(v).length&&!dead()){
+ if(entries[v]&&(!entries[v].group.startsWith('Void ')||state.voidHeart)&&!remaining(v).length&&!dead()){
   if(['job','skill'].includes(a))state[a]=v;
   if(a==='home')state.home=state.home===v?(state.crossedRift?'Transit bunk':'Homeless'):v;
   if(a==='gear'){if(state.equipment[v])delete state.equipment[v];else state.equipment[v]=true}
