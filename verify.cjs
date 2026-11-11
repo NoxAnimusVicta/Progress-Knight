@@ -55,6 +55,15 @@ assert.equal(state.job,'Night courier');assert.equal(state.skill,'Neural link');
 const cityRate=rate(state.skill);const records=state.orbs;state.orbs={};assert.equal(rate(state.skill),cityRate);state.orbs=records;
 state.levels['Neural link']=10;state.levels['Night courier']=15;assert.equal(remaining('Relay technician').length,0);
 reset('Collect Void');assert.equal(state.Void,2096);assert.equal(state.memory['Void Heart'],150);assert(state.crossedRift&&state.job==='Night courier'&&state.home==='Transit bunk');
+for(const step of chronoSteps){
+ const lives=state.life;state.days=step.age*365;Object.assign(state.levels,step.skills);
+ const last=Object.keys(step.skills).pop();state.levels[last]--;assert(!choices().includes(step.action));state.levels[last]++;
+ reset(step.action);assert.equal(state.life,lives+1);assert.equal(age(),14);
+}
+assert.equal(state.chrono,3);assert(state.memory['Relay technician']>=15);
+assert(!choices().includes('Fuse Continuum Heart'));const oldLife=state.life;
+reset('Transmit construct');assert.equal(state.chrono,4);reset('Fuse Continuum Heart');assert.equal(state.chrono,5);assert.equal(state.life,oldLife);
+assert(!choices().includes('Fuse Continuum Heart'));state.days=200*365;assert.equal(voidGain(),4);reset('Collect Void');assert.equal(state.chrono,5);
 assert(migrateVoid({orbs:{Void:true}}).voidHeart);
 console.log('Verified base progression, orb collectibles and cumulative skill XP, Void jobs, Heart, legacy conversion and Void collection.');
 `,ctx);

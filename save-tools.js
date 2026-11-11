@@ -55,6 +55,8 @@ function readBackup(text) {
   for(const key of ['heartPair','superHeart','crossedRift']){
     check(typeof (src[key]??false)==='boolean',key);dst[key]=src[key]??false;
   }
+  dst.chrono=src.chrono??0;
+  check(Number.isInteger(dst.chrono)&&numeric(dst.chrono,5)&&(!dst.chrono||dst.crossedRift),'Chronotech progression');
   check(!dst.crossedRift||dst.superHeart,'rift progression');
   check(!(dst.heartPair&&dst.superHeart)&&(!(dst.heartPair||dst.superHeart)||(dst.voidHeart&&dst.voidPath)),'Heart progression');
   check(Number.isSafeInteger(src.Void??0)&&numeric(src.Void??0),'Void');
