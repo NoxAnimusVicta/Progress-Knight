@@ -5,7 +5,7 @@ vm.runInContext(`
 state.hero='Magnus';
 assert.equal(catalog.filter(e=>e.group!=="City contracts"&&e.income&&e.group!=="Void work").length,20);
 assert.equal(catalog.filter(e=>e.group!=="Augmentations"&&e.maxXp&&!e.income&&e.group!=="Void magic").length,23);
-assert.equal(catalog.filter(e=>e.group!=="City housing"&&e.expense!==undefined).length,17);
+assert.equal(catalog.filter(e=>e.group!=="Void estates"&&e.group!=="City housing"&&e.expense!==undefined).length,17);
 for(const e of catalog)assert.equal(typeof e.tile,'number');
 for(let i=0;i<1000&&level('Beggar')<10;i++)step(1);
 assert(remaining('Farmer').length===0);assert(state.coins>0);assert(level('Concentration')>0);
@@ -29,15 +29,18 @@ for(const side of ['Evil','Angelic']){
 const normal={...state.orbs};state.orbs={};const skillBase=rate('Concentration'),jobBase=rate('Beggar');
 state.orbs={Evil:true};assert.equal(rate('Concentration'),skillBase*5);
 state.orbs=normal;assert.equal(rate('Concentration'),skillBase*25);assert.equal(rate('Beggar'),jobBase);
-state.days=200*365;reset('Ending');assert(state.finished);render();assert(screen.innerHTML.includes('Both orbs recovered'));
-reset('Void');assert(state.voidPath&&!state.finished);assert.equal(age(),14);
-for(const hero of ['Magnus','Isabella']){state.hero=hero;const portraits=new Set();for(const years of [14,30,65,100]){state.days=years*365;portraits.add(portrait().split('style=')[1])}assert.equal(portraits.size,4)}
-assert.equal(remaining('Rift scout').length,1);state.levels['Rift keeper']=20;assert.equal(remaining('Rift scout').length,0);
-state.levels['Rift scout']=30;state.levels['Rift weaving']=12;assert.equal(remaining('Breach warden').length,0);
-state.levels['Breach warden']=40;state.levels['Void resonance']=20;assert.equal(remaining('Void regent').length,0);
-state.days=399*365;assert(!choices().includes('Void Heart'));state.days=400*365;reset('Void Heart');assert(!state.voidHeart);for(const [name,,target] of relicRequirements('Void'))if(name!=='Age')state.levels[name]=target;
- for(const [name,,target] of relicRequirements('Void')){if(name==='Age')state.days=399*365;else state.levels[name]=target-1;assert(!choices().includes('Void Heart'));if(name==='Age')state.days=400*365;else state.levels[name]=target}
- reset('Void Heart');assert(state.voidHeart&&state.orbs.Angelic&&state.orbs.Evil&&state.voidPath);
+assert(state.voidPath&&!state.voidHeart);assert(!portrait().includes('void-forms.svg'));
+tab='Jobs';assert(!list().includes('Rift keeper'));tab='Shop';assert(!list().includes('Watch hut'));
+for(let i=0;i<8;i++){state.days=200*365;reset('Collect Void')}
+assert.equal(state.Void,400);const waiting=JSON.stringify(state);
+state.days=399*365;reset('Void Heart');assert(!state.voidHeart);
+state.days=400*365;state.Void=399;reset('Void Heart');assert(!state.voidHeart);
+state.Void=400;delete state.orbs.Evil;reset('Void Heart');assert(!state.voidHeart);
+state=JSON.parse(waiting);state.days=400*365;state.Void=423;reset('Void Heart');assert.equal(state.Void,23);
+state=JSON.parse(waiting);state.days=400*365;reset('Void Heart');assert.equal(state.Void,0);
+assert(state.voidHeart&&state.voidPath&&age()===14);assert.deepEqual(Object.keys(state.orbs),[]);assert(portrait().includes('void-forms.svg'));
+tab='Shop';assert(list().includes('Watch hut'));tab='Jobs';assert(list().includes('Rift keeper'));tab='Skills';assert(list().includes('Timelessness'));
+assert(Object.keys(baseLore).length===60);
 state.days=200*365;state.levels['Void Heart']=10;state.levels['Void attunement']=20;assert.equal(voidGain(),4);reset('Collect Void');assert.equal(state.Void,4);assert(state.voidHeart);assert.equal(age(),14);
 for(const [name,,target] of relicRequirements('Second Heart')){
  if(name==='Age')state.days=target*365;else if(name!=='Banked Void')state.levels[name]=target;
