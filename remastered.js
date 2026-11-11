@@ -30,7 +30,7 @@ const catalog = Object.values(entries);
 function newLife() {
   return {days:5110, coins:0, job:'Beggar', skill:'Concentration', home:'Homeless',
     equipment:{}, levels:{}, xp:{}, unlocked:{}, memory:{}, hero:'', life:1,
-    voidPath:false, voidHeart:false, heartPair:false, superHeart:false, crossedRift:false, Void:0, Evil:0, Angelic:0, orbs:{}, finished:false, paused:false, warp:true, devSpeed:1, clock:Date.now()};
+    voidPath:false, voidHeart:false, heartPair:false, superHeart:false, crossedRift:false, chrono:0, Void:0, Evil:0, Angelic:0, orbs:{}, finished:false, paused:false, warp:true, devSpeed:1, clock:Date.now()};
 }
 let state = newLife();
 try {Object.assign(state,JSON.parse(localStorage.getItem(saveKey)))} catch {}
@@ -67,8 +67,9 @@ const dead=()=>state.days>=lifespan()*365;
 function rate(n){
   const e=entries[n];
   if(state.crossedRift){
+    const recall=state.chrono>=1?2:1;
     const heartBonus=e.group==='Augmentations'?1+state.Void/10:1;
-    return Math.round(30*(1+(state.memory[n]||0)/10)*happy()*effect('Neural link')*heartBonus);
+    return Math.round(30*(1+recall*(state.memory[n]||0)/10)*happy()*effect('Neural link')*heartBonus);
   }
   // Remastered adds a constant x3 to every task XP multiplier list (1.9.1).
   let gain=30*(1+(state.memory[n]||0)/10)*happy()*effect('Dark influence')*effect('Demon training')*effect('Divine Blessing')*effect("Angel's Guidance");
@@ -109,7 +110,7 @@ function step(days){
   gain(state.job,jobRate*days);gain(state.skill,skillRate*days);
 }
 function alignmentGain(side){return side==='Evil'?(effect('Evil control')+effect('Blood meditation')):(effect('Pure Heart')+effect('Spiritual Meditation'))}
-function voidGain(){return Math.floor(age()/200*effect('Void attunement')*effect('Void Heart')*(state.superHeart?2:1))}
+function voidGain(){return Math.floor(age()/200*effect('Void attunement')*effect('Void Heart')*(state.superHeart?2:1)*(state.chrono===5?2:1))}
 // All levels are earned in the life in which the relic is claimed.
 function relicRequirements(path){
  if(path==='Second Heart')return [['Age',age(),500],['Void regent',level('Void regent'),75],['Void attunement',level('Void attunement'),125],['Void Heart',level('Void Heart'),100],['Banked Void',state.Void,500]];
@@ -123,7 +124,24 @@ function relicProgress(path){
  const name=path==='Void'?'Void Heart':path==='Second Heart'?'Second Void Heart':path==='Rift'?'Cross the Rift':path+' Orb';
  return '<section class="card"><h3>'+name+' requirements</h3><ul>'+relicRequirements(path).map(([label,current,target])=>'<li>'+(current>=target?'✓ ':'')+label+' · '+fmt(current)+' / '+target+'</li>').join('')+'</ul></section>';
 }
+const chronoSteps=[
+ {action:'Record imprint',name:'Personality Imprint',age:65,skills:{'Relay technician':15,'Neural link':30},benefit:'Doubles the XP bonus from remembered levels.'},
+ {action:'Link imprints',name:'Continuity Archive',age:120,skills:{'Grid engineer':25,'Circuit design':50},benefit:'Reboots remember the highest level recorded across your archived lives.'},
+ {action:'Complete construct',name:'Chrono Personality Construct',age:200,skills:{'Grid engineer':75,'Neural link':100,'Life support':65},benefit:'Your construct can carry your identity through a one-way relay into another universe.'}
+];
+const chronoNames=['Unrecorded',...chronoSteps.map(step=>step.name),'Chrono Personality Construct','Continuum Heart'];
+function cityChoices(){
+ const actions=[];
+ const step=chronoSteps[state.chrono];
+ if(step&&age()>=step.age&&Object.entries(step.skills).every(([n,v])=>level(n)>=v))actions.push(step.action);
+ if(state.chrono===3)actions.push('Transmit construct');
+ if(state.chrono===4&&state.superHeart)actions.push('Fuse Continuum Heart');
+ if(age()>=65)actions.push('Rebirth');
+ if(age()>=200)actions.push('Collect Void');
+ return actions;
+}
 function choices(){
+  if(state.crossedRift)return cityChoices();
   if(state.finished)return state.orbs.Evil&&state.orbs.Angelic&&!state.voidPath?['Void']:[];
   if(state.voidPath&&state.heartPair&&!state.superHeart)return ['Super Void Heart'];
   if(age()<65)return [];
@@ -142,19 +160,25 @@ function choices(){
 }
 function reset(action){
   if(!choices().includes(action))return;
+  if(action==='Transmit construct'||action==='Fuse Continuum Heart'){state.chrono++;return}
+  const upgrade=state.crossedRift&&chronoSteps[state.chrono]?.action===action;
+  if(upgrade)state.chrono++;
   if(action==='Cross the Rift'){state.crossedRift=true;cityLoadout(state);return}
   if(action==='Super Void Heart'){state.superHeart=true;state.heartPair=false;return}
   if(action==='Ending'){state.finished=true;return}
   let {hero,life,Evil,Angelic,orbs}=state;
   const memory={};
-  if(action==='Rebirth'||(action==='Collect Void'&&state.crossedRift))Object.assign(memory,state.levels);
+  if(upgrade||action==='Rebirth'||(action==='Collect Void'&&state.crossedRift)){
+    Object.assign(memory,state.levels);
+    if(state.chrono>=2)for(const [name,previous] of Object.entries(state.memory))memory[name]=Math.max(previous,memory[name]||0);
+  }
   else if(action==='Evil'){Evil+=alignmentGain('Evil');Angelic=0}
   else if(action==='Angelic'){Angelic+=alignmentGain('Angelic');Evil=0}
   if(action==='Collect Void')state.Void+=voidGain();
   else if(action==='Second Heart')state.heartPair=true;
   else if(action==='Void Heart')state.voidHeart=true;
   else if(action.endsWith(' orb')){orbs={...orbs,[action.split(' ')[0]]:true};Evil=0;Angelic=0}
-  state={...newLife(),hero,crossedRift:state.crossedRift,heartPair:state.heartPair,superHeart:state.superHeart,Void:state.Void,voidHeart:state.voidHeart,voidPath:state.voidPath||action==='Void',devSpeed:state.devSpeed,life:life+1,Evil,Angelic,orbs,memory};
+  state={...newLife(),hero,chrono:state.chrono,crossedRift:state.crossedRift,heartPair:state.heartPair,superHeart:state.superHeart,Void:state.Void,voidHeart:state.voidHeart,voidPath:state.voidPath||action==='Void',devSpeed:state.devSpeed,life:life+1,Evil,Angelic,orbs,memory};
   cityLoadout(state);
 }
 function save(){try{localStorage.setItem(saveKey,JSON.stringify(state))}catch{statusText='Save unavailable in this browser.'}}
@@ -171,11 +195,24 @@ function cityIcon(tile,size){
  return '<span aria-hidden="true" style="display:inline-block;flex:none;width:'+size+'px;height:'+size+'px;border-radius:4px;background:url(./neon-city.webp) '+(tile%3*50)+'% '+(Math.floor(tile/3)*50)+'%/300% 300%"></span>';
 }
 function cityTerminal(){
- const actions=choices();
- return '<h2>Relay terminal</h2><p>Rain hisses on the elevated tracks. A courier hands you a dead receiver. “Get the grid talking again and there’s a bed upstairs.” Inside your coat, both orbs have gone cold. The Super Void Heart still beats.</p>'+
- '<p>Banked Void · '+fmt(state.Void)+' · Augment XP ×'+(1+state.Void/10).toFixed(1)+' · Orb bonuses sealed</p>'+
- (actions.length?actions.map(a=>button('ask:'+a,a==='Collect Void'?'Bank '+voidGain()+' Void and reboot':'Reboot with XP memories')).join(' '):'<p>Memory reboot available at age 65. Void banking available from age 200.</p>')+
- (pending?'<p>Start a new city life with your XP memories'+(pending==='Collect Void'?' and '+voidGain()+' more Void':'')+'?</p>'+button('accept','Confirm reboot')+' '+button('cancel','Stay here'):'');
+ const step=chronoSteps[state.chrono],actions=cityChoices();
+ const notes=[
+  'The receiver answers in your own voice. Inside the amulet, a copper wheel turns backwards. Each time the eye sent you back, it wrote a little of you into the glass.',
+  'You play your imprint beside a recording from the last life. Both voices remember the same room. Only one remembers how to fix the relay.',
+  'The archive finishes a sentence before you speak. For the first time, you ask the terminal who woke up on the other side of the eye.',
+  'Your construct answers with your oldest memory. A signal arrives from a universe with no local copy of you. The relay is wide enough for one transmission.',
+  'Under a motionless white sun, a relay clicks on inside an empty observatory. Your construct has made the crossing. In its palm, the Super Void Heart still beats.',
+  'Two pulses settle into one. The observatory prints your name onto a clock that has never had hands. The Continuum Heart doubles the Void you bank here.'
+ ];
+ const labels={'Collect Void':'Bank '+voidGain()+' Void and reboot',Rebirth:'Reboot with XP memories'};
+ const idx=Math.min(state.chrono,2)+(state.chrono===5?1:0);
+ const art='<span aria-hidden="true" style="display:inline-block;width:76px;height:76px;background:url(./chronotech.webp) '+(idx%2*100)+'% '+(Math.floor(idx/2)*100)+'%/200% 200%"></span>';
+ const needs=step?[['Age',age(),step.age],...Object.entries(step.skills).map(([name,target])=>[name,level(name),target])]:[];
+ const progress=step?'<h3>'+step.name+'</h3><p>'+step.benefit+'</p><ul>'+needs.map(([n,v,t])=>'<li>'+(v>=t?'✓ ':'')+n+' · '+v+' / '+t+'</li>').join('')+'</ul>':'';
+ const confirm=pending==='Transmit construct'?'Enter the Still Observatory. Your current life continues, and your city uplink stays active.':pending==='Fuse Continuum Heart'?'Bind the completed construct to the Super Void Heart. Its existing bonuses carry into the Continuum Heart. This life continues.':'Start a new life at age 14 with XP memories'+(pending==='Collect Void'?' and '+voidGain()+' more Void':'')+(step?.action===pending?' and the '+step.name:'')+'?';
+ return '<h2>'+ (state.chrono>=4?'Observatory relay':'Relay terminal')+'</h2>'+art+'<h3>'+chronoNames[state.chrono]+'</h3><p>'+notes[state.chrono]+'</p><p>Banked Void · '+fmt(state.Void)+' · Augment XP ×'+(1+state.Void/10).toFixed(1)+' · Orb bonuses sealed</p>'+progress+
+ actions.map(a=>button('ask:'+a,labels[a]||a)).join(' ')+(pending?'<section class="card"><p>'+confirm+'</p>'+button('accept','Confirm')+' '+button('cancel','Cancel')+'</section>':'');
+
 }
 function portrait(){
  if(state.crossedRift||state.voidPath){
@@ -327,7 +364,7 @@ function draw(){
    if(dead())tab='Amulet';
    const where=tab==='Amulet'?'Terminal':tab==='Jobs'?'Contracts':tab==='Skills'?'Augments':'Housing';
    const tabs=[['Jobs','Contracts'],['Skills','Augments'],['Shop','Housing'],['Amulet','Terminal']];
-   screen.innerHTML=top.replace('◉','₡')+'<div class="city-banner">'+cityIcon(8,66)+'<div><small>RIFT DISTRICT</small><h1>Night Shift</h1></div></div><nav>'+tabs.map(([key,label])=>button('tab:'+key,label,where===label)).join('')+'</nav><section class="card">'+(tab==='Amulet'?cityTerminal():list())+'</section><footer>'+button('pause',state.paused?'Resume':'Pause')+' · Test speed '+[1,5,20].map(v=>button('devSpeed:'+v,v+'×',state.devSpeed===v)).join(' ')+'</footer>';
+   screen.innerHTML=top.replace('◉','₡')+'<div class="city-banner">'+cityIcon(8,66)+(state.chrono>=4?'<div><small>CITY UPLINK ACTIVE</small><h1>Still Observatory</h1></div>':'<div><small>RIFT DISTRICT</small><h1>Night Shift</h1></div>')+'</div><nav>'+tabs.map(([key,label])=>button('tab:'+key,label,where===label)).join('')+'</nav><section class="card">'+(tab==='Amulet'?cityTerminal():list())+'</section><footer>'+button('pause',state.paused?'Resume':'Pause')+' · Test speed '+[1,5,20].map(v=>button('devSpeed:'+v,v+'×',state.devSpeed===v)).join(' ')+'</footer>';
    return;
  }
  if(state.finished){screen.innerHTML=top+sprite(artIndex.endgame,144)+'<h1>Both orbs recovered</h1><p>Your journey through Evil and Angelic magic is complete.</p>'+amuletStory.ending+button('ask:Void','Embrace the Void')+(pending==='Void'?'<p>Start a new life at age 14 with both orbs. Master Void jobs and skills to claim the Void Heart from age 400.</p>'+button('accept','Enter the Void')+' '+button('cancel','Stay here'):'');return}
@@ -357,7 +394,7 @@ screen.onclick=e=>{
  if(a==='tab'){tab=v;pending=''}
  if(a==='ask'&&choices().includes(v)){pending=v;if(v==='Rebirth')inspectingAmulet=true}
  if(a==='cancel')pending='';
- if(a==='accept'&&pending){reset(pending);tab=['Second Heart','Super Void Heart','Cross the Rift'].includes(pending)?'Amulet':'Jobs';pending=''}
+ if(a==='accept'&&pending){reset(pending);tab=state.crossedRift||['Second Heart','Super Void Heart','Cross the Rift'].includes(pending)?'Amulet':'Jobs';pending=''}
  if(a==='pause')state.paused=!state.paused;
  if(a==='potion'&&['happiness','accelerating'].includes(v))drink(v);
  if(a==='devSpeed'&&[1,5,20].includes(Number(v)))state.devSpeed=Number(v);
