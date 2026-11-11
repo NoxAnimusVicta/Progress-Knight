@@ -14,12 +14,13 @@ function readBackup(text) {
   const src = file.campaign;
   const plain = obj => obj !== null && typeof obj === 'object' && !Array.isArray(obj);
   if (!plain(src)) throw Error('Missing campaign.');
+  migrateOldVoidTasks(src);
   removeOrbTraining(src);
   const dst = newLife();
   function check(ok, field) { if (!ok) throw Error('Invalid backup field: '+field); }
   function numeric(v, max=Number.MAX_SAFE_INTEGER) { return Number.isFinite(v) && v>=0 && v<=max; }
   for (const field of ['days','coins','life','Evil','Angelic','clock']) {
-    check(numeric(src[field]),field); dst[field]=src[field];
+    check(numeric(src[field],field==='coins'?Number.MAX_VALUE:Number.MAX_SAFE_INTEGER),field); dst[field]=src[field];
   }
   check(dst.days>=5110 && Number.isSafeInteger(dst.life) && dst.life>=1,'age or life');
   for(const field of ['paused','warp','finished']) {
@@ -29,7 +30,7 @@ function readBackup(text) {
   check([1,5,20].includes(src.devSpeed??1),'developer speed');dst.devSpeed=src.devSpeed??1;
   check(typeof (src.voidPath??false)==='boolean','Void path');dst.voidPath=src.voidPath??false;
   const hasEntry=n=>typeof n==='string' && Object.hasOwn(entries,n);
-  for(const [field,test] of [['job',e=>e.income],['skill',e=>e.maxXp&&!e.income],['home',e=>['Properties','City housing','Void estates'].includes(e.group)]]) {
+  for(const [field,test] of [['job',e=>e.income],['skill',e=>e.maxXp&&!e.income],['home',e=>['Properties','City housing','Void properties'].includes(e.group)]]) {
     check(hasEntry(src[field])&&test(entries[src[field]]),field);dst[field]=src[field];
   }
   for(const field of ['equipment','unlocked','levels','xp','memory','orbs']){
@@ -38,7 +39,7 @@ function readBackup(text) {
       if(field==='orbs')check(['Evil','Angelic','Void'].includes(name)&&value===true,field);
       else {
         check(hasEntry(name),field);
-        if(field==='equipment')check(entries[name].group==='Misc'&&value===true,field);
+        if(field==='equipment')check(['Misc','Void equipment'].includes(entries[name].group)&&value===true,field);
         else if(field==='unlocked')check(value===true,field);
         else if(field==='xp')check(entries[name].maxXp&&numeric(value,1e100),field);
         else check(entries[name].maxXp&&Number.isInteger(value)&&numeric(value,30000),field);
