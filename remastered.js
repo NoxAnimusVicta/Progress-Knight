@@ -1,15 +1,48 @@
 const saveKey = 'pk-remastered-191';
-for(const [name,tile,income,maxXp,requirements] of [
- ['Rift keeper',0,1200,800,{}],['Rift scout',1,3600,1600,{'Rift keeper':20}],
- ['Breach warden',2,10800,3200,{'Rift scout':30,'Rift weaving':12}],
- ['Void regent',3,32400,6400,{'Breach warden':40,'Void resonance':20}]
-])entries[name]={name,tile,income,maxXp,requirements,group:'Void work'};
-for(const [name,tile,effect,description,maxXp,requirements] of [
- ['Timelessness',4,.01,'lifespan',800,{}],['Rift weaving',5,.025,'Void job XP',900,{}],
- ['Void resonance',6,.025,'Void wages',1200,{'Rift weaving':12}],
- ['Void attunement',7,.05,'Void collected',1500,{'Void resonance':12}],
- ['Void Heart',8,.10,'Void collected',2000,{}]
-])entries[name]={name,tile,effect,description,maxXp,requirements,group:'Void magic'};
+// Tables and prerequisites from Symb1/progress_knight_2 at c099d6f.
+const voidCatalog=[
+ {"name":"Corrupted","maxXp":100000000000000,"income":25000000,"group":"The Void","tile":0,"requirements":{"Age":1000}},
+ {"name":"Void Slave","maxXp":650000000000000,"income":200000000,"group":"The Void","tile":1,"requirements":{"Corrupted":30}},
+ {"name":"Void Fiend","maxXp":18000000000000000,"income":600000000,"group":"The Void","tile":2,"requirements":{"Brainwashing":3000,"Void Slave":200}},
+ {"name":"Abyss Anomaly","maxXp":18000000000000000,"income":1200000000,"group":"The Void","tile":3,"requirements":{"Mind Seize":3000,"Void Fiend":200}},
+ {"name":"Void Wraith","maxXp":180000000000000000,"income":5000000000,"group":"The Void","tile":4,"requirements":{"Temporal Dimension":3400,"Abyss Anomaly":300}},
+ {"name":"Void Reaver","maxXp":2600000000000000000,"income":25000000000,"group":"The Void","tile":5,"requirements":{"Void Amplification":3400,"Void Wraith":250}},
+ {"name":"Void Lord","maxXp":28000000000000000000,"income":100000000000,"group":"The Void","tile":6,"requirements":{"Void Symbiosis":3800,"Void Reaver":150}},
+ {"name":"Abyss God","maxXp":400000000000000000000,"income":1000000000000,"group":"The Void","tile":7,"requirements":{"Void Embodiment":4700,"Void Lord":750}},
+ {"name":"Absolute Wish","maxXp":100,"effect":0.005,"description":"Evil Gain","group":"Void Manipulation","tile":0,"requirements":{"Void Slave":25,"Chairman":300}},
+ {"name":"Void Amplification","maxXp":100,"effect":0.01,"description":"The Void XP","group":"Void Manipulation","tile":1,"requirements":{"Void Slave":100,"Absolute Wish":3000}},
+ {"name":"Mind Seize","maxXp":100,"effect":0.0006,"description":"Reduced Happiness","group":"Void Manipulation","tile":2,"requirements":{"Void Amplification":3000}},
+ {"name":"Ceaseless Abyss","maxXp":100,"effect":0.000585,"description":"Longer Lifespan","group":"Void Manipulation","tile":3,"requirements":{"Void Influence":4000,"Abyss Anomaly":50}},
+ {"name":"Void Symbiosis","maxXp":100,"effect":0.0015,"description":"Ability XP","group":"Void Manipulation","tile":4,"requirements":{"Ceaseless Abyss":3500,"Void Reaver":50}},
+ {"name":"Void Embodiment","maxXp":100,"effect":0.0025,"description":"Evil Gain","group":"Void Manipulation","tile":5,"requirements":{"Dark influence":4600,"Void Lord":50}},
+ {"name":"Abyss Manipulation","maxXp":100,"effect":-0.01,"description":"Reduced Expenses","group":"Void Manipulation","tile":6,"requirements":{"Abyss God":350,"Dark influence":6000,"Void Influence":6000}},
+ {"name":"Town Ruler","expense":35000000,"effect":120,"group":"Void properties","tile":0,"requirements":{"Coins":3500000000}},
+ {"name":"City Ruler","expense":1100000000,"effect":500,"group":"Void properties","tile":1,"requirements":{"Coins":110000000000}},
+ {"name":"Nation Ruler","expense":13000000000,"effect":1200,"group":"Void properties","tile":2,"requirements":{"Coins":1300000000000}},
+ {"name":"Pocket Dimension","expense":49000000000,"effect":5000,"group":"Void properties","tile":3,"requirements":{"Coins":4900000000000}},
+ {"name":"Void Realm","expense":121000000000,"effect":15000,"group":"Void properties","tile":4,"requirements":{"Coins":12100000000000}},
+ {"name":"Void Universe","expense":2000000000000,"effect":30000,"group":"Void properties","tile":5,"requirements":{"Coins":200000000000000}},
+ {"name":"Observatory","expense":140000000,"effect":5,"description":"Magic XP","group":"Void equipment","tile":0,"requirements":{"Coins":14000000000}},
+ {"name":"Mind's Eye","expense":3250000000,"effect":10,"description":"Fundamentals XP","group":"Void equipment","tile":1,"requirements":{"Coins":325000000000}},
+ {"name":"Void Necklace","expense":28050000000,"effect":3,"description":"Void Manipulation XP","group":"Void equipment","tile":2,"requirements":{"Coins":2805000000000}},
+ {"name":"Void Armor","expense":197050000000,"effect":3,"description":"The Void XP","group":"Void equipment","tile":3,"requirements":{"Coins":19705000000000}},
+ {"name":"Void Blade","expense":502050000000,"effect":3,"description":"Ability XP","group":"Void equipment","tile":4,"requirements":{"Coins":50205000000000}},
+ {"name":"Void Orb","expense":1202050000000,"effect":3,"description":"Void Manipulation XP","group":"Void equipment","tile":5,"requirements":{"Coins":120205000000000}},
+ {"name":"Void Dust","expense":25002050000000,"effect":3,"description":"The Void XP","group":"Void equipment","tile":6,"requirements":{"Coins":2500205000000000}},
+ {"name":"Adept Mage","maxXp":10000000,"income":9500,"group":"Advanced arcana","tile":0,"requirements":{"Mana control":700,"Apprentice mage":10}},
+ {"name":"Archmage","maxXp":10000000000,"income":350000,"group":"Advanced arcana","tile":1,"requirements":{"Mana control":1200,"Master wizard":10}},
+ {"name":"Chronomancer","maxXp":2000000000000,"income":1000000,"group":"Advanced arcana","tile":2,"requirements":{"Mana control":1500,"Meditation":1500,"Archmage":25}},
+ {"name":"Imperator","maxXp":9000000000000000,"income":60000000,"group":"Advanced arcana","tile":3,"requirements":{"All Seeing Eye":3000,"Concentration":3000,"Chairman":666}},
+ {"name":"All Seeing Eye","maxXp":100,"effect":0.0027,"description":"T.A.A Pay","group":"Advanced arcana","tile":4,"requirements":{"Mana control":2500,"Chairman":100}},
+ {"name":"Temporal Dimension","maxXp":100,"effect":0.025,"description":"Gamespeed","group":"Advanced arcana","tile":5,"requirements":{"Chronomancer":25}},
+ {"name":"Brainwashing","maxXp":100,"effect":-0.01,"description":"Reduced Expenses","group":"Advanced arcana","tile":6,"requirements":{"Imperator":100}},
+ {"name":"Astral Body","maxXp":100,"effect":0.0035,"description":"Longer lifespan","group":"Advanced arcana","tile":7,"requirements":{"Archmage":10}},
+ {"name":"Dark Knowledge","maxXp":100,"effect":0.003,"description":"Class XP","group":"Advanced dark magic","tile":0,"requirements":{"Evil":5000}},
+ {"name":"Void Influence","maxXp":100,"effect":0.0028,"description":"All XP","group":"Advanced dark magic","tile":1,"requirements":{"Evil":50000}},
+ {"name":"Time Loop","maxXp":100,"effect":0.001,"description":"Gamespeed","group":"Advanced dark magic","tile":2,"requirements":{"Evil":2500000}},
+ {"name":"Evil Incarnate","maxXp":100,"effect":0.0004,"description":"Ability XP","group":"Advanced dark magic","tile":3,"requirements":{"Evil":1000000000}}
+];
+for(const entry of voidCatalog)entries[entry.name]=entry;
 for(const [name,tile,income,maxXp,requirements] of [
  ['Night courier',0,12,120,{}],['Relay technician',1,90,500,{'Night courier':15,'Neural link':10}],
  ['Grid engineer',2,460,1500,{'Relay technician':25,'Circuit design':20}]
@@ -21,9 +54,6 @@ for(const [name,tile,effect,description,maxXp,requirements] of [
 entries['Transit bunk']={name:'Transit bunk',tile:6,expense:0,effect:1,requirements:{},group:'City housing'};
 entries['Skyline apartment']={name:'Skyline apartment',tile:7,expense:60,effect:2,requirements:{'Relay technician':5},group:'City housing'};
 const heartCost=400;
-for(const [name,tile,expense,effect,requirements] of [
- ['Watch hut',0,300,4,{}],['Veiled cloister',1,1800,9,{'Rift keeper':20}],['Chasm keep',2,6500,18,{'Breach warden':25}]
-])entries[name]={name,tile,expense,effect,requirements,group:'Void estates'};
 function cityLoadout(s){
  if(!s.crossedRift)return;
  if(entries[s.job]?.group!=='City contracts'){s.job='Night courier';s.equipment={}}
@@ -106,7 +136,20 @@ function removeOrbTraining(s){
    for(const key of ['levels','xp','memory','unlocked'])if(s[key])delete s[key][name];
  }
 }
+function migrateOldVoidTasks(s){
+ const aliases={'Rift keeper':'Corrupted','Rift scout':'Void Slave','Breach warden':'Void Fiend','Void regent':'Abyss God','Rift weaving':'Void Amplification','Void resonance':'Mind Seize','Void attunement':'Absolute Wish','Timelessness':'Astral Body','Void Heart':'Void Embodiment','Watch hut':'Town Ruler','Veiled cloister':'City Ruler','Chasm keep':'Nation Ruler'};
+ for(const [old,name] of Object.entries(aliases)){
+   for(const field of ['levels','xp','memory']){
+     const data=s[field];if(data&&Object.hasOwn(data,old)){data[name]=Math.max(data[name]||0,data[old]);delete data[old]}
+   }
+   if(s.unlocked)delete s.unlocked[old];
+   if(s.job===old)s.job='Beggar';
+   if(s.skill===old)s.skill='Concentration';
+   if(s.home===old)s.home='Homeless';
+ }
+}
 function migrateVoid(s){
+ migrateOldVoidTasks(s);
  removeOrbTraining(s);
  cityLoadout(s);
  if(s.orbs?.Void){s.voidHeart=true;delete s.orbs.Void}
@@ -115,8 +158,7 @@ function migrateVoid(s){
    delete s.orbs.Evil;delete s.orbs.Angelic;
  }else if(s.orbs?.Evil&&s.orbs.Angelic){
    s.voidPath=true;s.finished=false;
-   if(entries[s.job]?.group==='Void work')s.job='Beggar';
-   if(entries[s.skill]?.group==='Void magic')s.skill='Concentration';
+
  }
  return s;
 }
@@ -125,7 +167,7 @@ function level(name){return state.levels[name] || 0}
 function threshold(name){const l=level(name);return Math.round(entries[name].maxXp*(l+1)*1.01**l)}
 function effect(name){
   const l=level(name), log=Math.log1p(l);
-  if(['Bargaining','Intimidation','Healing Aura'].includes(name))return Math.max(.1,1-log/Math.log(7)/10);
+  if(['Bargaining','Intimidation','Healing Aura','Brainwashing','Abyss Manipulation'].includes(name))return Math.max(.1,1-log/Math.log(7)/10);
   if(['Immortality','Super immortality'].includes(name))return 1+log/Math.log(33);
   if(name==='Time warping')return 1+log/Math.log(13);
   if(['Blood meditation','Spiritual Meditation'].includes(name))return l*entries[name].effect;
@@ -134,9 +176,9 @@ function effect(name){
 const item=n=>state.equipment[n] ? entries[n].effect : 1;
 const potionActive=kind=>Date.now()<(state[kind+'Until']||0);
 function drink(kind){if(!potionActive(kind))state[kind+'Until']=Date.now()+600000}
-const happy=()=>(potionActive('happiness')?2:1)*entries[state.home].effect*effect('Meditation')*item('Butler');
+const happy=()=>(potionActive('happiness')?2:1)*entries[state.home].effect*effect('Meditation')*item('Butler')/effect('Mind Seize');
 const age=()=>Math.floor(state.days/365);
-const lifespan=()=>70*(state.crossedRift?effect('Life support'):1)*effect('Immortality')*effect('Super immortality')*(state.voidHeart?effect('Timelessness'):1);
+const lifespan=()=>70*(state.crossedRift?effect('Life support'):1)*effect('Immortality')*effect('Super immortality')*effect('Astral Body')*effect('Ceaseless Abyss');
 const dead=()=>state.days>=lifespan()*365;
 function rate(n){
   const e=entries[n];
@@ -151,25 +193,33 @@ function rate(n){
   else gain*=effect('Concentration')*item('Book')*item('Study desk')*item('Library')*(state.orbs.Evil?5:1)*(state.orbs.Angelic?5:1);
   if(e.group==='Military')gain*=effect('Battle tactics')*item('Steel longsword')*(state.hero==='Isabella'?1.1:1);
   if(e.group==='The Arcane Association')gain*=effect('Mana control')*(state.hero==='Magnus'?1.1:1);
-  if(e.group==='Void work')gain*=effect('Rift weaving');
-  if(e.group==='Void magic')gain*=1+state.Void/10;
+  gain*=effect('Void Influence');
+  if(e.income)gain*=effect('Dark Knowledge');
+  else gain*=effect('Void Symbiosis')*item('Void Blade')*effect('Evil Incarnate');
+  if(e.group==='The Void')gain*=effect('Void Amplification')*item('Void Armor')*item('Void Dust');
+  if(e.group==='Advanced dark magic')gain*=state.Evil;
+  if(e.group==='Fundamentals')gain*=item("Mind's Eye");
+  if(e.group==='Advanced arcana'&&e.income)gain*=effect('Mana control');
+  if(e.group==='Magic'||(e.group==='Advanced arcana'&&!e.income))gain*=item('Observatory');
+  if(e.group==='Void Manipulation')gain*=(1+state.Void/10)*item('Void Necklace')*item('Void Orb');
   if(n==='Strength')gain*=effect('Muscle memory')*item('Dumbbells');
   if(e.group==='Magic')gain*=item('Sapphire charm');
   if(e.group==='Dark magic')gain*=state.Evil;
   if(e.group==='Light magic')gain*=state.Angelic;
   return Math.round(gain);
 }
-function pay(n){return Math.round(entries[n].income*(state.crossedRift?effect('Circuit design'):1)*(entries[n].group==='Void work'?effect('Void resonance'):1)*(1+Math.log10(level(n)+1))*effect("Demon's wealth")*effect('Bountiful Grace')*(entries[n].group==='Military'?effect('Strength'):1))}
-function price(n){return Math.round(entries[n].expense*effect('Bargaining')*effect('Intimidation')*effect('Healing Aura'))}
+function pay(n){return Math.round(entries[n].income*(state.crossedRift?effect('Circuit design'):1)*(['Advanced arcana','The Arcane Association'].includes(entries[n].group)?effect('All Seeing Eye'):1)*(1+Math.log10(level(n)+1))*effect("Demon's wealth")*effect('Bountiful Grace')*(entries[n].group==='Military'?effect('Strength'):1))}
+function price(n){return Math.round(entries[n].expense*effect('Bargaining')*effect('Intimidation')*effect('Healing Aura')*effect('Brainwashing')*effect('Abyss Manipulation'))}
 function upkeep(){return Object.keys(state.equipment).reduce((sum,n)=>sum+price(n),price(state.home))}
 function gain(n,amount){
   state.xp[n]=(state.xp[n]||0)+amount;
   while(state.xp[n]>=threshold(n)){state.xp[n]-=threshold(n);state.levels[n]=level(n)+1}
 }
 function remaining(n){
+  if(n==='Absolute Wish'&&(state.voidHeart||(state.orbs.Evil&&state.orbs.Angelic)))return [];
   if(state.unlocked[n])return [];
   const missing=Object.entries(entries[n].requirements).flatMap(([key,target])=>{
-    const value=key==='Coins'?state.coins:['Evil','Angelic'].includes(key)?state[key]:level(key);
+    const value=key==='Age'?age():key==='Coins'?state.coins:['Evil','Angelic'].includes(key)?state[key]:level(key);
     return value>=target?[]:[key+' '+Math.floor(value).toLocaleString()+'/'+target.toLocaleString()];
   });
   if(!missing.length)state.unlocked[n]=true;
@@ -185,12 +235,16 @@ function step(days){
 }
 function alignmentGain(side){return side==='Evil'?(effect('Evil control')+effect('Blood meditation')):(effect('Pure Heart')+effect('Spiritual Meditation'))}
 function voidGain(){
- if(!state.voidHeart&&state.orbs.Evil&&state.orbs.Angelic)return Math.max(0,Math.floor((age()-100)/2));
- return Math.floor(age()/200*effect('Void attunement')*effect('Void Heart')*(state.superHeart?2:1)*(state.chrono===5?2:1))}
+ if(state.crossedRift)return Math.floor(age()/200*(state.superHeart?2:1)*(state.chrono===5?2:1));
+ return Math.floor(level('Absolute Wish')*effect('Void Embodiment')*(state.superHeart?2:1));
+}
+function heartEvilGain(){
+ return (1+.01*level('Evil control'))*(1+.01*level('Blood meditation'))*effect('Absolute Wish')*effect('Void Embodiment');
+}
 // All levels are earned in the life in which the relic is claimed.
 function relicRequirements(path){
- if(path==='Second Heart')return [['Age',age(),500],['Void regent',level('Void regent'),75],['Void attunement',level('Void attunement'),125],['Void Heart',level('Void Heart'),100],['Banked Void',state.Void,500]];
- if(path==='Rift')return [['Age',age(),600],['Void regent',level('Void regent'),100],['Void Heart',level('Void Heart'),150],['Banked Void',state.Void,2000]];
+ if(path==='Second Heart')return [['Age',age(),500],['Void Slave',level('Void Slave'),75],['Absolute Wish',level('Absolute Wish'),125],['Void Amplification',level('Void Amplification'),100],['Banked Void',state.Void,500]];
+ if(path==='Rift')return [['Age',age(),600],['Void Fiend',level('Void Fiend'),100],['Mind Seize',level('Mind Seize'),150],['Banked Void',state.Void,2000]];
  if(path==='Void')return [['Age',age(),400],['Void to spend',state.Void,heartCost],['Evil Orb',Number(!!state.orbs.Evil),1],['Angelic Orb',Number(!!state.orbs.Angelic),1]];
  const group=path==='Evil'?'Dark magic':'Light magic';
  return [['Age',age(),300],[path,state[path],400],...catalog.filter(e=>e.group===group).map(e=>[e.name,level(e.name),e.name==="Demon's wealth"||e.name==='Bountiful Grace'?100:50])];
@@ -225,7 +279,7 @@ function choices(){
   if(state.voidPath&&state.voidHeart&&!state.superHeart&&relicReady('Second Heart'))return ['Second Heart','Collect Void','Rebirth'];
   if(state.voidPath){
     const actions=['Rebirth'];
-    if(age()>=200)actions.unshift('Collect Void');
+    if(state.voidHeart&&age()>=200)actions.unshift('Collect Void');
     if(!state.voidHeart&&relicReady('Void'))actions.unshift('Void Heart');
     return actions;
   }
@@ -255,7 +309,8 @@ function reset(action){
   }
   else if(action==='Evil'){Evil+=alignmentGain('Evil');Angelic=0}
   else if(action==='Angelic'){Angelic+=alignmentGain('Angelic');Evil=0}
-  if(action==='Collect Void')state.Void+=voidGain();
+  if(action==='Rebirth'&&state.voidPath&&!state.voidHeart)state.Void+=voidGain();
+  if(action==='Collect Void'){state.Void+=voidGain();if(state.voidHeart&&!state.crossedRift)Evil+=heartEvilGain()}
   else if(action==='Second Heart')state.heartPair=true;
   else if(action==='Void Heart'){state.voidHeart=true;state.Void-=heartCost;orbs={};Evil=0;Angelic=0}
   else if(action.endsWith(' orb')){orbs={...orbs,[action.split(' ')[0]]:true};Evil=0;Angelic=0}
@@ -319,7 +374,7 @@ function meter(n){
 }
 function daysPerSecond(now){
  const rested=now<(state.restedUntil||0)?state.restedSpeed:1;
- return 5*state.devSpeed*rested*(potionActive('accelerating')?2:1)*(state.warp?effect('Time warping'):1);
+ return 5*state.devSpeed*rested*(potionActive('accelerating')?2:1)*(state.warp?effect('Time warping')*effect('Temporal Dimension')*effect('Time Loop'):1);
 }
 
 let animatedBars=[], clockLabel, coinLabel, animationId;
@@ -367,18 +422,18 @@ function scheduleMotion(){
  animationId=requestAnimationFrame(frame);
 }
 function list(){
- const groups=state.crossedRift?[{Jobs:'City contracts',Skills:'Augmentations',Shop:'City housing'}[tab]]:tab==='Jobs'?['Common work','Military','The Arcane Association',...(state.voidHeart?['Void work']:[])]:tab==='Skills'?['Fundamentals','Combat','Magic','Dark magic','Light magic',...(state.voidHeart?['Void magic']:[])]:['Properties',...(state.voidHeart?['Void estates']:[]),'Misc'];
+ const groups=state.crossedRift?[{Jobs:'City contracts',Skills:'Augmentations',Shop:'City housing'}[tab]]:tab==='Jobs'?['Common work','Military','The Arcane Association',...(state.voidHeart?['Advanced arcana','The Void']:[])]:tab==='Skills'?['Fundamentals','Combat','Magic','Dark magic','Light magic',...(state.voidHeart?['Advanced arcana','Advanced dark magic']:[]),...(state.voidPath?['Void Manipulation']:[])]:['Properties',...(state.voidHeart?['Void properties','Void equipment']:[]),'Misc'];
  return groups.filter(g=>g!=='Dark magic'||state.Evil).filter(g=>g!=='Light magic'||state.Angelic).map(g=>{
   let lockedShown=false;
-  const rows=catalog.filter(e=>e.group===g&&(e.name!=='Void Heart'||state.voidHeart)).map(e=>{
+  const rows=catalog.filter(e=>e.group===g&&(g!=='Advanced arcana'||Boolean(e.income)===(tab==='Jobs'))&&(g!=='Void Manipulation'||state.voidHeart||e.name==='Absolute Wish')).map(e=>{
    const n=e.name,missing=remaining(n);
-   if(missing.length&&lockedShown&&g!=='Dark magic'&&g!=='Light magic')return '';
+   if(missing.length&&lockedShown&&!voidCatalog.includes(e)&&g!=='Dark magic'&&g!=='Light magic')return '';
    if(missing.length)lockedShown=true;
    const selected=[state.job,state.skill,state.home].includes(n)||state.equipment[n];
    const xpNote=e.maxXp?' · '+fmt(rate(n))+' XP/day':'';
    const info=e.income?fmt(pay(n))+(state.crossedRift?' credits/day':' coins/day'):e.maxXp?(e.isPlusDescription?'+':'×')+effect(n).toFixed(2)+' '+e.description:'×'+e.effect+' '+(e.description||'Happiness');
-   const action=e.income?'job':e.maxXp?'skill':(g==='Properties'||g==='City housing'||g==='Void estates')?'home':'gear';
-   return '<button class="row '+(selected?'on':'')+'" aria-pressed="'+Boolean(selected)+'" data-act="'+action+':'+n+'" '+(missing.length?'disabled':'')+'>'+(state.crossedRift?cityIcon(e.tile,54):g==='Void estates'?estateArt(e.tile):g.startsWith('Void ')?voidArt(e.tile,54,n):sprite(e.tile))+'<span><b>'+n+'</b>'+(selected&&baseLore[n]?'<small>'+baseLore[n]+'</small>':'')+'<small>'+(missing.length?missing.join(' · '):info+xpNote)+'</small></span><span class="right">'+(action==='gear'?(selected?'On · ':'Off · '):'')+(e.maxXp?'<span>Lv. '+level(n)+'</span>'+meter(n):fmt(price(n))+' / day')+'</span></button>';
+   const action=e.income?'job':e.maxXp?'skill':(g==='Properties'||g==='City housing'||g==='Void properties')?'home':'gear';
+   return '<button class="row '+(selected?'on':'')+'" aria-pressed="'+Boolean(selected)+'" data-act="'+action+':'+n+'" '+(missing.length?'disabled':'')+'>'+(state.crossedRift?cityIcon(e.tile,54):g==='Void properties'?estateArt(e.tile%3):voidCatalog.includes(e)?voidArt(e.tile%8,54,n):sprite(e.tile))+'<span><b>'+n+'</b>'+(selected&&baseLore[n]?'<small>'+baseLore[n]+'</small>':'')+'<small>'+(missing.length?missing.join(' · '):info+xpNote)+'</small></span><span class="right">'+(action==='gear'?(selected?'On · ':'Off · '):'')+(e.maxXp?'<span>Lv. '+level(n)+'</span>'+meter(n):fmt(price(n))+' / day')+'</span></button>';
   }).join('');
   return '<h3>'+g+'</h3>'+rows;
  }).join('');
@@ -396,7 +451,7 @@ let inspectingAmulet=false;
 function amulet(){
  if(state.voidPath){
    const available=choices();
-   const titles={'Cross the Rift':'Step through the rift','Void Heart':'Fuse amulet and orbs · 400 Void','Second Heart':'Draw out the second Heart','Super Void Heart':'Combine both Void Hearts','Collect Void':'Collect '+voidGain()+' Void',Rebirth:'Touch the eye'};
+   const titles={'Cross the Rift':'Step through the rift','Void Heart':'Fuse amulet and orbs · 400 Void','Second Heart':'Draw out the second Heart','Super Void Heart':'Combine both Void Hearts','Collect Void':'Collect '+voidGain()+' Void',Rebirth:state.voidHeart?'Rebirth through the Heart':'Touch the eye · bank '+voidGain()+' Void'};
    const passages={
      'Void Heart':'You pour the Void through the eye, a measure for every year of this long life. The copper softens around the two stones. The chain slips through your fingers as a violet heart takes its first beat beneath your ribs.',
      'Cross the Rift':'The knock comes again. This time you answer. A thin line opens in the glass of the amulet, wide enough for a hand, then a shoulder. You step through carrying the memory of every year it took to get here.',
@@ -404,11 +459,11 @@ function amulet(){
      'Super Void Heart':'You cradle one Heart in each hand. They beat against one another until you turn the second to fit the first. The seam closes. Somewhere beyond the amulet, something knocks once in reply.'
    };
    const title=state.superHeart?'Super Void Heart':state.heartPair?'Two Void Hearts':state.voidHeart?'Void Heart':'The twin sockets';
-   const story=state.crossedRift?'You have crossed the rift. Collecting Void now carries this life’s job and skill levels into the next as XP memories.':state.superHeart?'The Super Void Heart doubles every Void collection. Across the rift, something answers its beat.':state.heartPair?'Two Hearts rest in the amulet. Turn them together to seal the bond.':state.voidHeart?'The fused orbs beat as one. Bank Void and master the path again to grow a second Heart.':'Held apart, the two orbs cast ordinary shadows. Held together, they leave a darkness that stays on your fingers. From age 200, collect that Void at rebirth. At age 400, the copper can hold both stones.';
+   const story=state.crossedRift?'You have crossed the rift. Collecting Void now carries this life’s job and skill levels into the next as XP memories.':state.superHeart?'The Super Void Heart doubles every Void collection. Across the rift, something answers its beat.':state.heartPair?'Two Hearts rest in the amulet. Turn them together to seal the bond.':state.voidHeart?'The fused orbs beat as one. Bank Void and master the path again to grow a second Heart.':'Held apart, the two orbs cast ordinary shadows. Held together, they leave a darkness that stays on your fingers. Train Absolute Wish. Each level earned this life banks one Void when you touch the eye to be reborn. At age 400, the copper can hold both stones.';
    const details=pending==='Void Heart'?'Spend 400 Void and consume the amulet and both orbs. Both orb XP bonuses end. Be reborn at 14 with the Void Heart and '+fmt(state.Void-heartCost)+' Void. Current levels, possessions and XP memories reset.':pending==='Cross the Rift'?'Enter the neon city in this life. The Super Void Heart carries over, and collecting Void also preserves XP memories.':pending==='Super Void Heart'?'The two Hearts become one. Void collection doubles permanently. This life continues.':pending==='Collect Void'&&state.crossedRift?'Bank the Void and begin a new life with your current levels as XP memories.':pending==='Rebirth'?'Begin a new life with your current levels as XP memories.':'Begin a new life. Current levels and XP memories reset. Banked Void and permanent bonuses carry over.';
    return '<h2>'+title+'</h2>'+(state.voidHeart?voidArt(8,90,title):sprite(artIndex.icons_amulet_65,76)+sprite(artIndex.icons_angelicorb,50)+sprite(artIndex.icons_evilorb,50))+'<p>'+story+'</p><p>Void collected · '+fmt(state.Void)+(state.voidHeart?'<br>Void skill XP ×'+(1+state.Void/10).toFixed(1):'')+'</p>'+
      (!state.voidHeart?relicProgress('Void'):!state.heartPair&&!state.superHeart?relicProgress('Second Heart'):state.superHeart&&!state.crossedRift?relicProgress('Rift'):'')+
-     available.map(a=>button('ask:'+a,titles[a])).join(' ')+
+     available.map(a=>button('ask:'+a,titles[a]+(a==='Collect Void'&&state.voidHeart?' · +'+heartEvilGain().toFixed(2)+' Evil':''))).join(' ')+
      (pending?'<section class="card"><p>'+(passages[pending]||titles[pending])+'</p><p>'+details+'</p>'+button('accept','Confirm '+pending)+' '+button('cancel','Keep playing')+'</section>':'');
 
 
@@ -480,7 +535,7 @@ screen.onclick=e=>{
  if(a==='potion'&&['happiness','accelerating'].includes(v))drink(v);
  if(a==='devSpeed'&&[1,5,20].includes(Number(v)))state.devSpeed=Number(v);
  if(a==='warp')state.warp=!state.warp;
- if(entries[v]&&(!entries[v].group.startsWith('Void ')||state.voidHeart)&&!remaining(v).length&&!dead()){
+ if(entries[v]&&(!voidCatalog.includes(entries[v])||state.voidHeart||(v==='Absolute Wish'&&state.orbs.Evil&&state.orbs.Angelic))&&!remaining(v).length&&!dead()){
   if(['job','skill'].includes(a))state[a]=v;
   if(a==='home')state.home=state.home===v?(state.crossedRift?'Transit bunk':'Homeless'):v;
   if(a==='gear'){if(state.equipment[v])delete state.equipment[v];else state.equipment[v]=true}
