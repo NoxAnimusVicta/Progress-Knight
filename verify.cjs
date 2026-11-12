@@ -32,7 +32,7 @@ state.orbs=normal;assert.equal(rate('Concentration'),skillBase*25);assert.equal(
 assert(state.voidPath&&!state.voidHeart);assert(!portrait().includes('void-forms.svg'));
 tab='Jobs';assert(!list().includes('Rift keeper'));tab='Shop';assert(!list().includes('Watch hut'));
 tab='Skills';assert(list().includes('Absolute Wish'));assert(!list().includes('Void Amplification'));
-state.days=400*365;assert.equal(voidGain(),0);reset('Rebirth');assert.equal(state.Void,0);
+state.days=200*365;assert.equal(voidGain(),0);reset('Rebirth');assert.equal(state.Void,0);
 for(const l of [1,10,50,100,200,400]){
  state.levels={'Absolute Wish':l,'Blood meditation':l,'Spiritual Meditation':l};
  assert(Math.abs(voidGain()-(alignmentGain('Evil')-1))<1e-10);
@@ -44,11 +44,11 @@ for(let i=0;i<10;i++){state.days=200*365;state.levels['Absolute Wish']=1;reset('
 assert.equal(state.Void,1);state.Void=0;
 for(let i=0;i<20;i++){state.days=200*365;state.levels['Absolute Wish']=200;reset('Embrace Void')}
 assert.equal(state.Void,400);const waiting=JSON.stringify(state);
-state.days=399*365;reset('Void Heart');assert(!state.voidHeart);
-state.days=400*365;state.Void=399.99;reset('Void Heart');assert(!state.voidHeart);
+state.days=200*365-1;reset('Void Heart');assert(!state.voidHeart);
+state.days=200*365;state.Void=399.99;reset('Void Heart');assert(!state.voidHeart);
 state.Void=400;delete state.orbs.Evil;reset('Void Heart');assert(!state.voidHeart);
-state=JSON.parse(waiting);state.days=400*365;state.Void=423;reset('Void Heart');assert.equal(state.Void,23);
-state=JSON.parse(waiting);state.days=400*365;reset('Void Heart');assert.equal(state.Void,0);
+state=JSON.parse(waiting);state.days=200*365;state.Void=423;reset('Void Heart');assert.equal(state.Void,23);
+state=JSON.parse(waiting);state.days=200*365;reset('Void Heart');assert.equal(state.Void,0);
 assert(state.voidHeart&&state.voidPath&&age()===14);assert.deepEqual(Object.keys(state.orbs),[]);assert(portrait().includes('void-forms.svg'));
 tab='Shop';assert(list().includes('Town Ruler'));tab='Jobs';assert(list().includes('Corrupted'));tab='Skills';assert(list().includes('Absolute Wish'));
 assert.equal(voidCatalog.filter(e=>e.group==='The Void').length,8);assert.equal(voidCatalog.filter(e=>e.group==='Void Manipulation').length,7);
