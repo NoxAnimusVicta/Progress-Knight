@@ -55,6 +55,12 @@ body[data-path]:not([data-path=""]) .xp-track i{background:linear-gradient(90deg
  @keyframes level-settle{from{transform:translateY(2px);opacity:.65}to{transform:translateY(0);opacity:1}}
 }
 .city .play-controls{background:#090f18}
+
+.play-controls nav{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
+.play-controls nav button{min-width:0;height:44px;padding:0 2px;white-space:nowrap}
+.row .right{flex:0 0 6rem;min-width:0;font-variant-numeric:tabular-nums}
+.row .row-status{height:2.4em;display:flex;align-items:flex-end;justify-content:flex-end;font-size:12px;line-height:1.2}
+@media(max-width:400px){.play-controls nav button{font-size:.9rem}.row .right{flex-basis:5.4rem}}
 </style><main><header><img src="./icon-192.png" alt="" width="40" height="40" style="vertical-align:middle;border-radius:8px"> Progress Knight <span>REMASTERED</span></header><div id="screen"></div><details id="save-tools" class="card"><summary>Save &amp; backup</summary><p><label><input id="alignment-ui" type="checkbox"> Use alignment appearance</label></p><p><label><input id="level-feedback" type="checkbox"> Show level-up highlights</label></p><p><a href="./previous.html">Earlier prototype save</a></p><p>Download your campaign to keep a copy or move it to another device.</p><button id="export-save">Download backup</button> <label>Restore from file <input id="import-file" type="file" accept=".json,application/json"></label><p id="backup-status" aria-live="polite"></p><button hidden id="confirm-restore">Restore this campaign</button> <button hidden id="cancel-restore">Cancel</button></details></main><script src="./balance.js"></script><script src="./remastered.js"></script><script src="./save-tools.js"></script></html>
 
 
