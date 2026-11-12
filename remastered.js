@@ -422,10 +422,17 @@ const amuletStory={
  broken:'<h3>The setting cracks · Age 300</h3><p>A hairline split runs across the copper. Underneath, a stone has taken the colour of this life. The last thread holding it fast gives a little each time you practise your craft.</p>'
 };
 let inspectingAmulet=false;
+function heartForge(){
+ const ready=choices().includes('Void Heart');
+ const needs=relicRequirements('Void').filter(([,value,target])=>value<target)
+   .map(([label,value,target])=>label.endsWith('Orb')?label:label+' '+formatVoid(value)+' / '+target);
+ return '<section class="card"><button class="primary" data-act="ask:Void Heart" '+(ready?'':'disabled')+'>Create Void Heart</button><p>'+
+   (ready?'Ready to fuse · consumes 400 Void and both orbs.':'Requires · '+needs.join(' · '))+'</p></section>';
+}
 function amulet(){
  if(state.voidPath){
    const available=choices();
-   const titles={'Cross the Rift':'Step through the rift','Void Heart':'Fuse amulet and orbs · 400 Void','Second Heart':'Draw out the second Heart','Super Void Heart':'Combine both Void Hearts','Embrace Void':embraceLabel('Void',voidGain()),Rebirth:'Rebirth with XP memories'};
+   const titles={'Cross the Rift':'Step through the rift','Void Heart':'Create Void Heart','Second Heart':'Draw out the second Heart','Super Void Heart':'Combine both Void Hearts','Embrace Void':embraceLabel('Void',voidGain()),Rebirth:'Rebirth with XP memories'};
    const passages={
      'Void Heart':'You pour the Void through the eye, a measure for every year of this long life. The copper softens around the two stones. The chain slips through your fingers as a violet heart takes its first beat beneath your ribs.',
      'Cross the Rift':'The knock comes again. This time you answer. A thin line opens in the glass of the amulet, wide enough for a hand, then a shoulder. You step through carrying the memory of every year it took to get here.',
@@ -436,8 +443,8 @@ function amulet(){
    const story=state.crossedRift?'You have crossed the rift. The relay can let you embrace Void or record the memories of a life.':state.superHeart?'The Super Void Heart doubles your Void gain. Across the rift, something answers its beat.':state.heartPair?'Two Hearts rest in the amulet. Turn them together to seal the bond.':state.voidHeart?'The fused orbs beat as one. Embrace Void and master the path again to grow a second Heart.':'Held apart, the two orbs cast ordinary shadows. Held together, they leave a darkness that stays on your fingers. Train Absolute Wish. From age 200, choose Embrace Void to exchange every ten levels earned this life for one Void. Embracing Void clears your XP memories. At age 400, the copper can hold both stones.';
    const details=pending==='Void Heart'?'Spend 400 Void and consume the amulet and both orbs. Both orb XP bonuses end. Be reborn at 14 with the Void Heart and '+formatVoid(roundVoid(state.Void-heartCost))+' Void. Current levels, possessions and XP memories reset.':pending==='Cross the Rift'?'Enter the neon city in this life. The Super Void Heart carries over. The terminal offers separate memory and Void resets.':pending==='Super Void Heart'?'The two Hearts become one. Void gain doubles permanently. This life continues.':pending==='Embrace Void'?'Gain '+voidGain()+' Void. Current levels and all previous XP memories are cleared.':pending==='Rebirth'?'Begin a new life with your current levels as XP memories.':'Begin a new life. Current levels and XP memories reset. Void and permanent bonuses carry over.';
    return '<h2>'+title+'</h2>'+(state.voidHeart?voidArt(8,90,title):sprite(artIndex.icons_amulet_65,76)+sprite(artIndex.icons_angelicorb,50)+sprite(artIndex.icons_evilorb,50))+'<p>'+story+'</p><p>Void · '+formatVoid(state.Void)+(state.voidHeart?'<br>Void skill XP ×'+(1+state.Void/10).toFixed(1):'')+'</p>'+
-     (!state.voidHeart?relicProgress('Void'):!state.heartPair&&!state.superHeart?relicProgress('Second Heart'):state.superHeart&&!state.crossedRift?relicProgress('Rift'):'')+
-     available.map(a=>button('ask:'+a,titles[a]+(a==='Embrace Void'&&state.voidHeart?' · +'+heartEvilGain().toFixed(2)+' Evil':''))).join(' ')+
+     (!state.voidHeart?heartForge():!state.heartPair&&!state.superHeart?relicProgress('Second Heart'):state.superHeart&&!state.crossedRift?relicProgress('Rift'):'')+
+     available.filter(a=>a!=='Void Heart').map(a=>button('ask:'+a,titles[a]+(a==='Embrace Void'&&state.voidHeart?' · +'+heartEvilGain().toFixed(2)+' Evil':''))).join(' ')+
      (pending?'<section class="card"><p>'+(passages[pending]||titles[pending])+'</p><p>'+details+'</p>'+button('accept',pending==='Embrace Void'?'Confirm Void':('Confirm '+pending))+' '+button('cancel','Keep playing')+'</section>':'');
 
 
@@ -449,7 +456,7 @@ function amulet(){
  const chapter=years>=300&&(state.Evil||state.Angelic)?'broken':years>=200?(state.Evil?'evil':state.Angelic?'angelic':'paths'):years>=65?'eye':years>=45?'etching':'found';
  const inspection=years<65?'<p>The lid holds fast under your thumb.</p>':chapter==='eye'?'<p>Touch the eye to wake at fourteen. Your coins and equipment stay behind. Each remembered job or skill grants ×(1 + its level / 10) XP in your next life.</p><p>Concentration · ×'+(1+level('Concentration')/10).toFixed(1)+' next life. Around the rim are two hundred small notches.</p>':'';
  const artwork=sprite(artIndex['icons_amulet_'+art],90);
- return '<h2>Amulet</h2>'+(inspection?button('inspect',artwork+'<br>Inspect amulet'):artwork)+amuletStory[chapter]+
+ return '<h2>Amulet</h2>'+(inspection?button('inspect',artwork+'<br>Inspect amulet'):artwork)+amuletStory[chapter]+heartForge()+
  (state.Evil&&!state.orbs.Evil?relicProgress('Evil'):state.Angelic&&!state.orbs.Angelic?relicProgress('Angelic'):'')+
  (inspectingAmulet?inspection:'')+
  actions.map(a=>button('ask:'+a,a==='Rebirth'?'Touch the eye':a.endsWith('orb')?sprite(artIndex['icons_'+a.split(' ')[0].toLowerCase()+'orb'],44)+' Claim '+(a==='Angelic orb'?'Angelic Orb':'Evil Orb')+' · ×5 skill XP':embraceLabel(a,alignmentGain(a)))).join(' ')+
