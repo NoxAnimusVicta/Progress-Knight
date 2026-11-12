@@ -60,50 +60,7 @@ function cityLoadout(s){
  if(entries[s.skill]?.group!=='Augmentations')s.skill='Neural link';
  if(entries[s.home]?.group!=='City housing')s.home='Transit bunk';
 }
-const baseLore = {
-  "Beggar": "The baker leaves the back step dry for you. On good mornings he leaves a heel of bread there too.",
-  "Farmer": "You learn the weight of rain by the way the barley bends.",
-  "Fisherman": "While the village sleeps, you mend yesterday’s nets by touch.",
-  "Miner": "You can hear a hollow seam one tap before the pick breaks through.",
-  "Blacksmith": "People recognise your work by the little crescent your hammer leaves in a hinge.",
-  "Merchant": "By winter you know which villages will trade flour for lamp oil.",
-  "Squire": "The knight remembers the charge. You remember which buckle nearly failed.",
-  "Footman": "At dusk you can find your place in the line by the sound of the boots beside you.",
-  "Veteran footman": "The recruits watch your hands when the first horn sounds.",
-  "Knight": "A village sends a horse for you before it sends word to the crown.",
-  "Veteran knight": "You walk the field before dawn and count the places a frightened rider might fall.",
-  "Elite knight": "Your orders arrive sealed. The stable hands have already saddled your horse.",
-  "Holy knight": "Someone ties a strip of linen to your bridle for every soldier you bring home.",
-  "Legendary knight": "Children play at being you in towns you have never visited.",
-  "Student": "The first spell you copy is a light small enough to read the second by.",
-  "Apprentice mage": "Your master lets you wind the clock whose hands run backwards.",
-  "Mage": "The tower gives you a key and asks that you record everything you hear behind its door.",
-  "Wizard": "A candle burns blue for three days before you find the error in the margin.",
-  "Master wizard": "Former pupils send you their impossible questions. Some arrive decades before they are posted.",
-  "Chairman": "At the head of the long table, you finally recognise the handwriting in the oldest minutes.",
-  "Concentration": "You follow a single rain drop down the pane while the whole room argues.",
-  "Productivity": "Lay out tomorrow’s tools before you put out tonight’s lamp.",
-  "Bargaining": "A patient silence has bought you more than a clever speech.",
-  "Meditation": "You sit until the chapel bell sounds like part of the wind.",
-  "Strength": "By harvest the water pails hang straight from your hands.",
-  "Battle tactics": "On a kitchen table, beans and a salt cellar become a hill worth defending.",
-  "Muscle memory": "Your hands remember the knot after your tongue forgets its name.",
-  "Mana control": "Hold a spark between finger and thumb until the paper beneath it stays cool.",
-  "Immortality": "The physician counts your pulse twice, then asks to borrow your notebook.",
-  "Time warping": "For one breath you hear both ends of the bell stroke.",
-  "Super immortality": "The tree you planted as a child has fallen. You plant another in its place.",
-  "Dark influence": "People lower their voices before you enter the room.",
-  "Intimidation": "The toll keeper returns your coin and lifts the bar himself.",
-  "Evil control": "You teach the thing behind your temper to wait for a word.",
-  "Demon training": "Your shadow finishes the exercise after you have laid the sword down.",
-  "Blood meditation": "Under your palm, the red stone keeps time with a slower pulse.",
-  "Demon's wealth": "In your counting house the scales tip before the last coin lands.",
-  "Divine Blessing": "A traveller lights a candle for you in a town whose name you never learned.",
-  "Healing Aura": "The fever breaks while you are changing the water at the bedside.",
-  "Pure Heart": "You return a purse anonymously. Years later its owner does the same.",
-  "Angel's Guidance": "You wake with the last line of a prayer you heard only once.",
-  "Spiritual Meditation": "At the end of the vigil you can pick out every voice in the chorus.",
-  "Bountiful Grace": "One sack of grain feeds the whole street. The miller quietly brings another.",
+const shopLore = {
   "Homeless": "A stone warmed by the bakery wall marks your place for the night.",
   "Tent": "For the first time you can listen to rain without getting up.",
   "Wooden hut": "You cut a notch in the doorpost for the first winter you spend here.",
@@ -473,7 +430,7 @@ function list(){
    const xpNote=e.maxXp?' · '+fmt(rate(n))+' XP/day':'';
    const info=n==='Absolute Wish'?('+'+voidGain()+' '+e.description):e.income?fmt(pay(n))+(state.crossedRift?' credits/day':' coins/day'):e.maxXp?(e.isPlusDescription?'+':'×')+effect(n).toFixed(2)+' '+e.description:'×'+e.effect+' '+(e.description||'Happiness');
    const action=e.income?'job':e.maxXp?'skill':(g==='Properties'||g==='City housing'||g==='Void properties')?'home':'gear';
-   return '<button class="row '+(selected?'on':'')+(feedback?' recent-level':'')+'" aria-pressed="'+Boolean(selected)+'" data-act="'+action+':'+n+'" '+(missing.length?'disabled':'')+'>'+(state.crossedRift?cityIcon(e.tile,54):voidCatalog.includes(e)?catalogArt(e):sprite(e.tile))+'<span><b>'+n+'</b>'+(selected&&baseLore[n]?'<small>'+baseLore[n]+'</small>':'')+'<small>'+(missing.length?missing.join(' · '):info+xpNote)+'</small></span><span class="right">'+(action==='gear'?(selected?'On · ':'Off · '):selected?'<small>✓ Active</small>':'')+(e.maxXp?'<span>Lv. '+level(n)+'</span>'+meter(n)+(feedback?'<small class="level-gain">'+feedback+'</small>':''):fmt(price(n))+' / day')+'</span></button>';
+   return '<button class="row '+(selected?'on':'')+(feedback?' recent-level':'')+'" aria-pressed="'+Boolean(selected)+'" data-act="'+action+':'+n+'" '+(missing.length?'disabled':'')+'>'+(state.crossedRift?cityIcon(e.tile,54):voidCatalog.includes(e)?catalogArt(e):sprite(e.tile))+'<span><b>'+n+'</b>'+(selected&&shopLore[n]?'<small>'+shopLore[n]+'</small>':'')+'<small>'+(missing.length?missing.join(' · '):info+xpNote)+'</small></span><span class="right">'+(action==='gear'?(selected?'On · ':'Off · '):selected?'<small>✓ Active</small>':'')+(e.maxXp?'<span>Lv. '+level(n)+'</span>'+meter(n)+(feedback?'<small class="level-gain">'+feedback+'</small>':''):fmt(price(n))+' / day')+'</span></button>';
   }).join('');
   return '<h3>'+g+'</h3>'+rows;
  }).join('');
