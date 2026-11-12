@@ -2,6 +2,13 @@ const backupFormat = 'progress-knight-personal-remastered';
 const el = id => document.getElementById(id);
 const report = message => { el('backup-status').textContent = message; };
 let restoreCandidate = null;
+const appearance=el('alignment-ui');
+appearance.checked=alignmentUI;
+appearance.onchange=()=>{
+  alignmentUI=appearance.checked;
+  try{localStorage.setItem('pk-alignment-ui',alignmentUI?'on':'off')}catch{}
+  render();
+};
 
 function makeBackup() {
   advance();
@@ -92,7 +99,7 @@ el('confirm-restore').onclick=()=>{
   const restored={...restoreCandidate,clock:Date.now()};
   try{localStorage.setItem(saveKey,JSON.stringify(restored));}
   catch{report('Restore failed. Device storage is unavailable.');return;}
-  state=restored;pending='';tab='Jobs';chosen=state.hero||'Magnus';clearCandidate();render();
+  state=restored;pending='';tab='Jobs';chosen=state.hero||'Magnus';inspectingAmulet=false;clearCandidate();render();
   report('Backup restored.');
 };
 

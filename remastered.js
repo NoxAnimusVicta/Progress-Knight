@@ -320,7 +320,22 @@ function reset(action){
 function save(){try{localStorage.setItem(saveKey,JSON.stringify(state))}catch{statusText='Save unavailable in this browser.'}}
 let tab='Jobs',chosen='Magnus',pending='',statusText='';
 const screen=document.querySelector('#screen');
-const fmt=n=>Math.floor(n).toLocaleString();
+const compactNumber=new Intl.NumberFormat('en',{notation:'compact',maximumFractionDigits:2});
+function fmt(value){
+ if(Math.abs(value)>=1e15)return value.toExponential(2);
+ return Math.abs(value)>=1e6?compactNumber.format(value):Math.floor(value).toLocaleString();
+}
+function pathTheme(){
+ if(state.crossedRift)return '';
+ if(state.voidHeart)return 'void';
+ if(state.voidPath)return '';
+ if(state.Evil)return 'evil';
+ if(state.Angelic)return 'angelic';
+ return '';
+}
+let alignmentUI=true;
+try{alignmentUI=localStorage.getItem('pk-alignment-ui')!=='off'}catch{}
+
 function sprite(i,size=54){
  return '<span aria-hidden="true" class="sprite" style="width:'+size+'px;height:'+size+'px;background-size:'+size*10+'px '+size*atlasRows+'px;background-position:'+(-size*(i%10))+'px '+(-size*Math.floor(i/10))+'px"></span>';
 }
@@ -368,9 +383,15 @@ function portrait(){
    return '<span role="img" aria-label="'+state.hero+', age '+years+'" class="centenarian'+variant+'"></span>';
  }
  const stage=dead()?'dead':years>=100?120:years>=65?60:years>=45?45:years>=30?30:14;
- return sprite(artIndex['avatar_'+state.hero.toLowerCase()+'_'+stage+alignment],76);
+ const prefix='avatar_'+state.hero.toLowerCase()+'_';
+ const tile=artIndex[prefix+stage+alignment]??artIndex[prefix+stage];
+ return sprite(tile,76);
 }
-function button(a,label,on=false){return '<button data-act="'+a+'" class="'+(on?'on':'')+'">'+label+'</button>'}
+function button(action,label,selected=false){
+ const isToggle=['tab','devSpeed','warp','potion'].includes(action.split(':')[0]);
+ const pressed=isToggle?' aria-pressed="'+Boolean(selected)+'"':'';
+ return '<button data-act="'+action+'" class="'+(selected?'on':'')+'"'+pressed+'>'+label+'</button>';
+}
 function meter(n){
  const fraction=(state.xp[n]||0)/threshold(n);
  return '<div class="bar xp-track" data-meter="'+n+'"><i style="transform:scaleX('+fraction+')"></i></div>';
@@ -436,7 +457,7 @@ function list(){
    const xpNote=e.maxXp?' · '+fmt(rate(n))+' XP/day':'';
    const info=n==='Absolute Wish'?('+'+voidGain()+' '+e.description):e.income?fmt(pay(n))+(state.crossedRift?' credits/day':' coins/day'):e.maxXp?(e.isPlusDescription?'+':'×')+effect(n).toFixed(2)+' '+e.description:'×'+e.effect+' '+(e.description||'Happiness');
    const action=e.income?'job':e.maxXp?'skill':(g==='Properties'||g==='City housing'||g==='Void properties')?'home':'gear';
-   return '<button class="row '+(selected?'on':'')+'" aria-pressed="'+Boolean(selected)+'" data-act="'+action+':'+n+'" '+(missing.length?'disabled':'')+'>'+(state.crossedRift?cityIcon(e.tile,54):voidCatalog.includes(e)?catalogArt(e):sprite(e.tile))+'<span><b>'+n+'</b>'+(selected&&baseLore[n]?'<small>'+baseLore[n]+'</small>':'')+'<small>'+(missing.length?missing.join(' · '):info+xpNote)+'</small></span><span class="right">'+(action==='gear'?(selected?'On · ':'Off · '):'')+(e.maxXp?'<span>Lv. '+level(n)+'</span>'+meter(n):fmt(price(n))+' / day')+'</span></button>';
+   return '<button class="row '+(selected?'on':'')+'" aria-pressed="'+Boolean(selected)+'" data-act="'+action+':'+n+'" '+(missing.length?'disabled':'')+'>'+(state.crossedRift?cityIcon(e.tile,54):voidCatalog.includes(e)?catalogArt(e):sprite(e.tile))+'<span><b>'+n+'</b>'+(selected&&baseLore[n]?'<small>'+baseLore[n]+'</small>':'')+'<small>'+(missing.length?missing.join(' · '):info+xpNote)+'</small></span><span class="right">'+(action==='gear'?(selected?'On · ':'Off · '):selected?'<small>✓ Active</small>':'')+(e.maxXp?'<span>Lv. '+level(n)+'</span>'+meter(n):fmt(price(n))+' / day')+'</span></button>';
   }).join('');
   return '<h3>'+g+'</h3>'+rows;
  }).join('');
@@ -485,9 +506,22 @@ function amulet(){
  (pending?'<div class="card"><p>'+(pending==='Rebirth'?'Your current levels become your next life’s XP memories.':'This resets your current levels and XP memories. Your earned orbs carry forward.')+'</p>'+button('accept','Confirm '+pending)+' '+button('cancel','Keep playing')+'</div>':'')+
  '<p>Lives lived · '+state.life+'<br>Evil · '+state.Evil.toFixed(2)+'　Angelic · '+state.Angelic.toFixed(2)+'</p>'+Object.keys(state.orbs).map(o=>sprite(artIndex['icons_'+o.toLowerCase()+'orb'])+' '+o+' orb').join(' ');
 }
-function render(){draw();bindMotion();scheduleMotion()}
+function render(){
+ const focus=document.activeElement;
+ const action=screen.contains?.(focus)?focus?.dataset?.act:null;
+ draw();bindMotion();scheduleMotion();
+ if(action){
+   const replacement=Array.from(screen.querySelectorAll('button[data-act]')).find(b=>b.dataset.act===action);
+   replacement?.focus({preventScroll:true});
+ }
+}
 function draw(){
- if(document.body)document.body.classList.toggle('city',!!state.crossedRift);
+ const theme=pathTheme();
+ if(document.body){
+   document.body.classList.toggle('city',!!state.crossedRift);
+   document.body.dataset.path=alignmentUI?theme:'';
+ }
+
  if(!state.hero){
    const cards=['Magnus','Isabella'].map(name=>{
      const selected=chosen===name;
@@ -498,7 +532,7 @@ function draw(){
    screen.innerHTML=`<section class="launch"><h1>Choose your character</h1><div class="roster">${cards}</div><button type="button" class="primary" data-act="begin">Continue as ${chosen}</button></section>`;
    return;
  }
- const rested=Date.now()<(state.restedUntil||0)?' · Rested speed ×'+state.restedSpeed.toFixed(2):'';const top='<div class="card profile">'+portrait()+'<div><b>'+state.hero+'</b> · Life '+state.life+'<br><span data-clock>Age '+age()+' · '+Math.floor(state.days%365)+' days</span> · Lifespan '+Math.floor(lifespan())+'<br><span class="gold">◉ <span data-coins>'+fmt(state.coins)+'</span> · '+fmt(pay(state.job)-upkeep())+' net/day</span><br>Happiness ×'+happy().toFixed(2)+rested+'</div></div>';
+ const rested=Date.now()<(state.restedUntil||0)?' · Rested speed ×'+state.restedSpeed.toFixed(2):'';const top='<div class="card profile">'+portrait()+'<div>'+(theme?'<small class="path-stat">'+({evil:'Evil · '+fmt(state.Evil),angelic:'Angelic · '+fmt(state.Angelic),void:'Void · '+fmt(state.Void)})[theme]+'</small>':'')+'<b>'+state.hero+'</b> · Life '+state.life+'<br><span data-clock>Age '+age()+' · '+Math.floor(state.days%365)+' days</span> · Lifespan '+Math.floor(lifespan())+'<br><span class="gold">◉ <span data-coins>'+fmt(state.coins)+'</span> · '+fmt(pay(state.job)-upkeep())+' net/day</span><br>Happiness ×'+happy().toFixed(2)+rested+'</div></div>';
  if(state.crossedRift){
    if(dead())tab='Amulet';
    const where=tab==='Amulet'?'Terminal':tab==='Jobs'?'Contracts':tab==='Skills'?'Augments':'Housing';
@@ -509,7 +543,7 @@ function draw(){
 
  if(dead())tab='Amulet';
  const nav=['Jobs','Skills','Shop',...(age()>=25||state.voidPath?['Amulet']:[])];
- screen.innerHTML=top+'<nav>'+nav.map(t=>button('tab:'+t,t==='Amulet'&&state.voidHeart?'Heart':t,t===tab)).join('')+'</nav><section class="card">'+(tab==='Amulet'?amulet():list())+'</section><footer>'+state.job+' · Lv. '+level(state.job)+'　'+state.skill+' · Lv. '+level(state.skill)+'<p>'+button('pause',state.paused?'Resume':'Pause')+' '+(level('Time warping')?button('warp','Time warping '+(state.warp?'on':'off')):'')+'</p>'+['happiness','accelerating'].map(k=>button('potion:'+k,(k==='happiness'?'Happiness':'Speed')+' ×2 · '+(potionActive(k)?Math.ceil((state[k+'Until']-Date.now())/1000)+'s':'10 min'),potionActive(k))).join(' ')+'<p>Developer speed　'+[1,5,20].map(v=>button('devSpeed:'+v,v+'×',state.devSpeed===v)).join(' ')+'</p><p><a href="./previous.html">Earlier prototype save</a></p>'+statusText+'</footer>';
+ screen.innerHTML=top+'<nav>'+nav.map(t=>button('tab:'+t,t==='Amulet'&&state.voidHeart?'Heart':t,t===tab)).join('')+'</nav><section class="card">'+(tab==='Amulet'?amulet():list())+'</section><footer>'+state.job+' · Lv. '+level(state.job)+'　'+state.skill+' · Lv. '+level(state.skill)+'<p>'+button('pause',state.paused?'Resume':'Pause')+' '+(level('Time warping')?button('warp','Time warping '+(state.warp?'on':'off'),state.warp):'')+'</p>'+['happiness','accelerating'].map(k=>button('potion:'+k,(k==='happiness'?'Happiness':'Speed')+' ×2 · '+(potionActive(k)?Math.ceil((state[k+'Until']-Date.now())/1000)+'s':'10 min'),potionActive(k))).join(' ')+'<p>Developer speed　'+[1,5,20].map(v=>button('devSpeed:'+v,v+'×',state.devSpeed===v)).join(' ')+'</p>'+statusText+'</footer>';
 }
 function advance(){
  const now=Date.now(),elapsed=Math.max(0,(now-state.clock)/1000);state.clock=now;
