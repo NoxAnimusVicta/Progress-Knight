@@ -1,5 +1,5 @@
 const prefix = 'progress-knight-' + self.registration.scope + '-';
-const cacheName = prefix + 'void-catalog-art-2';
+const cacheName = prefix + 'absolute-wish-void-1';
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(cacheName).then(cache => cache.addAll([
     './', './index.html', './previous.html','./centenarians.jpg','./isabella-100.jpg','./save-tools.js','./balance.js','./remastered.js','./remastered-art.jpg','./void-icons.webp','./void-catalog.webp','./neon-city.webp','./chronotech.webp','./city-portraits.webp','./void-forms.svg','./game.js', './late-art.jpg', './activity-art.jpg', './Magnus.png', './Isabella.png', './icon-180.png','./icon-192.png', './icon-512.png', './manifest.webmanifest'
