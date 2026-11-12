@@ -29,14 +29,14 @@ const voidCatalog=[
  {"name":"Void Blade","expense":502050000000,"effect":3,"description":"Ability XP","group":"Void equipment","tile":4,"requirements":{"Coins":50205000000000}},
  {"name":"Void Orb","expense":1202050000000,"effect":3,"description":"Void Manipulation XP","group":"Void equipment","tile":5,"requirements":{"Coins":120205000000000}},
  {"name":"Void Dust","expense":25002050000000,"effect":3,"description":"The Void XP","group":"Void equipment","tile":6,"requirements":{"Coins":2500205000000000}},
- {"name":"Adept Mage","maxXp":10000000,"income":9500,"group":"Advanced arcana","tile":0,"requirements":{"Mana control":700,"Apprentice mage":10}},
- {"name":"Archmage","maxXp":10000000000,"income":350000,"group":"Advanced arcana","tile":1,"requirements":{"Mana control":1200,"Master wizard":10}},
- {"name":"Chronomancer","maxXp":2000000000000,"income":1000000,"group":"Advanced arcana","tile":2,"requirements":{"Mana control":1500,"Meditation":1500,"Archmage":25}},
- {"name":"Imperator","maxXp":9000000000000000,"income":60000000,"group":"Advanced arcana","tile":3,"requirements":{"All Seeing Eye":3000,"Concentration":3000,"Chairman":666}},
- {"name":"All Seeing Eye","maxXp":100,"effect":0.0027,"description":"T.A.A Pay","group":"Advanced arcana","tile":4,"requirements":{"Mana control":2500,"Chairman":100}},
+ {"name":"Adept Mage","maxXp":10000000,"income":9500,"group":"Advanced arcana","tile":0,"requirements":{"Mage":10}},
+ {"name":"Archmage","maxXp":10000000000,"income":350000,"group":"Advanced arcana","tile":1,"requirements":{"Adept Mage":25,"Astral Body":50,"Master wizard":10}},
+ {"name":"Chronomancer","maxXp":2000000000000,"income":1000000,"group":"Advanced arcana","tile":2,"requirements":{"Archmage":25,"All Seeing Eye":50,"Time warping":100}},
+ {"name":"Imperator","maxXp":9000000000000000,"income":60000000,"group":"Advanced arcana","tile":3,"requirements":{"Chronomancer":50,"Temporal Dimension":100,"Chairman":100}},
+ {"name":"All Seeing Eye","maxXp":100,"effect":0.0027,"description":"T.A.A Pay","group":"Advanced arcana","tile":4,"requirements":{"Archmage":10}},
  {"name":"Temporal Dimension","maxXp":100,"effect":0.025,"description":"Gamespeed","group":"Advanced arcana","tile":5,"requirements":{"Chronomancer":25}},
  {"name":"Brainwashing","maxXp":100,"effect":-0.01,"description":"Reduced Expenses","group":"Advanced arcana","tile":6,"requirements":{"Imperator":100}},
- {"name":"Astral Body","maxXp":100,"effect":0.0035,"description":"Longer lifespan","group":"Advanced arcana","tile":7,"requirements":{"Archmage":10}},
+ {"name":"Astral Body","maxXp":100,"effect":0.0035,"description":"Longer lifespan","group":"Advanced arcana","tile":7,"requirements":{"Adept Mage":10,"Immortality":50}},
  {"name":"Dark Knowledge","maxXp":100,"effect":0.003,"description":"Class XP","group":"Advanced dark magic","tile":0,"requirements":{"Evil":5000}},
  {"name":"Void Influence","maxXp":100,"effect":0.0028,"description":"All XP","group":"Advanced dark magic","tile":1,"requirements":{"Evil":50000}},
  {"name":"Time Loop","maxXp":100,"effect":0.001,"description":"Gamespeed","group":"Advanced dark magic","tile":2,"requirements":{"Evil":2500000}},
@@ -147,18 +147,17 @@ function rate(n){
   if(e.income)gain*=effect('Productivity')*item('Personal squire');
   else gain*=effect('Concentration')*item('Book')*item('Study desk')*item('Library')*(state.orbs.Evil?5:1)*(state.orbs.Angelic?5:1);
   if(e.group==='Military')gain*=effect('Battle tactics')*item('Steel longsword')*(state.hero==='Isabella'?1.1:1);
-  if(e.group==='The Arcane Association')gain*=effect('Mana control')*(state.hero==='Magnus'?1.1:1);
+  if(e.group==='The Arcane Association'||(e.group==='Advanced arcana'&&e.income))gain*=effect('Mana control')*(state.hero==='Magnus'?1.1:1);
   gain*=effect('Void Influence')*effect('Celestial Influence');
   if(e.income)gain*=effect('Dark Knowledge')*effect('Sacred Knowledge');
   else gain*=effect('Void Symbiosis')*item('Void Blade')*effect('Evil Incarnate')*effect('Grace Incarnate');
   if(e.group==='The Void')gain*=effect('Void Amplification')*item('Void Armor')*item('Void Dust');
   if(e.group==='Advanced dark magic')gain*=state.Evil;
   if(e.group==='Fundamentals')gain*=item("Mind's Eye");
-  if(e.group==='Advanced arcana'&&e.income)gain*=effect('Mana control');
   if(e.group==='Magic'||(e.group==='Advanced arcana'&&!e.income))gain*=item('Observatory');
   if(e.group==='Void Manipulation')gain*=(1+state.Void/10)*item('Void Necklace')*item('Void Orb');
   if(n==='Strength')gain*=effect('Muscle memory')*item('Dumbbells');
-  if(e.group==='Magic')gain*=item('Sapphire charm');
+  if(e.group==='Magic'||(e.group==='Advanced arcana'&&!e.income))gain*=item('Sapphire charm');
   if(e.group==='Dark magic')gain*=state.Evil;
   if(e.group==='Light magic'||e.group==='Advanced Angelic')gain*=state.Angelic;
   return Math.round(gain);
@@ -412,11 +411,19 @@ function scheduleMotion(){
  };
  animationId=requestAnimationFrame(frame);
 }
+function showAdvancedMagic(){
+ return state.voidHeart||state.unlocked['Adept Mage']||level('Mage')>=10||Object.keys(state.memory).some(name=>entries[name]?.group==='Advanced arcana'&&state.memory[name]>0);
+}
 function list(){
- const groups=state.crossedRift?[{Jobs:'City contracts',Skills:'Augmentations',Shop:'City housing'}[tab]]:tab==='Jobs'?['Common work','Military','The Arcane Association',...(state.voidHeart?['Advanced arcana','The Void']:[])]:tab==='Skills'?['Fundamentals','Combat','Magic','Dark magic','Advanced dark magic','Light magic','Advanced Angelic','Void Manipulation']:['Properties',...(state.voidHeart?['Void properties','Void equipment']:[]),'Misc'];
+ const groups=state.crossedRift?[{Jobs:'City contracts',Skills:'Augmentations',Shop:'City housing'}[tab]]:tab==='Jobs'?['Common work','Military','The Arcane Association',...(showAdvancedMagic()?['Advanced arcana']:[]),...(state.voidHeart?['The Void']:[])]:tab==='Skills'?['Fundamentals','Combat','Magic','Dark magic','Advanced dark magic','Light magic','Advanced Angelic','Void Manipulation']:['Properties',...(state.voidHeart?['Void properties','Void equipment']:[]),'Misc'];
  return groups.filter(g=>ownsSkillPath(state,g)).map(g=>{
   let lockedShown=false;
-  const rows=catalog.filter(e=>(e.group===g&&(g!=='Advanced arcana'||Boolean(e.income)===(tab==='Jobs')))||(g==='Magic'&&state.voidHeart&&e.group==='Advanced arcana'&&!e.income)).map(e=>{
+  const groupEntries=catalog.filter(e=>(e.group===g&&(g!=='Advanced arcana'||Boolean(e.income)===(tab==='Jobs')))||(g==='Magic'&&showAdvancedMagic()&&e.group==='Advanced arcana'&&!e.income));
+  if(g==='Magic'){
+   const order=['Astral Body','All Seeing Eye','Temporal Dimension','Brainwashing'];
+   groupEntries.sort((a,b)=>order.indexOf(a.name)-order.indexOf(b.name));
+  }
+  const rows=groupEntries.map(e=>{
    const n=e.name,missing=remaining(n);
    if(missing.length&&lockedShown&&!voidCatalog.includes(e)&&g!=='Dark magic'&&g!=='Light magic'&&g!=='Advanced Angelic')return '';
    if(missing.length)lockedShown=true;
@@ -427,7 +434,9 @@ function list(){
    const action=e.income?'job':e.maxXp?'skill':(g==='Properties'||g==='City housing'||g==='Void properties')?'home':'gear';
    return '<button class="row '+(selected?'on':'')+(feedback?' recent-level':'')+'" aria-pressed="'+Boolean(selected)+'" data-act="'+action+':'+n+'" '+(missing.length?'disabled':'')+'>'+(state.crossedRift?cityIcon(e.tile,54):voidCatalog.includes(e)?catalogArt(e):sprite(e.tile))+'<span><b>'+n+'</b><small>'+(missing.length?missing.join(' · '):info+xpNote)+'</small></span><span class="right">'+(action==='gear'?(selected?'On · ':'Off · '):selected?(feedback?'<small class="row-status level-gain">'+feedback+'</small>':'<small class="row-status">✓ Active</small>'):'')+(e.maxXp?'<span>Lv. '+level(n)+'</span>'+meter(n):fmt(price(n))+' / day')+'</span></button>';
   }).join('');
-  return '<h3>'+g+'</h3>'+rows;
+  const academyHint=g==='The Arcane Association'&&!showAdvancedMagic()&&(state.unlocked.Mage||level('Mage')>0)
+    ? '<p>Advanced mage careers unlock at Mage '+level('Mage')+' / 10.</p>':'';
+  return '<h3>'+g+'</h3>'+rows+academyHint;
  }).join('');
 }
 const amuletStory={
@@ -552,7 +561,7 @@ screen.onclick=e=>{
  if(a==='potion'&&['happiness','accelerating'].includes(v))drink(v);
  if(a==='devSpeed'&&[1,5,20].includes(Number(v)))state.devSpeed=Number(v);
  if(a==='warp')state.warp=!state.warp;
- if(entries[v]&&(!voidCatalog.includes(entries[v])||state.voidHeart||entries[v].group==='Advanced dark magic')&&!remaining(v).length&&!dead()){
+ if(entries[v]&&(!voidCatalog.includes(entries[v])||state.voidHeart||entries[v].group==='Advanced dark magic'||entries[v].group==='Advanced arcana')&&!remaining(v).length&&!dead()){
   if(['job','skill'].includes(a))state[a]=v;
   if(a==='home')state.home=state.home===v?(state.crossedRift?'Transit bunk':'Homeless'):v;
   if(a==='gear'){if(state.equipment[v])delete state.equipment[v];else state.equipment[v]=true}
