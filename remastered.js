@@ -9,7 +9,7 @@ const voidCatalog=[
  {"name":"Void Reaver","maxXp":2600000000000000000,"income":25000000000,"group":"The Void","tile":5,"requirements":{"Void Amplification":3400,"Void Wraith":250}},
  {"name":"Void Lord","maxXp":28000000000000000000,"income":100000000000,"group":"The Void","tile":6,"requirements":{"Void Symbiosis":3800,"Void Reaver":150}},
  {"name":"Abyss God","maxXp":400000000000000000000,"income":1000000000000,"group":"The Void","tile":7,"requirements":{"Void Embodiment":4700,"Void Lord":750}},
- {"name":"Absolute Wish","maxXp":100,"effect":0.005,"description":"Evil Gain","group":"Void Manipulation","tile":0,"requirements":{"Void Slave":25,"Chairman":300}},
+ {"name":"Absolute Wish","maxXp":100,"description":"Void at rebirth","group":"Void Manipulation","tile":0,"requirements":{"Void Slave":25,"Chairman":300}},
  {"name":"Void Amplification","maxXp":100,"effect":0.01,"description":"The Void XP","group":"Void Manipulation","tile":1,"requirements":{"Void Slave":100,"Absolute Wish":3000}},
  {"name":"Mind Seize","maxXp":100,"effect":0.0006,"description":"Reduced Happiness","group":"Void Manipulation","tile":2,"requirements":{"Void Amplification":3000}},
  {"name":"Ceaseless Abyss","maxXp":100,"effect":0.000585,"description":"Longer Lifespan","group":"Void Manipulation","tile":3,"requirements":{"Void Influence":4000,"Abyss Anomaly":50}},
@@ -239,7 +239,7 @@ function voidGain(){
  return Math.floor(level('Absolute Wish')*effect('Void Embodiment')*(state.superHeart?2:1));
 }
 function heartEvilGain(){
- return (1+.01*level('Evil control'))*(1+.01*level('Blood meditation'))*effect('Absolute Wish')*effect('Void Embodiment');
+ return (1+.01*level('Evil control'))*(1+.01*level('Blood meditation'))*effect('Void Embodiment');
 }
 // All levels are earned in the life in which the relic is claimed.
 function relicRequirements(path){
@@ -434,7 +434,7 @@ function list(){
    if(missing.length)lockedShown=true;
    const selected=[state.job,state.skill,state.home].includes(n)||state.equipment[n];
    const xpNote=e.maxXp?' · '+fmt(rate(n))+' XP/day':'';
-   const info=e.income?fmt(pay(n))+(state.crossedRift?' credits/day':' coins/day'):e.maxXp?(e.isPlusDescription?'+':'×')+effect(n).toFixed(2)+' '+e.description:'×'+e.effect+' '+(e.description||'Happiness');
+   const info=n==='Absolute Wish'?('+'+voidGain()+' '+e.description):e.income?fmt(pay(n))+(state.crossedRift?' credits/day':' coins/day'):e.maxXp?(e.isPlusDescription?'+':'×')+effect(n).toFixed(2)+' '+e.description:'×'+e.effect+' '+(e.description||'Happiness');
    const action=e.income?'job':e.maxXp?'skill':(g==='Properties'||g==='City housing'||g==='Void properties')?'home':'gear';
    return '<button class="row '+(selected?'on':'')+'" aria-pressed="'+Boolean(selected)+'" data-act="'+action+':'+n+'" '+(missing.length?'disabled':'')+'>'+(state.crossedRift?cityIcon(e.tile,54):voidCatalog.includes(e)?catalogArt(e):sprite(e.tile))+'<span><b>'+n+'</b>'+(selected&&baseLore[n]?'<small>'+baseLore[n]+'</small>':'')+'<small>'+(missing.length?missing.join(' · '):info+xpNote)+'</small></span><span class="right">'+(action==='gear'?(selected?'On · ':'Off · '):'')+(e.maxXp?'<span>Lv. '+level(n)+'</span>'+meter(n):fmt(price(n))+' / day')+'</span></button>';
   }).join('');
