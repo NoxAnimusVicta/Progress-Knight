@@ -47,7 +47,7 @@ for(const e of voidCatalog){for(const key of Object.keys(e.requirements))assert(
 state.days=999*365;assert(remaining('Corrupted').length);state.days=1000*365;assert.equal(remaining('Corrupted').length,0);
 assert(remaining('Void Fiend').length);state.levels.Brainwashing=3000;state.levels['Void Slave']=200;assert.equal(remaining('Void Fiend').length,0);
 state.coins=entries['Void Realm'].expense*100-1;assert(remaining('Void Realm').length);state.coins++;assert.equal(remaining('Void Realm').length,0);
-assert(Object.keys(baseLore).length===60);
+for(const name of Object.keys(shopLore))assert(entries[name].expense!==undefined);
 state.days=200*365;const evilWithoutWish=heartEvilGain();state.levels['Absolute Wish']=4;assert.equal(heartEvilGain(),evilWithoutWish);tab='Skills';assert(list().includes('+4 Void at rebirth'));assert.equal(voidGain(),4);reset('Collect Void');assert.equal(state.Void,4);assert(state.voidHeart);assert.equal(age(),14);
 for(const [name,,target] of relicRequirements('Second Heart')){
  if(name==='Age')state.days=target*365;else if(name!=='Banked Void')state.levels[name]=target;
