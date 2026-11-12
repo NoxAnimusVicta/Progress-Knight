@@ -4,7 +4,7 @@ vm.createContext(ctx);for(const file of ['balance.js','remastered.js'])vm.runInC
 vm.runInContext(`
 state.hero='Magnus';
 assert.equal(catalog.filter(e=>e.group!=="City contracts"&&e.income&&!voidCatalog.includes(e)).length,20);
-assert.equal(catalog.filter(e=>e.group!=="Augmentations"&&e.maxXp&&!e.income&&!voidCatalog.includes(e)).length,23);
+assert.equal(catalog.filter(e=>e.group!=="Advanced Angelic"&&e.group!=="Augmentations"&&e.maxXp&&!e.income&&!voidCatalog.includes(e)).length,23);
 assert.equal(catalog.filter(e=>!voidCatalog.includes(e)&&e.group!=="City housing"&&e.expense!==undefined).length,17);
 for(const e of catalog)assert.equal(typeof e.tile,'number');
 for(let i=0;i<1000&&level('Beggar')<10;i++)step(1);
@@ -94,5 +94,10 @@ for(const chapter of [{},{voidPath:true,voidHeart:true},{voidPath:true,voidHeart
  }
  assert(screen.innerHTML.includes('42 / '));assert.equal(level(state.skill),12);
 }
+for(const [key,heading] of [['Evil','Advanced dark magic'],['Angelic','Advanced Angelic'],['Void','Void Manipulation']]){
+ state={...newLife(),hero:'Magnus',voidPath:true,voidHeart:true};tab='Skills';assert(!list().includes('<h3>'+heading+'</h3>'));
+ state[key]=1;assert(list().includes('<h3>'+heading+'</h3>'));assert(!list().includes('<h3>Advanced arcana</h3>'));
+}
+state.Angelic=4999;assert(remaining('Sacred Knowledge').length);state.Angelic=5000;assert.equal(remaining('Sacred Knowledge').length,0);state.Angelic=0;assert(remaining('Sacred Knowledge').length);
 console.log('Verified base progression, orb collectibles and cumulative skill XP, Void jobs, Heart, legacy conversion and Void collection.');
 `,ctx);

@@ -42,6 +42,21 @@ const voidCatalog=[
  {"name":"Time Loop","maxXp":100,"effect":0.001,"description":"Gamespeed","group":"Advanced dark magic","tile":2,"requirements":{"Evil":2500000}},
  {"name":"Evil Incarnate","maxXp":100,"effect":0.0004,"description":"Ability XP","group":"Advanced dark magic","tile":3,"requirements":{"Evil":1000000000}}
 ];
+// Angelic counterparts use the same thresholds and effects as the advanced Evil skills.
+for(const [name,mirror,art] of [
+ ['Sacred Knowledge','Dark Knowledge','Divine Blessing'],
+ ['Celestial Influence','Void Influence',"Angel's Guidance"],
+ ['Eternal Vigil','Time Loop','Pure Heart'],
+ ['Grace Incarnate','Evil Incarnate','Bountiful Grace']
+]){
+ const source=voidCatalog.find(entry=>entry.name===mirror);
+ entries[name]={...source,name,group:'Advanced Angelic',tile:entries[art].tile,requirements:{Angelic:source.requirements.Evil}};
+}
+const pathResource={'Dark magic':'Evil','Advanced dark magic':'Evil','Light magic':'Angelic','Advanced Angelic':'Angelic','Void Manipulation':'Void'};
+function ownsSkillPath(s,group){
+ const key=pathResource[group];
+ return !key||(s[key]>0&&(key!=='Void'||s.voidHeart));
+}
 for(const entry of voidCatalog)entries[entry.name]=entry;
 for(const [name,tile,income,maxXp,requirements] of [
  ['Night courier',0,12,120,{}],['Relay technician',1,90,500,{'Night courier':15,'Neural link':10}],
@@ -99,6 +114,7 @@ function migrateVoid(s){
 
  }
  if(entries[s.skill]?.group==='Void Manipulation'&&(!s.voidHeart||s.Void<entries[s.skill].requirements.Void))s.skill='Concentration';
+ if(entries[s.skill]&&!ownsSkillPath(s,entries[s.skill].group))s.skill='Concentration';
  return s;
 }
 migrateVoid(state);
@@ -132,9 +148,9 @@ function rate(n){
   else gain*=effect('Concentration')*item('Book')*item('Study desk')*item('Library')*(state.orbs.Evil?5:1)*(state.orbs.Angelic?5:1);
   if(e.group==='Military')gain*=effect('Battle tactics')*item('Steel longsword')*(state.hero==='Isabella'?1.1:1);
   if(e.group==='The Arcane Association')gain*=effect('Mana control')*(state.hero==='Magnus'?1.1:1);
-  gain*=effect('Void Influence');
-  if(e.income)gain*=effect('Dark Knowledge');
-  else gain*=effect('Void Symbiosis')*item('Void Blade')*effect('Evil Incarnate');
+  gain*=effect('Void Influence')*effect('Celestial Influence');
+  if(e.income)gain*=effect('Dark Knowledge')*effect('Sacred Knowledge');
+  else gain*=effect('Void Symbiosis')*item('Void Blade')*effect('Evil Incarnate')*effect('Grace Incarnate');
   if(e.group==='The Void')gain*=effect('Void Amplification')*item('Void Armor')*item('Void Dust');
   if(e.group==='Advanced dark magic')gain*=state.Evil;
   if(e.group==='Fundamentals')gain*=item("Mind's Eye");
@@ -144,7 +160,7 @@ function rate(n){
   if(n==='Strength')gain*=effect('Muscle memory')*item('Dumbbells');
   if(e.group==='Magic')gain*=item('Sapphire charm');
   if(e.group==='Dark magic')gain*=state.Evil;
-  if(e.group==='Light magic')gain*=state.Angelic;
+  if(e.group==='Light magic'||e.group==='Advanced Angelic')gain*=state.Angelic;
   return Math.round(gain);
 }
 function pay(n){return Math.round(entries[n].income*(state.crossedRift?effect('Circuit design'):1)*(['Advanced arcana','The Arcane Association'].includes(entries[n].group)?effect('All Seeing Eye'):1)*(1+Math.log10(level(n)+1))*effect("Demon's wealth")*effect('Bountiful Grace')*(entries[n].group==='Military'?effect('Strength'):1))}
@@ -170,6 +186,7 @@ function gain(n,amount){
   }
 }
 function remaining(n){
+  if(!ownsSkillPath(state,entries[n].group))return [pathResource[entries[n].group]+' required'];
   if(entries[n].group==='Void Manipulation')return !state.voidHeart?['Void Heart required']:state.Void<entries[n].requirements.Void?['Void '+formatVoid(state.Void)+' / '+entries[n].requirements.Void]:[];
   if(state.unlocked[n])return [];
   const missing=Object.entries(entries[n].requirements).flatMap(([key,target])=>{
@@ -348,7 +365,7 @@ function meter(n){
 }
 function daysPerSecond(now){
  const rested=now<(state.restedUntil||0)?state.restedSpeed:1;
- return 5*state.devSpeed*rested*(potionActive('accelerating')?2:1)*(state.warp?effect('Time warping')*effect('Temporal Dimension')*effect('Time Loop'):1);
+ return 5*state.devSpeed*rested*(potionActive('accelerating')?2:1)*(state.warp?effect('Time warping')*effect('Temporal Dimension')*effect('Time Loop')*effect('Eternal Vigil'):1);
 }
 
 let animatedBars=[], clockLabel, coinLabel, animationId;
@@ -396,12 +413,12 @@ function scheduleMotion(){
  animationId=requestAnimationFrame(frame);
 }
 function list(){
- const groups=state.crossedRift?[{Jobs:'City contracts',Skills:'Augmentations',Shop:'City housing'}[tab]]:tab==='Jobs'?['Common work','Military','The Arcane Association',...(state.voidHeart?['Advanced arcana','The Void']:[])]:tab==='Skills'?['Fundamentals','Combat','Magic','Dark magic','Light magic',...(state.voidHeart?['Advanced arcana','Advanced dark magic']:[]),...(state.voidHeart?['Void Manipulation']:[])]:['Properties',...(state.voidHeart?['Void properties','Void equipment']:[]),'Misc'];
- return groups.filter(g=>g!=='Dark magic'||state.Evil).filter(g=>g!=='Light magic'||state.Angelic).map(g=>{
+ const groups=state.crossedRift?[{Jobs:'City contracts',Skills:'Augmentations',Shop:'City housing'}[tab]]:tab==='Jobs'?['Common work','Military','The Arcane Association',...(state.voidHeart?['Advanced arcana','The Void']:[])]:tab==='Skills'?['Fundamentals','Combat','Magic','Dark magic','Advanced dark magic','Light magic','Advanced Angelic','Void Manipulation']:['Properties',...(state.voidHeart?['Void properties','Void equipment']:[]),'Misc'];
+ return groups.filter(g=>ownsSkillPath(state,g)).map(g=>{
   let lockedShown=false;
-  const rows=catalog.filter(e=>e.group===g&&(g!=='Advanced arcana'||Boolean(e.income)===(tab==='Jobs'))).map(e=>{
+  const rows=catalog.filter(e=>(e.group===g&&(g!=='Advanced arcana'||Boolean(e.income)===(tab==='Jobs')))||(g==='Magic'&&state.voidHeart&&e.group==='Advanced arcana'&&!e.income)).map(e=>{
    const n=e.name,missing=remaining(n);
-   if(missing.length&&lockedShown&&!voidCatalog.includes(e)&&g!=='Dark magic'&&g!=='Light magic')return '';
+   if(missing.length&&lockedShown&&!voidCatalog.includes(e)&&g!=='Dark magic'&&g!=='Light magic'&&g!=='Advanced Angelic')return '';
    if(missing.length)lockedShown=true;
    const selected=[state.job,state.skill,state.home].includes(n)||state.equipment[n];
    const feedback=selected&&e.maxXp?levelGainLabel(n):'';
@@ -535,7 +552,7 @@ screen.onclick=e=>{
  if(a==='potion'&&['happiness','accelerating'].includes(v))drink(v);
  if(a==='devSpeed'&&[1,5,20].includes(Number(v)))state.devSpeed=Number(v);
  if(a==='warp')state.warp=!state.warp;
- if(entries[v]&&(!voidCatalog.includes(entries[v])||state.voidHeart)&&!remaining(v).length&&!dead()){
+ if(entries[v]&&(!voidCatalog.includes(entries[v])||state.voidHeart||entries[v].group==='Advanced dark magic')&&!remaining(v).length&&!dead()){
   if(['job','skill'].includes(a))state[a]=v;
   if(a==='home')state.home=state.home===v?(state.crossedRift?'Transit bunk':'Homeless'):v;
   if(a==='gear'){if(state.equipment[v])delete state.equipment[v];else state.equipment[v]=true}
