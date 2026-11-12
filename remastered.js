@@ -60,25 +60,6 @@ function cityLoadout(s){
  if(entries[s.skill]?.group!=='Augmentations')s.skill='Neural link';
  if(entries[s.home]?.group!=='City housing')s.home='Transit bunk';
 }
-const shopLore = {
-  "Homeless": "A stone warmed by the bakery wall marks your place for the night.",
-  "Tent": "For the first time you can listen to rain without getting up.",
-  "Wooden hut": "You cut a notch in the doorpost for the first winter you spend here.",
-  "Cottage": "Thyme grows between the kitchen step and the well.",
-  "House": "There is a second chair by the fire, even when you live alone.",
-  "Large house": "Morning reaches the east bedroom long before it finds the kitchen.",
-  "Small palace": "From the balcony you can still make out the road where you started.",
-  "Grand palace": "It takes the lamplighter half an hour to cross your courtyard.",
-  "Mansion": "There is a room here for every life you remember.",
-  "Book": "Someone before you has argued with the author in the margins.",
-  "Dumbbells": "The iron is worn smooth exactly where your fingers settle.",
-  "Personal squire": "Your squire can tell from the mud on your boots which kit to lay out.",
-  "Steel longsword": "The balance point sits a finger’s breadth above the guard.",
-  "Butler": "You reach for your travelling coat and find the torn cuff already mended.",
-  "Sapphire charm": "Held to the light, its blue centre turns as slowly as a tide.",
-  "Study desk": "A shallow groove in the wood keeps your quill from rolling.",
-  "Library": "At last the note that baffled you at fourteen has a book to answer it."
-};
 const catalog = Object.values(entries);
 function newLife() {
   return {days:5110, coins:0, job:'Beggar', skill:'Concentration', home:'Homeless',
@@ -327,21 +308,13 @@ function cityIcon(tile,size){
 }
 function cityTerminal(){
  const step=chronoSteps[state.chrono],actions=cityChoices();
- const notes=[
-  'The receiver answers in your own voice. Inside the amulet, a copper wheel turns backwards. Each time the eye sent you back, it wrote a little of you into the glass.',
-  'You play your imprint beside a recording from the last life. Both voices remember the same room. Only one remembers how to fix the relay.',
-  'The archive finishes a sentence before you speak. For the first time, you ask the terminal who woke up on the other side of the eye.',
-  'Your construct answers with your oldest memory. A signal arrives from a universe with no local copy of you. The relay is wide enough for one transmission.',
-  'Under a motionless white sun, a relay clicks on inside an empty observatory. Your construct has made the crossing. In its palm, the Super Void Heart still beats.',
-  'Two pulses settle into one. The observatory prints your name onto a clock that has never had hands. The Continuum Heart doubles the Void you gain here.'
- ];
  const labels={'Embrace Void':embraceLabel('Void',voidGain()),Rebirth:'Reboot with XP memories'};
  const idx=Math.min(state.chrono,2)+(state.chrono===5?1:0);
  const art='<span aria-hidden="true" style="display:inline-block;width:76px;height:76px;background:url(./chronotech.webp) '+(idx%2*100)+'% '+(Math.floor(idx/2)*100)+'%/200% 200%"></span>';
  const needs=step?[['Age',age(),step.age],...Object.entries(step.skills).map(([name,target])=>[name,level(name),target])]:[];
  const progress=step?'<h3>'+step.name+'</h3><p>'+step.benefit+'</p><ul>'+needs.map(([n,v,t])=>'<li>'+(v>=t?'✓ ':'')+n+' · '+v+' / '+t+'</li>').join('')+'</ul>':'';
  const confirm=pending==='Transmit construct'?'Enter the Still Observatory. Your current life continues, and your city uplink stays active.':pending==='Fuse Continuum Heart'?'Bind the completed construct to the Super Void Heart. Its existing bonuses carry into the Continuum Heart. This life continues.':pending==='Embrace Void'?'Gain '+voidGain()+' Void and restart at age 14. Current levels and all archived XP memories are cleared.':'Start a new life at age 14 with XP memories'+(step?.action===pending?' and the '+step.name:'')+'?';
- return '<h2>'+ (state.chrono>=4?'Observatory relay':'Relay terminal')+'</h2>'+art+'<h3>'+chronoNames[state.chrono]+'</h3><p>'+notes[state.chrono]+'</p><p>Void · '+formatVoid(state.Void)+' · Augment XP ×'+(1+state.Void/10).toFixed(1)+' · Void Heart lineage</p>'+progress+
+ return '<h2>'+ (state.chrono>=4?'Observatory relay':'Relay terminal')+'</h2>'+art+'<h3>'+chronoNames[state.chrono]+'</h3><p>Void · '+formatVoid(state.Void)+' · Augment XP ×'+(1+state.Void/10).toFixed(1)+' · Void Heart lineage</p>'+progress+
  actions.map(a=>button('ask:'+a,labels[a]||a)).join(' ')+(pending?'<section class="card"><p>'+confirm+'</p>'+button('accept','Confirm')+' '+button('cancel','Cancel')+'</section>':'');
 
 }
@@ -434,7 +407,7 @@ function list(){
    const xpNote=e.maxXp?(dead()?' · '+fmt(state.xp[n]||0)+' / '+fmt(threshold(n))+' XP':' · '+fmt(rate(n))+' XP/day'):'';
    const info=n==='Absolute Wish'?('+'+voidGain()+' '+e.description):e.income?fmt(pay(n))+(state.crossedRift?' credits/day':' coins/day'):e.maxXp?(e.isPlusDescription?'+':'×')+effect(n).toFixed(2)+' '+e.description:'×'+e.effect+' '+(e.description||'Happiness');
    const action=e.income?'job':e.maxXp?'skill':(g==='Properties'||g==='City housing'||g==='Void properties')?'home':'gear';
-   return '<button class="row '+(selected?'on':'')+(feedback?' recent-level':'')+'" aria-pressed="'+Boolean(selected)+'" data-act="'+action+':'+n+'" '+(missing.length?'disabled':'')+'>'+(state.crossedRift?cityIcon(e.tile,54):voidCatalog.includes(e)?catalogArt(e):sprite(e.tile))+'<span><b>'+n+'</b>'+(selected&&shopLore[n]?'<small>'+shopLore[n]+'</small>':'')+'<small>'+(missing.length?missing.join(' · '):info+xpNote)+'</small></span><span class="right">'+(action==='gear'?(selected?'On · ':'Off · '):selected?'<small>✓ Active</small>':'')+(e.maxXp?'<span>Lv. '+level(n)+'</span>'+meter(n)+(feedback?'<small class="level-gain">'+feedback+'</small>':''):fmt(price(n))+' / day')+'</span></button>';
+   return '<button class="row '+(selected?'on':'')+(feedback?' recent-level':'')+'" aria-pressed="'+Boolean(selected)+'" data-act="'+action+':'+n+'" '+(missing.length?'disabled':'')+'>'+(state.crossedRift?cityIcon(e.tile,54):voidCatalog.includes(e)?catalogArt(e):sprite(e.tile))+'<span><b>'+n+'</b><small>'+(missing.length?missing.join(' · '):info+xpNote)+'</small></span><span class="right">'+(action==='gear'?(selected?'On · ':'Off · '):selected?'<small>✓ Active</small>':'')+(e.maxXp?'<span>Lv. '+level(n)+'</span>'+meter(n)+(feedback?'<small class="level-gain">'+feedback+'</small>':''):fmt(price(n))+' / day')+'</span></button>';
   }).join('');
   return '<h3>'+g+'</h3>'+rows;
  }).join('');
