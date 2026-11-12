@@ -99,5 +99,17 @@ for(const [key,heading] of [['Evil','Advanced dark magic'],['Angelic','Advanced 
  state[key]=1;assert(list().includes('<h3>'+heading+'</h3>'));assert(!list().includes('<h3>Advanced arcana</h3>'));
 }
 state.Angelic=4999;assert(remaining('Sacred Knowledge').length);state.Angelic=5000;assert.equal(remaining('Sacred Knowledge').length,0);state.Angelic=0;assert(remaining('Sacred Knowledge').length);
+state={...newLife(),hero:'Magnus'};tab='Jobs';assert(!list().includes('skill:Astral Body'));assert(!list().includes('job:Adept Mage'));
+state.levels.Mage=10;assert(list().includes('job:Adept Mage'));
+for(const name of ['Adept Mage','Astral Body','Archmage','All Seeing Eye','Chronomancer','Temporal Dimension','Imperator','Brainwashing']){
+ const e=entries[name];tab=e.income?'Jobs':'Skills';
+ for(const [key,target] of Object.entries(e.requirements)){
+   Object.assign(state.levels,e.requirements);state.levels[key]=target-1;delete state.unlocked[name];
+   assert(remaining(name).length,key+' must gate '+name);
+ }
+ Object.assign(state.levels,e.requirements);assert.equal(remaining(name).length,0);
+ const action=(e.income?'job:':'skill:')+name;assert(list().includes('data-act="'+action+'"'));
+ screen.onclick({target:{closest:()=>({dataset:{act:action}})}});assert.equal(state[e.income?'job':'skill'],name);
+}
 console.log('Verified base progression, orb collectibles and cumulative skill XP, Void jobs, Heart, legacy conversion and Void collection.');
 `,ctx);
