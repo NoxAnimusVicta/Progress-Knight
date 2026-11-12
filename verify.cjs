@@ -1,5 +1,5 @@
 const fs=require('fs'),vm=require('vm'),assert=require('assert/strict');
-const root={}, storage={};const ctx={assert,console,document:{querySelector:()=>root},navigator:{},localStorage:{getItem:k=>storage[k],setItem:(k,v)=>storage[k]=v},addEventListener(){},setInterval(){}};
+const root={}, storage={};const ctx={assert,console,window:{scrollY:0},document:{querySelector:()=>root},navigator:{},localStorage:{getItem:k=>storage[k],setItem:(k,v)=>storage[k]=v},addEventListener(){},setInterval(){}};
 vm.createContext(ctx);for(const file of ['balance.js','remastered.js'])vm.runInContext(fs.readFileSync(require('path').join(__dirname,file),'utf8'),ctx);
 vm.runInContext(`
 state.hero='Magnus';
@@ -81,5 +81,14 @@ state.voidPath=true;assert.equal(pathTheme(),'');
 state.voidHeart=true;assert.equal(pathTheme(),'void');
 state.crossedRift=true;assert.equal(pathTheme(),'');
 assert(fmt(1e25).length<12);
+for(const chapter of [{},{voidPath:true,voidHeart:true},{voidPath:true,voidHeart:true,superHeart:true,crossedRift:true}]){
+ state={...newLife(),hero:'Magnus',...chapter};cityLoadout(state);state.days=lifespan()*365;state.levels[state.skill]=12;state.xp[state.skill]=42;
+ render();assert.equal(tab,'Amulet');
+ for(const section of ['Jobs','Skills','Shop','Amulet','Skills']){
+  screen.onclick({target:{closest:()=>({dataset:{act:'tab:'+section}})}});
+  render();assert.equal(tab,section);
+ }
+ assert(screen.innerHTML.includes('42 / '));assert.equal(level(state.skill),12);
+}
 console.log('Verified base progression, orb collectibles and cumulative skill XP, Void jobs, Heart, legacy conversion and Void collection.');
 `,ctx);

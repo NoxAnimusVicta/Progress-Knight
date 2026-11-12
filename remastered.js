@@ -290,6 +290,7 @@ function reset(action){
   cityLoadout(state);
 }
 function save(){try{localStorage.setItem(saveKey,JSON.stringify(state))}catch{statusText='Save unavailable in this browser.'}}
+let lastDeathShown=null;
 let tab='Jobs',chosen='Magnus',pending='',statusText='';
 const screen=document.querySelector('#screen');
 const compactNumber=new Intl.NumberFormat('en',{notation:'compact',maximumFractionDigits:2});
@@ -427,7 +428,7 @@ function list(){
    if(missing.length)lockedShown=true;
    const selected=[state.job,state.skill,state.home].includes(n)||state.equipment[n];
    const feedback=selected&&e.maxXp?levelGainLabel(n):'';
-   const xpNote=e.maxXp?' · '+fmt(rate(n))+' XP/day':'';
+   const xpNote=e.maxXp?(dead()?' · '+fmt(state.xp[n]||0)+' / '+fmt(threshold(n))+' XP':' · '+fmt(rate(n))+' XP/day'):'';
    const info=n==='Absolute Wish'?('+'+voidGain()+' '+e.description):e.income?fmt(pay(n))+(state.crossedRift?' credits/day':' coins/day'):e.maxXp?(e.isPlusDescription?'+':'×')+effect(n).toFixed(2)+' '+e.description:'×'+e.effect+' '+(e.description||'Happiness');
    const action=e.income?'job':e.maxXp?'skill':(g==='Properties'||g==='City housing'||g==='Void properties')?'home':'gear';
    return '<button class="row '+(selected?'on':'')+(feedback?' recent-level':'')+'" aria-pressed="'+Boolean(selected)+'" data-act="'+action+':'+n+'" '+(missing.length?'disabled':'')+'>'+(state.crossedRift?cityIcon(e.tile,54):voidCatalog.includes(e)?catalogArt(e):sprite(e.tile))+'<span><b>'+n+'</b>'+(selected&&shopLore[n]?'<small>'+shopLore[n]+'</small>':'')+'<small>'+(missing.length?missing.join(' · '):info+xpNote)+'</small></span><span class="right">'+(action==='gear'?(selected?'On · ':'Off · '):selected?'<small>✓ Active</small>':'')+(e.maxXp?'<span>Lv. '+level(n)+'</span>'+meter(n)+(feedback?'<small class="level-gain">'+feedback+'</small>':''):fmt(price(n))+' / day')+'</span></button>';
@@ -489,6 +490,12 @@ function render(){
  }
 }
 function draw(){
+ if(state.hero&&dead()&&lastDeathShown!==state){
+   lastDeathShown=state;
+   tab='Amulet';
+   pending='';
+ }
+
  const theme=pathTheme();
  if(document.body){
    document.body.classList.toggle('city',!!state.crossedRift);
@@ -507,14 +514,12 @@ function draw(){
  }
  const rested=Date.now()<(state.restedUntil||0)?' · Rested speed ×'+state.restedSpeed.toFixed(2):'';const top='<div class="card profile">'+portrait()+'<div>'+(theme?'<small class="path-stat">'+({evil:'Evil · '+fmt(state.Evil),angelic:'Angelic · '+fmt(state.Angelic),void:'Void · '+fmt(state.Void)})[theme]+'</small>':'')+'<b>'+state.hero+'</b> · Life '+state.life+'<br><span data-clock>Age '+age()+' · '+Math.floor(state.days%365)+' days</span> · Lifespan '+Math.floor(lifespan())+'<br><span class="gold">◉ <span data-coins>'+fmt(state.coins)+'</span> · '+fmt(pay(state.job)-upkeep())+' net/day</span><br>Happiness ×'+happy().toFixed(2)+rested+'</div></div>';
  if(state.crossedRift){
-   if(dead())tab='Amulet';
    const where=tab==='Amulet'?'Terminal':tab==='Jobs'?'Contracts':tab==='Skills'?'Augments':'Housing';
    const tabs=[['Jobs','Contracts'],['Skills','Augments'],['Shop','Housing'],['Amulet','Terminal']];
    screen.innerHTML='<div class="city-banner">'+cityIcon(8,66)+(state.chrono>=4?'<div><small>CITY UPLINK ACTIVE</small><h1>Still Observatory</h1></div>':'<div><small>RIFT DISTRICT</small><h1>Night Shift</h1></div>')+'</div><div class="play-controls">'+top.replace('◉','₡')+'<nav aria-label="Game sections">'+tabs.map(([key,label])=>button('tab:'+key,label,where===label)).join('')+'</nav></div><section class="card">'+(tab==='Amulet'?cityTerminal():list())+'</section><footer>'+button('pause',state.paused?'Resume':'Pause')+' · Test speed '+[1,5,20].map(v=>button('devSpeed:'+v,v+'×',state.devSpeed===v)).join(' ')+'</footer>';
    return;
  }
 
- if(dead())tab='Amulet';
  const nav=['Jobs','Skills','Shop',...(age()>=25||state.voidPath?['Amulet']:[])];
  screen.innerHTML='<div class="play-controls">'+top+'<nav aria-label="Game sections">'+nav.map(t=>button('tab:'+t,t==='Amulet'&&state.voidHeart?'Heart':t,t===tab)).join('')+'</nav></div><section class="card">'+(tab==='Amulet'?amulet():list())+'</section><footer>'+state.job+' · Lv. '+level(state.job)+'　'+state.skill+' · Lv. '+level(state.skill)+'<p>'+button('pause',state.paused?'Resume':'Pause')+' '+(level('Time warping')?button('warp','Time warping '+(state.warp?'on':'off'),state.warp):'')+'</p>'+['happiness','accelerating'].map(k=>button('potion:'+k,(k==='happiness'?'Happiness':'Speed')+' ×2 · '+(potionActive(k)?Math.ceil((state[k+'Until']-Date.now())/1000)+'s':'10 min'),potionActive(k))).join(' ')+'<p>Developer speed　'+[1,5,20].map(v=>button('devSpeed:'+v,v+'×',state.devSpeed===v)).join(' ')+'</p>'+statusText+'</footer>';
 }
