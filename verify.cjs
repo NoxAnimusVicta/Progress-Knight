@@ -99,9 +99,9 @@ for(const [key,heading] of [['Evil','Advanced dark magic'],['Angelic','Advanced 
  state[key]=1;assert(list().includes('<h3>'+heading+'</h3>'));assert(!list().includes('<h3>Advanced arcana</h3>'));
 }
 state.Angelic=4999;assert(remaining('Sacred Knowledge').length);state.Angelic=5000;assert.equal(remaining('Sacred Knowledge').length,0);state.Angelic=0;assert(remaining('Sacred Knowledge').length);
-state={...newLife(),hero:'Magnus'};tab='Jobs';assert(!list().includes('skill:Astral Body'));assert(!list().includes('job:Adept Mage'));
-state.levels.Mage=10;assert(list().includes('job:Adept Mage'));
-for(const name of ['Adept Mage','Astral Body','Archmage','All Seeing Eye','Chronomancer','Temporal Dimension','Imperator','Brainwashing']){
+state={...newLife(),hero:'Magnus'};tab='Jobs';assert(!list().includes('skill:Astral Body'));assert(!list().includes('job:Astral scholar'));
+state.levels.Mage=10;assert(!list().includes('job:Astral scholar'));state.levels.Chairman=120;state.levels['Super immortality']=9;assert(!showAdvancedMagic());state.levels['Super immortality']=10;assert(list().includes('job:Astral scholar'));
+for(const name of ['Astral scholar','Astral Body','Archmage','All Seeing Eye','Chronomancer','Temporal Dimension','Imperator','Brainwashing']){
  const e=entries[name];tab=e.income?'Jobs':'Skills';
  for(const [key,target] of Object.entries(e.requirements)){
    Object.assign(state.levels,e.requirements);state.levels[key]=target-1;delete state.unlocked[name];
