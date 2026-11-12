@@ -35,19 +35,23 @@ body.city{background:linear-gradient(155deg,#12172a,#090f18 65%);color:#dbeaf0}.
 .row:disabled{opacity:1;color:#b2a9b8;background:#19171d}
 .row:disabled small{color:#a69faa}.row:disabled .sprite{opacity:.6}
 button:focus-visible,summary:focus-visible,a:focus-visible{outline:2px solid #e2d293;outline-offset:2px}
-body[data-path=evil]{--accent:#ffac86;--edge:#8f5143;--surface:#281c20;--deep:#190f13;--select:#47272a;--shape:3px;--bar:#be5841}
-body[data-path=angelic]{--accent:#f7dfa2;--edge:#84764f;--surface:#27272a;--deep:#18191e;--select:#39372f;--shape:18px;--bar:#b5a16a}
-body[data-path=void]{--accent:#debcff;--edge:#726087;--surface:#232032;--deep:#14111f;--select:#39304d;--shape:9px;--bar:#9272b8}
+body[data-path=evil]{--accent:#ffac86;--edge:#8f5143;--surface:#281c20;--deep:#190f13;--select:#47272a;--bar:#be5841}
+body[data-path=angelic]{--accent:#f7dfa2;--edge:#84764f;--surface:#27272a;--deep:#18191e;--select:#39372f;--bar:#b5a16a}
+body[data-path=void]{--accent:#debcff;--edge:#726087;--surface:#232032;--deep:#14111f;--select:#39304d;--bar:#9272b8}
 body[data-path]:not([data-path=""]){background:radial-gradient(ellipse at top,var(--surface),var(--deep) 75%)}
-body[data-path]:not([data-path=""]) :is(.card,nav button){background-color:var(--surface);border-color:var(--edge);border-radius:var(--shape)}
+body[data-path]:not([data-path=""]) :is(.card,nav button){background-color:var(--surface);border-color:var(--edge)}
 body[data-path]:not([data-path=""]) :is(.path-stat,h3){color:var(--accent)}
 body[data-path]:not([data-path=""]) .profile::before{background:var(--deep)}
 body[data-path]:not([data-path=""]) button.on{color:var(--accent);background:var(--select);border-color:var(--accent);box-shadow:inset 3px 0 var(--accent)}
 body[data-path]:not([data-path=""]) .xp-track i{background:linear-gradient(90deg,var(--bar),var(--accent))}
-body[data-path=evil] .profile{border-left:4px solid var(--accent)}
-body[data-path=angelic] .profile{border-top:3px double var(--accent)}
-body[data-path=void] .profile{background:radial-gradient(ellipse at top right,#423252,var(--surface) 70%);border-right:3px double var(--accent)}
 @media(max-width:400px){.row{padding:7px;gap:7px}.right{min-width:58px;font-size:13px}nav{gap:4px}nav button{padding:10px 9px;min-height:44px}}
-</style><main><header><img src="./icon-192.png" alt="" width="40" height="40" style="vertical-align:middle;border-radius:8px"> Progress Knight <span>REMASTERED</span></header><div id="screen"></div><details id="save-tools" class="card"><summary>Save &amp; backup</summary><p><label><input id="alignment-ui" type="checkbox"> Use alignment appearance</label></p><p><a href="./previous.html">Earlier prototype save</a></p><p>Download your campaign to keep a copy or move it to another device.</p><button id="export-save">Download backup</button> <label>Restore from file <input id="import-file" type="file" accept=".json,application/json"></label><p id="backup-status" aria-live="polite"></p><button hidden id="confirm-restore">Restore this campaign</button> <button hidden id="cancel-restore">Cancel</button></details></main><script src="./balance.js"></script><script src="./remastered.js"></script><script src="./save-tools.js"></script></html>
+
+.level-gain{display:block;font-size:12px;font-weight:650;color:var(--accent,#d5e8b8)}
+@media(prefers-reduced-motion:no-preference){
+ .recent-level .xp-track{box-shadow:0 0 5px var(--accent,#c9dea0)}
+ .level-gain{animation:level-settle .45s ease-out}
+ @keyframes level-settle{from{transform:translateY(2px);opacity:.65}to{transform:translateY(0);opacity:1}}
+}
+</style><main><header><img src="./icon-192.png" alt="" width="40" height="40" style="vertical-align:middle;border-radius:8px"> Progress Knight <span>REMASTERED</span></header><div id="screen"></div><details id="save-tools" class="card"><summary>Save &amp; backup</summary><p><label><input id="alignment-ui" type="checkbox"> Use alignment appearance</label></p><p><label><input id="level-feedback" type="checkbox"> Show level-up highlights</label></p><p><a href="./previous.html">Earlier prototype save</a></p><p>Download your campaign to keep a copy or move it to another device.</p><button id="export-save">Download backup</button> <label>Restore from file <input id="import-file" type="file" accept=".json,application/json"></label><p id="backup-status" aria-live="polite"></p><button hidden id="confirm-restore">Restore this campaign</button> <button hidden id="cancel-restore">Cancel</button></details></main><script src="./balance.js"></script><script src="./remastered.js"></script><script src="./save-tools.js"></script></html>
 
 

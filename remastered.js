@@ -211,9 +211,24 @@ function rate(n){
 function pay(n){return Math.round(entries[n].income*(state.crossedRift?effect('Circuit design'):1)*(['Advanced arcana','The Arcane Association'].includes(entries[n].group)?effect('All Seeing Eye'):1)*(1+Math.log10(level(n)+1))*effect("Demon's wealth")*effect('Bountiful Grace')*(entries[n].group==='Military'?effect('Strength'):1))}
 function price(n){return Math.round(entries[n].expense*effect('Bargaining')*effect('Intimidation')*effect('Healing Aura')*effect('Brainwashing')*effect('Abyss Manipulation'))}
 function upkeep(){return Object.keys(state.equipment).reduce((sum,n)=>sum+price(n),price(state.home))}
+const recentGains=new Map();
+let showLevelFeedback=true;
+try{showLevelFeedback=localStorage.getItem('pk-level-feedback')!=='off'}catch{}
+function levelGainLabel(name){
+ const gain=recentGains.get(name);
+ if(!showLevelFeedback||!gain||gain.life!==state.life||Date.now()-gain.time>1800)return '';
+ const previous=state.memory[name]||0;
+ return previous>0&&gain.from<=previous&&level(name)>previous?'Past life surpassed':'+'+(level(name)-gain.from)+' Lv.';
+}
 function gain(n,amount){
+  const from=level(n);
   state.xp[n]=(state.xp[n]||0)+amount;
   while(state.xp[n]>=threshold(n)){state.xp[n]-=threshold(n);state.levels[n]=level(n)+1}
+  if(showLevelFeedback&&level(n)>from&&!document.hidden){
+    const last=recentGains.get(n),now=Date.now();
+    const start=last&&last.life===state.life&&now-last.time<300?last.from:from;
+    recentGains.set(n,{from:start,life:state.life,time:now});
+  }
 }
 function remaining(n){
   if(n==='Absolute Wish'&&(state.voidHeart||(state.orbs.Evil&&state.orbs.Angelic)))return [];
@@ -454,10 +469,11 @@ function list(){
    if(missing.length&&lockedShown&&!voidCatalog.includes(e)&&g!=='Dark magic'&&g!=='Light magic')return '';
    if(missing.length)lockedShown=true;
    const selected=[state.job,state.skill,state.home].includes(n)||state.equipment[n];
+   const feedback=selected&&e.maxXp?levelGainLabel(n):'';
    const xpNote=e.maxXp?' · '+fmt(rate(n))+' XP/day':'';
    const info=n==='Absolute Wish'?('+'+voidGain()+' '+e.description):e.income?fmt(pay(n))+(state.crossedRift?' credits/day':' coins/day'):e.maxXp?(e.isPlusDescription?'+':'×')+effect(n).toFixed(2)+' '+e.description:'×'+e.effect+' '+(e.description||'Happiness');
    const action=e.income?'job':e.maxXp?'skill':(g==='Properties'||g==='City housing'||g==='Void properties')?'home':'gear';
-   return '<button class="row '+(selected?'on':'')+'" aria-pressed="'+Boolean(selected)+'" data-act="'+action+':'+n+'" '+(missing.length?'disabled':'')+'>'+(state.crossedRift?cityIcon(e.tile,54):voidCatalog.includes(e)?catalogArt(e):sprite(e.tile))+'<span><b>'+n+'</b>'+(selected&&baseLore[n]?'<small>'+baseLore[n]+'</small>':'')+'<small>'+(missing.length?missing.join(' · '):info+xpNote)+'</small></span><span class="right">'+(action==='gear'?(selected?'On · ':'Off · '):selected?'<small>✓ Active</small>':'')+(e.maxXp?'<span>Lv. '+level(n)+'</span>'+meter(n):fmt(price(n))+' / day')+'</span></button>';
+   return '<button class="row '+(selected?'on':'')+(feedback?' recent-level':'')+'" aria-pressed="'+Boolean(selected)+'" data-act="'+action+':'+n+'" '+(missing.length?'disabled':'')+'>'+(state.crossedRift?cityIcon(e.tile,54):voidCatalog.includes(e)?catalogArt(e):sprite(e.tile))+'<span><b>'+n+'</b>'+(selected&&baseLore[n]?'<small>'+baseLore[n]+'</small>':'')+'<small>'+(missing.length?missing.join(' · '):info+xpNote)+'</small></span><span class="right">'+(action==='gear'?(selected?'On · ':'Off · '):selected?'<small>✓ Active</small>':'')+(e.maxXp?'<span>Lv. '+level(n)+'</span>'+meter(n)+(feedback?'<small class="level-gain">'+feedback+'</small>':''):fmt(price(n))+' / day')+'</span></button>';
   }).join('');
   return '<h3>'+g+'</h3>'+rows;
  }).join('');
