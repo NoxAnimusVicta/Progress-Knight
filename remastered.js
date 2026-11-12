@@ -9,7 +9,7 @@ const voidCatalog=[
  {"name":"Void Reaver","maxXp":2600000000000000000,"income":25000000000,"group":"The Void","tile":5,"requirements":{"Void Amplification":3400,"Void Wraith":250}},
  {"name":"Void Lord","maxXp":28000000000000000000,"income":100000000000,"group":"The Void","tile":6,"requirements":{"Void Symbiosis":3800,"Void Reaver":150}},
  {"name":"Abyss God","maxXp":400000000000000000000,"income":1000000000000,"group":"The Void","tile":7,"requirements":{"Void Embodiment":4700,"Void Lord":750}},
- {"name":"Absolute Wish","maxXp":100,"description":"Void on banking","group":"Void Manipulation","tile":0,"requirements":{"Void Slave":25,"Chairman":300}},
+ {"name":"Absolute Wish","maxXp":100,"description":"Void gain","group":"Void Manipulation","tile":0,"requirements":{"Void Slave":25,"Chairman":300}},
  {"name":"Void Amplification","maxXp":100,"effect":0.01,"description":"The Void XP","group":"Void Manipulation","tile":1,"requirements":{"Void Slave":100,"Absolute Wish":3000}},
  {"name":"Mind Seize","maxXp":100,"effect":0.0006,"description":"Reduced Happiness","group":"Void Manipulation","tile":2,"requirements":{"Void Amplification":3000}},
  {"name":"Ceaseless Abyss","maxXp":100,"effect":0.000585,"description":"Longer Lifespan","group":"Void Manipulation","tile":3,"requirements":{"Void Influence":4000,"Abyss Anomaly":50}},
@@ -205,6 +205,7 @@ function step(days){
   if(state.coins<0){state.coins=0;state.home=state.crossedRift?'Transit bunk':'Homeless';state.equipment={}}
   gain(state.job,jobRate*days);gain(state.skill,skillRate*days);
 }
+function embraceLabel(path,gain){return 'Embrace '+path+' (+'+gain.toFixed(2)+')'}
 function alignmentGain(side){return side==='Evil'?(effect('Evil control')+effect('Blood meditation')):(effect('Pure Heart')+effect('Spiritual Meditation'))}
 // Bank in hundredths so small payouts accumulate exactly at relic thresholds.
 function roundVoid(value){return Number(value.toFixed(2))}
@@ -218,8 +219,8 @@ function heartEvilGain(){
 }
 // All levels are earned in the life in which the relic is claimed.
 function relicRequirements(path){
- if(path==='Second Heart')return [['Age',age(),500],['Void Slave',level('Void Slave'),75],['Absolute Wish',level('Absolute Wish'),125],['Void Amplification',level('Void Amplification'),100],['Banked Void',state.Void,500]];
- if(path==='Rift')return [['Age',age(),600],['Void Fiend',level('Void Fiend'),100],['Mind Seize',level('Mind Seize'),150],['Banked Void',state.Void,2000]];
+ if(path==='Second Heart')return [['Age',age(),500],['Void Slave',level('Void Slave'),75],['Absolute Wish',level('Absolute Wish'),125],['Void Amplification',level('Void Amplification'),100],['Void',state.Void,500]];
+ if(path==='Rift')return [['Age',age(),600],['Void Fiend',level('Void Fiend'),100],['Mind Seize',level('Mind Seize'),150],['Void',state.Void,2000]];
  if(path==='Void')return [['Age',age(),400],['Void to spend',state.Void,heartCost],['Evil Orb',Number(!!state.orbs.Evil),1],['Angelic Orb',Number(!!state.orbs.Angelic),1]];
  const group=path==='Evil'?'Dark magic':'Light magic';
  return [['Age',age(),300],[path,state[path],400],...catalog.filter(e=>e.group===group).map(e=>[e.name,level(e.name),e.name==="Demon's wealth"||e.name==='Bountiful Grace'?100:50])];
@@ -242,7 +243,7 @@ function cityChoices(){
  if(state.chrono===3)actions.push('Transmit construct');
  if(state.chrono===4&&state.superHeart)actions.push('Fuse Continuum Heart');
  if(age()>=65)actions.push('Rebirth');
- if(age()>=200)actions.push('Collect Void');
+ if(age()>=200)actions.push('Embrace Void');
  return actions;
 }
 function choices(){
@@ -250,11 +251,11 @@ function choices(){
 
   if(state.voidPath&&state.heartPair&&!state.superHeart)return ['Super Void Heart'];
   if(age()<65)return [];
-  if(state.voidPath&&state.superHeart&&!state.crossedRift&&relicReady('Rift'))return ['Cross the Rift','Collect Void','Rebirth'];
-  if(state.voidPath&&state.voidHeart&&!state.superHeart&&relicReady('Second Heart'))return ['Second Heart','Collect Void','Rebirth'];
+  if(state.voidPath&&state.superHeart&&!state.crossedRift&&relicReady('Rift'))return ['Cross the Rift','Embrace Void','Rebirth'];
+  if(state.voidPath&&state.voidHeart&&!state.superHeart&&relicReady('Second Heart'))return ['Second Heart','Embrace Void','Rebirth'];
   if(state.voidPath){
     const actions=['Rebirth'];
-    if(age()>=200&&voidGain()>0)actions.unshift('Collect Void');
+    if(age()>=200&&voidGain()>0)actions.unshift('Embrace Void');
     if(!state.voidHeart&&relicReady('Void'))actions.unshift('Void Heart');
     return actions;
   }
@@ -284,7 +285,7 @@ function reset(action){
   }
   else if(action==='Evil'){Evil+=alignmentGain('Evil');Angelic=0}
   else if(action==='Angelic'){Angelic+=alignmentGain('Angelic');Evil=0}
-  if(action==='Collect Void'){state.Void=roundVoid(state.Void+voidGain());if(state.voidHeart&&!state.crossedRift)Evil+=heartEvilGain()}
+  if(action==='Embrace Void'){state.Void=roundVoid(state.Void+voidGain());if(state.voidHeart&&!state.crossedRift)Evil+=heartEvilGain()}
   else if(action==='Second Heart')state.heartPair=true;
   else if(action==='Void Heart'){state.voidHeart=true;state.Void=roundVoid(state.Void-heartCost);orbs={};Evil=0;Angelic=0}
   else if(action.endsWith(' orb')){orbs={...orbs,[action.split(' ')[0]]:true};Evil=0;Angelic=0}
@@ -332,15 +333,15 @@ function cityTerminal(){
   'The archive finishes a sentence before you speak. For the first time, you ask the terminal who woke up on the other side of the eye.',
   'Your construct answers with your oldest memory. A signal arrives from a universe with no local copy of you. The relay is wide enough for one transmission.',
   'Under a motionless white sun, a relay clicks on inside an empty observatory. Your construct has made the crossing. In its palm, the Super Void Heart still beats.',
-  'Two pulses settle into one. The observatory prints your name onto a clock that has never had hands. The Continuum Heart doubles the Void you bank here.'
+  'Two pulses settle into one. The observatory prints your name onto a clock that has never had hands. The Continuum Heart doubles the Void you gain here.'
  ];
- const labels={'Collect Void':'Bank '+voidGain()+' Void and reboot',Rebirth:'Reboot with XP memories'};
+ const labels={'Embrace Void':embraceLabel('Void',voidGain()),Rebirth:'Reboot with XP memories'};
  const idx=Math.min(state.chrono,2)+(state.chrono===5?1:0);
  const art='<span aria-hidden="true" style="display:inline-block;width:76px;height:76px;background:url(./chronotech.webp) '+(idx%2*100)+'% '+(Math.floor(idx/2)*100)+'%/200% 200%"></span>';
  const needs=step?[['Age',age(),step.age],...Object.entries(step.skills).map(([name,target])=>[name,level(name),target])]:[];
  const progress=step?'<h3>'+step.name+'</h3><p>'+step.benefit+'</p><ul>'+needs.map(([n,v,t])=>'<li>'+(v>=t?'✓ ':'')+n+' · '+v+' / '+t+'</li>').join('')+'</ul>':'';
- const confirm=pending==='Transmit construct'?'Enter the Still Observatory. Your current life continues, and your city uplink stays active.':pending==='Fuse Continuum Heart'?'Bind the completed construct to the Super Void Heart. Its existing bonuses carry into the Continuum Heart. This life continues.':pending==='Collect Void'?'Bank '+voidGain()+' Void and restart at age 14. Current levels and all archived XP memories are cleared.':'Start a new life at age 14 with XP memories'+(step?.action===pending?' and the '+step.name:'')+'?';
- return '<h2>'+ (state.chrono>=4?'Observatory relay':'Relay terminal')+'</h2>'+art+'<h3>'+chronoNames[state.chrono]+'</h3><p>'+notes[state.chrono]+'</p><p>Banked Void · '+formatVoid(state.Void)+' · Augment XP ×'+(1+state.Void/10).toFixed(1)+' · Void Heart lineage</p>'+progress+
+ const confirm=pending==='Transmit construct'?'Enter the Still Observatory. Your current life continues, and your city uplink stays active.':pending==='Fuse Continuum Heart'?'Bind the completed construct to the Super Void Heart. Its existing bonuses carry into the Continuum Heart. This life continues.':pending==='Embrace Void'?'Gain '+voidGain()+' Void and restart at age 14. Current levels and all archived XP memories are cleared.':'Start a new life at age 14 with XP memories'+(step?.action===pending?' and the '+step.name:'')+'?';
+ return '<h2>'+ (state.chrono>=4?'Observatory relay':'Relay terminal')+'</h2>'+art+'<h3>'+chronoNames[state.chrono]+'</h3><p>'+notes[state.chrono]+'</p><p>Void · '+formatVoid(state.Void)+' · Augment XP ×'+(1+state.Void/10).toFixed(1)+' · Void Heart lineage</p>'+progress+
  actions.map(a=>button('ask:'+a,labels[a]||a)).join(' ')+(pending?'<section class="card"><p>'+confirm+'</p>'+button('accept','Confirm')+' '+button('cancel','Cancel')+'</section>':'');
 
 }
@@ -451,7 +452,7 @@ let inspectingAmulet=false;
 function amulet(){
  if(state.voidPath){
    const available=choices();
-   const titles={'Cross the Rift':'Step through the rift','Void Heart':'Fuse amulet and orbs · 400 Void','Second Heart':'Draw out the second Heart','Super Void Heart':'Combine both Void Hearts','Collect Void':'Bank '+voidGain()+' Void',Rebirth:'Rebirth with XP memories'};
+   const titles={'Cross the Rift':'Step through the rift','Void Heart':'Fuse amulet and orbs · 400 Void','Second Heart':'Draw out the second Heart','Super Void Heart':'Combine both Void Hearts','Embrace Void':embraceLabel('Void',voidGain()),Rebirth:'Rebirth with XP memories'};
    const passages={
      'Void Heart':'You pour the Void through the eye, a measure for every year of this long life. The copper softens around the two stones. The chain slips through your fingers as a violet heart takes its first beat beneath your ribs.',
      'Cross the Rift':'The knock comes again. This time you answer. A thin line opens in the glass of the amulet, wide enough for a hand, then a shoulder. You step through carrying the memory of every year it took to get here.',
@@ -459,12 +460,12 @@ function amulet(){
      'Super Void Heart':'You cradle one Heart in each hand. They beat against one another until you turn the second to fit the first. The seam closes. Somewhere beyond the amulet, something knocks once in reply.'
    };
    const title=state.superHeart?'Super Void Heart':state.heartPair?'Two Void Hearts':state.voidHeart?'Void Heart':'The twin sockets';
-   const story=state.crossedRift?'You have crossed the rift. The relay can bank Void or record the memories of a life.':state.superHeart?'The Super Void Heart doubles every Void collection. Across the rift, something answers its beat.':state.heartPair?'Two Hearts rest in the amulet. Turn them together to seal the bond.':state.voidHeart?'The fused orbs beat as one. Bank Void and master the path again to grow a second Heart.':'Held apart, the two orbs cast ordinary shadows. Held together, they leave a darkness that stays on your fingers. Train Absolute Wish. From age 200, choose Bank Void to exchange every ten levels earned this life for one Void. Banking clears your XP memories. At age 400, the copper can hold both stones.';
-   const details=pending==='Void Heart'?'Spend 400 Void and consume the amulet and both orbs. Both orb XP bonuses end. Be reborn at 14 with the Void Heart and '+formatVoid(roundVoid(state.Void-heartCost))+' Void. Current levels, possessions and XP memories reset.':pending==='Cross the Rift'?'Enter the neon city in this life. The Super Void Heart carries over. The terminal offers separate memory and Void resets.':pending==='Super Void Heart'?'The two Hearts become one. Void collection doubles permanently. This life continues.':pending==='Collect Void'?'Bank '+voidGain()+' Void. Current levels and all previous XP memories are cleared.':pending==='Rebirth'?'Begin a new life with your current levels as XP memories.':'Begin a new life. Current levels and XP memories reset. Banked Void and permanent bonuses carry over.';
-   return '<h2>'+title+'</h2>'+(state.voidHeart?voidArt(8,90,title):sprite(artIndex.icons_amulet_65,76)+sprite(artIndex.icons_angelicorb,50)+sprite(artIndex.icons_evilorb,50))+'<p>'+story+'</p><p>Void collected · '+formatVoid(state.Void)+(state.voidHeart?'<br>Void skill XP ×'+(1+state.Void/10).toFixed(1):'')+'</p>'+
+   const story=state.crossedRift?'You have crossed the rift. The relay can let you embrace Void or record the memories of a life.':state.superHeart?'The Super Void Heart doubles your Void gain. Across the rift, something answers its beat.':state.heartPair?'Two Hearts rest in the amulet. Turn them together to seal the bond.':state.voidHeart?'The fused orbs beat as one. Embrace Void and master the path again to grow a second Heart.':'Held apart, the two orbs cast ordinary shadows. Held together, they leave a darkness that stays on your fingers. Train Absolute Wish. From age 200, choose Embrace Void to exchange every ten levels earned this life for one Void. Embracing Void clears your XP memories. At age 400, the copper can hold both stones.';
+   const details=pending==='Void Heart'?'Spend 400 Void and consume the amulet and both orbs. Both orb XP bonuses end. Be reborn at 14 with the Void Heart and '+formatVoid(roundVoid(state.Void-heartCost))+' Void. Current levels, possessions and XP memories reset.':pending==='Cross the Rift'?'Enter the neon city in this life. The Super Void Heart carries over. The terminal offers separate memory and Void resets.':pending==='Super Void Heart'?'The two Hearts become one. Void gain doubles permanently. This life continues.':pending==='Embrace Void'?'Gain '+voidGain()+' Void. Current levels and all previous XP memories are cleared.':pending==='Rebirth'?'Begin a new life with your current levels as XP memories.':'Begin a new life. Current levels and XP memories reset. Void and permanent bonuses carry over.';
+   return '<h2>'+title+'</h2>'+(state.voidHeart?voidArt(8,90,title):sprite(artIndex.icons_amulet_65,76)+sprite(artIndex.icons_angelicorb,50)+sprite(artIndex.icons_evilorb,50))+'<p>'+story+'</p><p>Void · '+formatVoid(state.Void)+(state.voidHeart?'<br>Void skill XP ×'+(1+state.Void/10).toFixed(1):'')+'</p>'+
      (!state.voidHeart?relicProgress('Void'):!state.heartPair&&!state.superHeart?relicProgress('Second Heart'):state.superHeart&&!state.crossedRift?relicProgress('Rift'):'')+
-     available.map(a=>button('ask:'+a,titles[a]+(a==='Collect Void'&&state.voidHeart?' · +'+heartEvilGain().toFixed(2)+' Evil':''))).join(' ')+
-     (pending?'<section class="card"><p>'+(passages[pending]||titles[pending])+'</p><p>'+details+'</p>'+button('accept','Confirm '+pending)+' '+button('cancel','Keep playing')+'</section>':'');
+     available.map(a=>button('ask:'+a,titles[a]+(a==='Embrace Void'&&state.voidHeart?' · +'+heartEvilGain().toFixed(2)+' Evil':''))).join(' ')+
+     (pending?'<section class="card"><p>'+(passages[pending]||titles[pending])+'</p><p>'+details+'</p>'+button('accept',pending==='Embrace Void'?'Confirm Void':('Confirm '+pending))+' '+button('cancel','Keep playing')+'</section>':'');
 
 
  }
@@ -478,8 +479,8 @@ function amulet(){
  return '<h2>Amulet</h2>'+(inspection?button('inspect',artwork+'<br>Inspect amulet'):artwork)+amuletStory[chapter]+
  (state.Evil&&!state.orbs.Evil?relicProgress('Evil'):state.Angelic&&!state.orbs.Angelic?relicProgress('Angelic'):'')+
  (inspectingAmulet?inspection:'')+
- actions.map(a=>button('ask:'+a,a==='Rebirth'?'Touch the eye':a.endsWith('orb')?sprite(artIndex['icons_'+a.split(' ')[0].toLowerCase()+'orb'],44)+' Claim '+(a==='Angelic orb'?'Angelic Orb':'Evil Orb')+' · ×5 skill XP':'Embrace '+a+' (+'+alignmentGain(a).toFixed(2)+')')).join(' ')+
- (pending?'<div class="card"><p>'+(pending==='Rebirth'?'Your current levels become your next life’s XP memories.':'This resets your current levels and XP memories. Your earned orbs carry forward.')+'</p>'+button('accept','Confirm '+pending)+' '+button('cancel','Keep playing')+'</div>':'')+
+ actions.map(a=>button('ask:'+a,a==='Rebirth'?'Touch the eye':a.endsWith('orb')?sprite(artIndex['icons_'+a.split(' ')[0].toLowerCase()+'orb'],44)+' Claim '+(a==='Angelic orb'?'Angelic Orb':'Evil Orb')+' · ×5 skill XP':embraceLabel(a,alignmentGain(a)))).join(' ')+
+ (pending?'<div class="card"><p>'+(pending==='Rebirth'?'Your current levels become your next life’s XP memories.':'This resets your current levels and XP memories. Your earned orbs carry forward.')+'</p>'+button('accept',pending==='Embrace Void'?'Confirm Void':('Confirm '+pending))+' '+button('cancel','Keep playing')+'</div>':'')+
  '<p>Lives lived · '+state.life+'<br>Evil · '+state.Evil.toFixed(2)+'　Angelic · '+state.Angelic.toFixed(2)+'</p>'+Object.keys(state.orbs).map(o=>sprite(artIndex['icons_'+o.toLowerCase()+'orb'])+' '+o+' orb').join(' ');
 }
 function render(){
