@@ -23,7 +23,9 @@ main:has(.launch) #save-tools{max-width:36rem;margin:18px auto 0}
 @media(max-width:600px){main{padding-left:max(16px,env(safe-area-inset-left));padding-right:max(16px,env(safe-area-inset-right))}
 header{padding-bottom:12px;gap:10px}.launch{margin-top:26px}.launch h1{margin-bottom:16px}}
 
-.profile{position:sticky;top:env(safe-area-inset-top,0px);z-index:3;background:#211e26;box-shadow:0 3px 12px #0005}
+.play-controls{position:sticky;top:env(safe-area-inset-top,0px);z-index:3;margin-top:12px;background:var(--deep,#211e26)}
+.play-controls nav{margin:0;padding:6px 0;gap:4px}.play-controls nav button{flex:1;min-height:44px}.play-controls .profile{margin:0;position:relative}
+.profile{background:#211e26;box-shadow:0 3px 12px #0005}
 @media(max-width:600px){.profile{padding:8px 12px;font-size:13px;line-height:1.35;margin-top:8px}.profile::before{content:"";position:absolute;bottom:100%;left:-1px;right:-1px;height:env(safe-area-inset-top,0px);background:#211e26}}
 button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 @media(hover:hover) and (pointer:fine){button:not(.on):not(.primary):hover:enabled{border-color:#978aa1}}
@@ -52,6 +54,7 @@ body[data-path]:not([data-path=""]) .xp-track i{background:linear-gradient(90deg
  .level-gain{animation:level-settle .45s ease-out}
  @keyframes level-settle{from{transform:translateY(2px);opacity:.65}to{transform:translateY(0);opacity:1}}
 }
+.city .play-controls{background:#090f18}
 </style><main><header><img src="./icon-192.png" alt="" width="40" height="40" style="vertical-align:middle;border-radius:8px"> Progress Knight <span>REMASTERED</span></header><div id="screen"></div><details id="save-tools" class="card"><summary>Save &amp; backup</summary><p><label><input id="alignment-ui" type="checkbox"> Use alignment appearance</label></p><p><label><input id="level-feedback" type="checkbox"> Show level-up highlights</label></p><p><a href="./previous.html">Earlier prototype save</a></p><p>Download your campaign to keep a copy or move it to another device.</p><button id="export-save">Download backup</button> <label>Restore from file <input id="import-file" type="file" accept=".json,application/json"></label><p id="backup-status" aria-live="polite"></p><button hidden id="confirm-restore">Restore this campaign</button> <button hidden id="cancel-restore">Cancel</button></details></main><script src="./balance.js"></script><script src="./remastered.js"></script><script src="./save-tools.js"></script></html>
 
 
