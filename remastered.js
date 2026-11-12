@@ -206,9 +206,12 @@ function step(days){
   gain(state.job,jobRate*days);gain(state.skill,skillRate*days);
 }
 function alignmentGain(side){return side==='Evil'?(effect('Evil control')+effect('Blood meditation')):(effect('Pure Heart')+effect('Spiritual Meditation'))}
+// Bank in hundredths so small payouts accumulate exactly at relic thresholds.
+function roundVoid(value){return Number(value.toFixed(2))}
+function formatVoid(value){return value.toLocaleString(undefined,{maximumFractionDigits:2})}
 function voidGain(){
  if(state.crossedRift)return Math.floor(age()/200*(state.superHeart?2:1)*(state.chrono===5?2:1));
- return Math.floor(level('Absolute Wish')*effect('Void Embodiment')*(state.superHeart?2:1));
+ return roundVoid(level('Absolute Wish')*entries['Spiritual Meditation'].effect*effect('Void Embodiment')*(state.superHeart?2:1));
 }
 function heartEvilGain(){
  return (1+.01*level('Evil control'))*(1+.01*level('Blood meditation'))*effect('Void Embodiment');
@@ -224,7 +227,7 @@ function relicRequirements(path){
 function relicReady(path){return relicRequirements(path).every(([,current,target])=>current>=target)}
 function relicProgress(path){
  const name=path==='Void'?'Void Heart':path==='Second Heart'?'Second Void Heart':path==='Rift'?'Cross the Rift':path+' Orb';
- return '<section class="card"><h3>'+name+' requirements</h3><ul>'+relicRequirements(path).map(([label,current,target])=>'<li>'+(current>=target?'✓ ':'')+label+' · '+fmt(current)+' / '+target+'</li>').join('')+'</ul></section>';
+ return '<section class="card"><h3>'+name+' requirements</h3><ul>'+relicRequirements(path).map(([label,current,target])=>'<li>'+(current>=target?'✓ ':'')+label+' · '+(label.includes('Void')?formatVoid(current):fmt(current))+' / '+target+'</li>').join('')+'</ul></section>';
 }
 const chronoSteps=[
  {action:'Record imprint',name:'Personality Imprint',age:65,skills:{'Relay technician':15,'Neural link':30},benefit:'Doubles the XP bonus from remembered levels.'},
@@ -281,10 +284,10 @@ function reset(action){
   }
   else if(action==='Evil'){Evil+=alignmentGain('Evil');Angelic=0}
   else if(action==='Angelic'){Angelic+=alignmentGain('Angelic');Evil=0}
-  if(action==='Rebirth'&&state.voidPath&&!state.voidHeart)state.Void+=voidGain();
-  if(action==='Collect Void'){state.Void+=voidGain();if(state.voidHeart&&!state.crossedRift)Evil+=heartEvilGain()}
+  if(action==='Rebirth'&&state.voidPath&&!state.voidHeart)state.Void=roundVoid(state.Void+voidGain());
+  if(action==='Collect Void'){state.Void=roundVoid(state.Void+voidGain());if(state.voidHeart&&!state.crossedRift)Evil+=heartEvilGain()}
   else if(action==='Second Heart')state.heartPair=true;
-  else if(action==='Void Heart'){state.voidHeart=true;state.Void-=heartCost;orbs={};Evil=0;Angelic=0}
+  else if(action==='Void Heart'){state.voidHeart=true;state.Void=roundVoid(state.Void-heartCost);orbs={};Evil=0;Angelic=0}
   else if(action.endsWith(' orb')){orbs={...orbs,[action.split(' ')[0]]:true};Evil=0;Angelic=0}
   state={...newLife(),hero,chrono:state.chrono,crossedRift:state.crossedRift,heartPair:state.heartPair,superHeart:state.superHeart,Void:state.Void,voidHeart:state.voidHeart,voidPath:state.voidPath||Boolean(orbs.Evil&&orbs.Angelic),devSpeed:state.devSpeed,life:life+1,Evil,Angelic,orbs,memory};
   cityLoadout(state);
@@ -338,7 +341,7 @@ function cityTerminal(){
  const needs=step?[['Age',age(),step.age],...Object.entries(step.skills).map(([name,target])=>[name,level(name),target])]:[];
  const progress=step?'<h3>'+step.name+'</h3><p>'+step.benefit+'</p><ul>'+needs.map(([n,v,t])=>'<li>'+(v>=t?'✓ ':'')+n+' · '+v+' / '+t+'</li>').join('')+'</ul>':'';
  const confirm=pending==='Transmit construct'?'Enter the Still Observatory. Your current life continues, and your city uplink stays active.':pending==='Fuse Continuum Heart'?'Bind the completed construct to the Super Void Heart. Its existing bonuses carry into the Continuum Heart. This life continues.':'Start a new life at age 14 with XP memories'+(pending==='Collect Void'?' and '+voidGain()+' more Void':'')+(step?.action===pending?' and the '+step.name:'')+'?';
- return '<h2>'+ (state.chrono>=4?'Observatory relay':'Relay terminal')+'</h2>'+art+'<h3>'+chronoNames[state.chrono]+'</h3><p>'+notes[state.chrono]+'</p><p>Banked Void · '+fmt(state.Void)+' · Augment XP ×'+(1+state.Void/10).toFixed(1)+' · Void Heart lineage</p>'+progress+
+ return '<h2>'+ (state.chrono>=4?'Observatory relay':'Relay terminal')+'</h2>'+art+'<h3>'+chronoNames[state.chrono]+'</h3><p>'+notes[state.chrono]+'</p><p>Banked Void · '+formatVoid(state.Void)+' · Augment XP ×'+(1+state.Void/10).toFixed(1)+' · Void Heart lineage</p>'+progress+
  actions.map(a=>button('ask:'+a,labels[a]||a)).join(' ')+(pending?'<section class="card"><p>'+confirm+'</p>'+button('accept','Confirm')+' '+button('cancel','Cancel')+'</section>':'');
 
 }
@@ -457,9 +460,9 @@ function amulet(){
      'Super Void Heart':'You cradle one Heart in each hand. They beat against one another until you turn the second to fit the first. The seam closes. Somewhere beyond the amulet, something knocks once in reply.'
    };
    const title=state.superHeart?'Super Void Heart':state.heartPair?'Two Void Hearts':state.voidHeart?'Void Heart':'The twin sockets';
-   const story=state.crossedRift?'You have crossed the rift. Collecting Void now carries this life’s job and skill levels into the next as XP memories.':state.superHeart?'The Super Void Heart doubles every Void collection. Across the rift, something answers its beat.':state.heartPair?'Two Hearts rest in the amulet. Turn them together to seal the bond.':state.voidHeart?'The fused orbs beat as one. Bank Void and master the path again to grow a second Heart.':'Held apart, the two orbs cast ordinary shadows. Held together, they leave a darkness that stays on your fingers. Train Absolute Wish. Each level earned this life banks one Void when you touch the eye to be reborn. At age 400, the copper can hold both stones.';
-   const details=pending==='Void Heart'?'Spend 400 Void and consume the amulet and both orbs. Both orb XP bonuses end. Be reborn at 14 with the Void Heart and '+fmt(state.Void-heartCost)+' Void. Current levels, possessions and XP memories reset.':pending==='Cross the Rift'?'Enter the neon city in this life. The Super Void Heart carries over, and collecting Void also preserves XP memories.':pending==='Super Void Heart'?'The two Hearts become one. Void collection doubles permanently. This life continues.':pending==='Collect Void'&&state.crossedRift?'Bank the Void and begin a new life with your current levels as XP memories.':pending==='Rebirth'?'Begin a new life with your current levels as XP memories.':'Begin a new life. Current levels and XP memories reset. Banked Void and permanent bonuses carry over.';
-   return '<h2>'+title+'</h2>'+(state.voidHeart?voidArt(8,90,title):sprite(artIndex.icons_amulet_65,76)+sprite(artIndex.icons_angelicorb,50)+sprite(artIndex.icons_evilorb,50))+'<p>'+story+'</p><p>Void collected · '+fmt(state.Void)+(state.voidHeart?'<br>Void skill XP ×'+(1+state.Void/10).toFixed(1):'')+'</p>'+
+   const story=state.crossedRift?'You have crossed the rift. Collecting Void now carries this life’s job and skill levels into the next as XP memories.':state.superHeart?'The Super Void Heart doubles every Void collection. Across the rift, something answers its beat.':state.heartPair?'Two Hearts rest in the amulet. Turn them together to seal the bond.':state.voidHeart?'The fused orbs beat as one. Bank Void and master the path again to grow a second Heart.':'Held apart, the two orbs cast ordinary shadows. Held together, they leave a darkness that stays on your fingers. Train Absolute Wish. Every ten levels earned this life bank one Void when you touch the eye to be reborn. At age 400, the copper can hold both stones.';
+   const details=pending==='Void Heart'?'Spend 400 Void and consume the amulet and both orbs. Both orb XP bonuses end. Be reborn at 14 with the Void Heart and '+formatVoid(roundVoid(state.Void-heartCost))+' Void. Current levels, possessions and XP memories reset.':pending==='Cross the Rift'?'Enter the neon city in this life. The Super Void Heart carries over, and collecting Void also preserves XP memories.':pending==='Super Void Heart'?'The two Hearts become one. Void collection doubles permanently. This life continues.':pending==='Collect Void'&&state.crossedRift?'Bank the Void and begin a new life with your current levels as XP memories.':pending==='Rebirth'?'Begin a new life with your current levels as XP memories.':'Begin a new life. Current levels and XP memories reset. Banked Void and permanent bonuses carry over.';
+   return '<h2>'+title+'</h2>'+(state.voidHeart?voidArt(8,90,title):sprite(artIndex.icons_amulet_65,76)+sprite(artIndex.icons_angelicorb,50)+sprite(artIndex.icons_evilorb,50))+'<p>'+story+'</p><p>Void collected · '+formatVoid(state.Void)+(state.voidHeart?'<br>Void skill XP ×'+(1+state.Void/10).toFixed(1):'')+'</p>'+
      (!state.voidHeart?relicProgress('Void'):!state.heartPair&&!state.superHeart?relicProgress('Second Heart'):state.superHeart&&!state.crossedRift?relicProgress('Rift'):'')+
      available.map(a=>button('ask:'+a,titles[a]+(a==='Collect Void'&&state.voidHeart?' · +'+heartEvilGain().toFixed(2)+' Evil':''))).join(' ')+
      (pending?'<section class="card"><p>'+(passages[pending]||titles[pending])+'</p><p>'+details+'</p>'+button('accept','Confirm '+pending)+' '+button('cancel','Keep playing')+'</section>':'');
@@ -512,7 +515,7 @@ function draw(){
    screen.innerHTML=`<section class="launch"><h1>Choose your character</h1><div class="roster">${cards}</div><button type="button" class="primary" data-act="begin">Continue as ${chosen}</button></section>`;
    return;
  }
- const rested=Date.now()<(state.restedUntil||0)?' · Rested speed ×'+state.restedSpeed.toFixed(2):'';const top='<div class="card profile">'+portrait()+'<div>'+(theme?'<small class="path-stat">'+({evil:'Evil · '+fmt(state.Evil),angelic:'Angelic · '+fmt(state.Angelic),void:'Void · '+fmt(state.Void)})[theme]+'</small>':'')+'<b>'+state.hero+'</b> · Life '+state.life+'<br><span data-clock>Age '+age()+' · '+Math.floor(state.days%365)+' days</span> · Lifespan '+Math.floor(lifespan())+'<br><span class="gold">◉ <span data-coins>'+fmt(state.coins)+'</span> · '+fmt(pay(state.job)-upkeep())+' net/day</span><br>Happiness ×'+happy().toFixed(2)+rested+'</div></div>';
+ const rested=Date.now()<(state.restedUntil||0)?' · Rested speed ×'+state.restedSpeed.toFixed(2):'';const top='<div class="card profile">'+portrait()+'<div>'+(theme?'<small class="path-stat">'+({evil:'Evil · '+fmt(state.Evil),angelic:'Angelic · '+fmt(state.Angelic),void:'Void · '+formatVoid(state.Void)})[theme]+'</small>':'')+'<b>'+state.hero+'</b> · Life '+state.life+'<br><span data-clock>Age '+age()+' · '+Math.floor(state.days%365)+' days</span> · Lifespan '+Math.floor(lifespan())+'<br><span class="gold">◉ <span data-coins>'+fmt(state.coins)+'</span> · '+fmt(pay(state.job)-upkeep())+' net/day</span><br>Happiness ×'+happy().toFixed(2)+rested+'</div></div>';
  if(state.crossedRift){
    const where=tab==='Amulet'?'Terminal':tab==='Jobs'?'Contracts':tab==='Skills'?'Augments':'Housing';
    const tabs=[['Jobs','Contracts'],['Skills','Augments'],['Shop','Housing'],['Amulet','Terminal']];

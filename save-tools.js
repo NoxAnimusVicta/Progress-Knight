@@ -75,7 +75,7 @@ function readBackup(text) {
   check(Number.isInteger(dst.chrono)&&numeric(dst.chrono,5)&&(!dst.chrono||dst.crossedRift),'Chronotech progression');
   check(!dst.crossedRift||dst.superHeart,'rift progression');
   check(!(dst.heartPair&&dst.superHeart)&&(!(dst.heartPair||dst.superHeart)||(dst.voidHeart&&dst.voidPath)),'Heart progression');
-  check(Number.isSafeInteger(src.Void??0)&&numeric(src.Void??0),'Void');
+  check(numeric(src.Void??0)&&roundVoid(src.Void??0)===(src.Void??0),'Void');
   dst.Void=src.Void??0;
   return migrateVoid(dst);
 }
