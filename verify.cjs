@@ -123,6 +123,17 @@ state={...newLife(),hero:'Magnus',coins:1e15};tab='Shop';assert(!list().includes
 for(const [side,home,relic] of [['Evil','Ashen keep','Obsidian seal'],['Angelic','Dawn sanctuary','Ivory seal']]){
  state[side]=1;assert(list().includes(home)&&!list().includes(relic));state[side]=25;assert(list().includes(relic));state[side]=0;assert(!list().includes(home)&&!list().includes(relic));
 }
+for(const [side,seal] of [['Evil','Obsidian seal'],['Angelic','Ivory seal']]){
+ state={...newLife(),hero:'Magnus',[side]:24,coins:60000};
+ const swordAt=shopThreshold(entries['Steel longsword']);
+ assert(swordAt>state.coins);
+ const equipment=()=>list().split('<h3>Equipment</h3>')[1];
+ assert(equipment().includes('Coins 60,000/'+swordAt.toLocaleString()));
+ state.coins=swordAt;assert(equipment().includes('gear:Steel longsword')&&!equipment().includes('gear:'+seal));
+ screen.onclick({target:{closest:()=>({dataset:{act:'gear:Steel longsword'}})}});assert(state.equipment['Steel longsword']);
+ state[side]=25;assert(equipment().includes('gear:'+seal));
+}
+state={...newLife(),hero:'Magnus',coins:1e15};
 state.voidHeart=true;assert(list().includes('Town Ruler')&&list().includes('Void Armor'));assert.deepEqual(list().match(new RegExp('<h3>.*?</h3>','g')),['<h3>Properties</h3>','<h3>Equipment</h3>']);
 for(const hero of ['Magnus','Isabella']){
  for(const side of ['Evil','Angelic']){

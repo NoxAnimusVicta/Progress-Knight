@@ -417,7 +417,7 @@ function list(){
     Skills:['Fundamentals','Combat','Magic',...(showAdvancedMagic()?['Advanced arcana']:[]),'Dark magic','Advanced dark magic','Light magic','Advanced Angelic','Void Manipulation'].map(group=>[group==='Advanced arcana'?'Advanced Magic':group,group]),
     Shop:[['Properties','Properties',...(state.voidHeart?['Void properties']:[])],['Equipment','Misc',...(state.voidHeart?['Void equipment']:[])]]};
  return sections[tab].map(([heading,...groups])=>{
-  const candidates=catalog.filter(e=>groups.includes(e.group)&&ownsSkillPath(state,e.group)&&(e.group!=='Advanced arcana'||Boolean(e.income)===(tab==='Jobs'))&&(!e.side||state[e.side]>0));
+  const candidates=catalog.filter(e=>groups.includes(e.group)&&ownsSkillPath(state,e.group)&&(e.group!=='Advanced arcana'||Boolean(e.income)===(tab==='Jobs'))&&(!e.side||state[e.side]>=e.requirements[e.side]));
   if(heading==='Advanced Magic'){
    const order=['Astral Body','All Seeing Eye','Temporal Dimension','Brainwashing'];
    candidates.sort((a,b)=>order.indexOf(a.name)-order.indexOf(b.name));
