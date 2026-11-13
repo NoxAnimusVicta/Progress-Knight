@@ -14,8 +14,8 @@ const voidCatalog=[
  {"name":"Mind Seize","maxXp":100,"effect":0.0006,"description":"Reduced Happiness","group":"Void Manipulation","tile":2,"requirements":{"Void Amplification":3000}},
  {"name":"Ceaseless Abyss","maxXp":100,"effect":0.000585,"description":"Longer Lifespan","group":"Void Manipulation","tile":3,"requirements":{"Void Influence":4000,"Abyss Anomaly":50}},
  {"name":"Void Symbiosis","maxXp":100,"effect":0.0015,"description":"Ability XP","group":"Void Manipulation","tile":4,"requirements":{"Ceaseless Abyss":3500,"Void Reaver":50}},
- {"name":"Void Embodiment","maxXp":100,"effect":0.0025,"description":"Void gain","group":"Void Manipulation","tile":5,"requirements":{"Dark influence":4600,"Void Lord":50}},
- {"name":"Abyss Manipulation","maxXp":100,"effect":-0.01,"description":"Reduced Expenses","group":"Void Manipulation","tile":6,"requirements":{"Abyss God":350,"Dark influence":6000,"Void Influence":6000}},
+ {"name":"Void Embodiment","maxXp":100,"effect":0.0025,"description":"Void gain","group":"Void Manipulation","tile":5,"requirements":{"Void Amplification":4600,"Void Lord":50}},
+ {"name":"Abyss Manipulation","maxXp":100,"effect":-0.01,"description":"Reduced Expenses","group":"Void Manipulation","tile":6,"requirements":{"Abyss God":350,"Void Amplification":6000,"Void Influence":6000}},
  {"name":"Town Ruler","expense":35000000,"effect":120,"group":"Void properties","tile":0,"requirements":{"Coins":3500000000}},
  {"name":"City Ruler","expense":1100000000,"effect":500,"group":"Void properties","tile":1,"requirements":{"Coins":110000000000}},
  {"name":"Nation Ruler","expense":13000000000,"effect":1200,"group":"Void properties","tile":2,"requirements":{"Coins":1300000000000}},
@@ -38,7 +38,7 @@ const voidCatalog=[
  {"name":"Brainwashing","maxXp":100,"effect":-0.01,"description":"Reduced Expenses","group":"Advanced arcana","tile":6,"requirements":{"Imperator":100}},
  {"name":"Astral Body","maxXp":100,"effect":0.0035,"description":"Longer lifespan","group":"Advanced arcana","tile":7,"requirements":{"Astral scholar":10}},
  {"name":"Dark Knowledge","maxXp":100,"effect":0.003,"description":"Class XP","group":"Advanced dark magic","tile":0,"requirements":{"Evil":5000}},
- {"name":"Void Influence","maxXp":100,"effect":0.0028,"description":"All XP","group":"Advanced dark magic","tile":1,"requirements":{"Evil":50000}},
+ {"name":"Void Influence","maxXp":100,"effect":0.0028,"description":"All XP","group":"Void Manipulation","tile":1,"requirements":{"Void":1}},
  {"name":"Time Loop","maxXp":100,"effect":0.001,"description":"Gamespeed","group":"Advanced dark magic","tile":2,"requirements":{"Evil":2500000}},
  {"name":"Evil Incarnate","maxXp":100,"effect":0.0004,"description":"Ability XP","group":"Advanced dark magic","tile":3,"requirements":{"Evil":1000000000}}
 ];
@@ -50,7 +50,7 @@ for(const [name,mirror,art] of [
  ['Grace Incarnate','Evil Incarnate','Bountiful Grace']
 ]){
  const source=voidCatalog.find(entry=>entry.name===mirror);
- entries[name]={...source,name,group:'Advanced Angelic',tile:entries[art].tile,requirements:{Angelic:source.requirements.Evil}};
+ entries[name]={...source,name,group:'Advanced Angelic',tile:entries[art].tile,requirements:{Angelic:mirror==='Void Influence'?50000:source.requirements.Evil}};
 }
 const pathResource={'Dark magic':'Evil','Advanced dark magic':'Evil','Light magic':'Angelic','Advanced Angelic':'Angelic','Void Manipulation':'Void'};
 function ownsSkillPath(s,group){
@@ -143,26 +143,25 @@ function effect(name){
 const item=n=>state.equipment[n] ? entries[n].effect : 1;
 const happy=()=>entries[state.home].effect*effect('Meditation')*item('Butler')/effect('Mind Seize');
 const age=()=>Math.floor(state.days/365);
-const heartCareerFactor=()=>state.voidHeart?1+Math.min(state.Void,2000)**2:1;
+const heartXpMultiplier=()=>state.voidHeart?state.life*(state.superHeart?2:1):1;
 const lifespan=()=>70*effect('Immortality')*effect('Super immortality')*effect('Astral Body')*effect('Ceaseless Abyss');
 const dead=()=>state.days>=lifespan()*365;
 function rate(n){
   const e=entries[n];
   // Remastered adds a constant x3 to every task XP multiplier list (1.9.1).
-  let gain=30*(1+(state.memory[n]||0)/10)*happy()*effect('Dark influence')*effect('Demon training')*effect('Divine Blessing')*effect("Angel's Guidance");
+  let gain=30*heartXpMultiplier()*(1+(state.memory[n]||0)/10)*happy()*effect('Dark influence')*effect('Demon training')*effect('Divine Blessing')*effect("Angel's Guidance");
   if(e.income)gain*=effect('Productivity')*item('Personal squire');
   else gain*=effect('Concentration')*item('Book')*item('Study desk')*item('Library')*(state.orbs.Evil?5:1)*(state.orbs.Angelic?5:1);
   if(e.group==='Military')gain*=effect('Battle tactics')*item('Steel longsword')*(state.hero==='Isabella'?1.1:1);
   if(e.group==='The Arcane Association'||(e.group==='Advanced arcana'&&e.income))gain*=effect('Mana control')*(state.hero==='Magnus'?1.1:1);
-  gain*=effect('Void Influence')*effect('Celestial Influence');
+  gain*=(state.voidHeart&&state.Void>=1?effect('Void Influence'):1)*effect('Celestial Influence');
   if(e.income)gain*=effect('Dark Knowledge')*effect('Sacred Knowledge');
   else gain*=effect('Void Symbiosis')*item('Void Blade')*effect('Evil Incarnate')*effect('Grace Incarnate');
-  if(e.group==='The Void'||e.group==='Advanced arcana'||(state.superHeart&&['Magic','The Arcane Association'].includes(e.group)))gain*=heartCareerFactor();
   if(e.group==='The Void')gain*=effect('Void Amplification')*item('Void Armor')*item('Void Dust');
   if(e.group==='Advanced dark magic')gain*=state.Evil;
   if(e.group==='Fundamentals')gain*=item("Mind's Eye");
   if(e.group==='Magic'||(e.group==='Advanced arcana'&&!e.income))gain*=item('Observatory');
-  if(e.group==='Void Manipulation')gain*=(1+state.Void/10)*item('Void Necklace')*item('Void Orb');
+  if(e.group==='Void Manipulation')gain*=Math.max(1,state.Void)*item('Void Necklace')*item('Void Orb');
   if(n==='Strength')gain*=effect('Muscle memory')*item('Dumbbells');
   if(e.group==='Magic'||(e.group==='Advanced arcana'&&!e.income))gain*=item('Sapphire charm');
   if(pathResource[e.group]==='Evil')gain*=item('Obsidian seal');
@@ -468,9 +467,9 @@ function amulet(){
      'Super Void Heart':'You cradle one Heart in each hand. They beat against one another until you turn the second to fit the first. The seam closes.'
    };
    const title=state.superHeart?'Super Void Heart':state.heartPair?'Two Void Hearts':state.voidHeart?'Void Heart':'The twin sockets';
-   const story=state.superHeart?'The Super Void Heart doubles your Void gain.':state.heartPair?'Two Hearts rest in the amulet. Turn them together to seal the bond.':state.voidHeart?'The fused orbs beat as one. From age 200, Embrace Void to gain Void and unlock Void Manipulation skills.':'The stones draw close whenever your pulse falters. At the end of this life, set them both into the copper eye to create the Void Heart.';
-   const details=pending==='Void Heart'?'Consume the amulet and both orbs. Both orb XP bonuses end. Be reborn at 14 with the Void Heart. Current levels, possessions and XP memories reset.':pending==='Super Void Heart'?'The two Hearts become one. Void gain doubles permanently. This life continues.':pending==='Embrace Void'?'Gain '+voidGain()+' Void. Current levels and all previous XP memories are cleared.':pending==='Rebirth'?'Begin a new life with your current levels as XP memories.':'Begin a new life. Current levels and XP memories reset. Void and permanent bonuses carry over.';
-   return '<h2>'+title+'</h2>'+(state.voidHeart?voidArt(8,90,title):sprite(artIndex.icons_amulet_65,76)+sprite(artIndex.icons_angelicorb,50)+sprite(artIndex.icons_evilorb,50))+'<p>'+story+'</p><p>Void · '+formatVoid(state.Void)+(state.voidHeart?'<br>Void jobs and advanced arcana'+(state.superHeart?', including ordinary magic and arcane jobs':'')+' XP ×'+fmt(heartCareerFactor())+'<br>Void skill XP ×'+(1+state.Void/10).toFixed(1):'')+'</p>'+
+   const story=state.superHeart?'The Super Void Heart doubles your life-based XP bonus and your Void gain.':state.heartPair?'Two Hearts rest in the amulet. Turn them together to seal the bond.':state.voidHeart?'The fused orbs beat as one. From age 200, Embrace Void to gain Void and unlock Void Manipulation skills.':'The stones draw close whenever your pulse falters. At the end of this life, set them both into the copper eye to create the Void Heart.';
+   const details=pending==='Void Heart'?'Consume the amulet and both orbs. Both orb XP bonuses end. Be reborn at 14 with the Void Heart. Current levels, possessions and XP memories reset.':pending==='Super Void Heart'?'The two Hearts become one. All job and skill XP becomes twice your life number. Void gain doubles permanently. This life continues.':pending==='Embrace Void'?'Gain '+voidGain()+' Void. Current levels and all previous XP memories are cleared.':pending==='Rebirth'?'Begin a new life with your current levels as XP memories.':'Begin a new life. Current levels and XP memories reset. Void and permanent bonuses carry over.';
+   return '<h2>'+title+'</h2>'+(state.voidHeart?voidArt(8,90,title):sprite(artIndex.icons_amulet_65,76)+sprite(artIndex.icons_angelicorb,50)+sprite(artIndex.icons_evilorb,50))+'<p>'+story+'</p><p>Void · '+formatVoid(state.Void)+(state.voidHeart?'<br>Heart · all XP ×'+fmt(heartXpMultiplier())+'<br>Void · Void skill XP ×'+formatVoid(Math.max(1,state.Void)):'')+'</p>'+
      (!state.voidHeart?heartForge():!state.heartPair&&!state.superHeart?relicProgress('Second Heart'):'')+
      (state.voidHeart?nextVoidShop():'')+
      available.filter(a=>a!=='Void Heart').map(a=>button('ask:'+a,titles[a])).join(' ')+
