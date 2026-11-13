@@ -118,6 +118,7 @@ function migrateOldVoidTasks(s){
  }
 }
 function migrateVoid(s){
+ delete s.happinessUntil;delete s.acceleratingUntil;
  migrateOldVoidTasks(s);
  removeOrbTraining(s);
  cityLoadout(s);
@@ -145,18 +146,12 @@ function effect(name){
   return 1+l*entries[name].effect;
 }
 const item=n=>state.equipment[n] ? entries[n].effect : 1;
-const potionActive=kind=>Date.now()<(state[kind+'Until']||0);
-function potionSpent(){return Boolean(state.happinessUntil||state.acceleratingUntil)}
-function drink(kind){if(!potionSpent())state[kind+'Until']=Date.now()+600000}
-function potionButton(kind){
- const active=potionActive(kind),spent=potionSpent();
- const timing=active?Math.ceil((state[kind+'Until']-Date.now())/1000)+'s':spent?'Next life':'10 min';
- const label=(kind==='happiness'?'Happiness':'Speed')+' ×2 · '+timing;
- return '<button data-act="potion:'+kind+'" class="'+(active?'on':'')+'"'+(spent?' disabled':'')+'>'+label+'</button>';
-}
-const happy=()=>(potionActive('happiness')?2:1)*entries[state.home].effect*effect('Meditation')*item('Butler')/effect('Mind Seize');
+const happy=()=>entries[state.home].effect*effect('Meditation')*item('Butler')/effect('Mind Seize');
 const age=()=>Math.floor(state.days/365);
-const lifespan=()=>70*(state.crossedRift?effect('Life support'):1)*effect('Immortality')*effect('Super immortality')*effect('Astral Body')*effect('Ceaseless Abyss');
+// The fused Heart carries years and career experience into its own era.
+const heartYears=()=>state.voidHeart&&!state.crossedRift?Math.min(1200,2*state.Void):0;
+const heartCareerFactor=()=>state.voidHeart&&!state.crossedRift?1+Math.min(state.Void,2000)**2:1;
+const lifespan=()=>heartYears()+70*(state.crossedRift?effect('Life support'):1)*effect('Immortality')*effect('Super immortality')*effect('Astral Body')*effect('Ceaseless Abyss');
 const dead=()=>state.days>=lifespan()*365;
 function rate(n){
   const e=entries[n];
@@ -174,6 +169,7 @@ function rate(n){
   gain*=effect('Void Influence')*effect('Celestial Influence');
   if(e.income)gain*=effect('Dark Knowledge')*effect('Sacred Knowledge');
   else gain*=effect('Void Symbiosis')*item('Void Blade')*effect('Evil Incarnate')*effect('Grace Incarnate');
+  if(e.group==='The Void'||e.group==='Advanced arcana'||(state.superHeart&&['Magic','The Arcane Association'].includes(e.group)))gain*=heartCareerFactor();
   if(e.group==='The Void')gain*=effect('Void Amplification')*item('Void Armor')*item('Void Dust');
   if(e.group==='Advanced dark magic')gain*=state.Evil;
   if(e.group==='Fundamentals')gain*=item("Mind's Eye");
@@ -411,7 +407,7 @@ function portrait(){
  return sprite(tile,76);
 }
 function button(action,label,selected=false){
- const isToggle=['tab','devSpeed','warp','potion'].includes(action.split(':')[0]);
+ const isToggle=['tab','devSpeed','warp'].includes(action.split(':')[0]);
  const pressed=isToggle?' aria-pressed="'+Boolean(selected)+'"':'';
  return '<button data-act="'+action+'" class="'+(selected?'on':'')+'"'+pressed+'>'+label+'</button>';
 }
@@ -421,7 +417,7 @@ function meter(n){
 }
 function daysPerSecond(now){
  const rested=now<(state.restedUntil||0)?state.restedSpeed:1;
- return 5*state.devSpeed*rested*(potionActive('accelerating')?2:1)*(state.warp?effect('Time warping')*effect('Temporal Dimension')*effect('Time Loop')*effect('Eternal Vigil'):1);
+ return 5*state.devSpeed*rested*(state.warp?effect('Time warping')*effect('Temporal Dimension')*effect('Time Loop')*effect('Eternal Vigil'):1);
 }
 
 let animatedBars=[], clockLabel, coinLabel, animationId;
@@ -525,7 +521,7 @@ function amulet(){
    const title=state.superHeart?'Super Void Heart':state.heartPair?'Two Void Hearts':state.voidHeart?'Void Heart':'The twin sockets';
    const story=state.crossedRift?'You have crossed the rift. The relay can let you embrace Void or record the memories of a life.':state.superHeart?'The Super Void Heart doubles your Void gain. Across the rift, something answers its beat.':state.heartPair?'Two Hearts rest in the amulet. Turn them together to seal the bond.':state.voidHeart?'The fused orbs beat as one. From age 200, Embrace Void to gain Void and unlock Void Manipulation skills.':'The stones draw close whenever your pulse falters. At the end of this life, set them both into the copper eye to create the Void Heart.';
    const details=pending==='Void Heart'?'Consume the amulet and both orbs. Both orb XP bonuses end. Be reborn at 14 with the Void Heart. Current levels, possessions and XP memories reset.':pending==='Cross the Rift'?'Enter the neon city in this life. The Super Void Heart carries over. The terminal offers separate memory and Void resets.':pending==='Super Void Heart'?'The two Hearts become one. Void gain doubles permanently. This life continues.':pending==='Embrace Void'?'Gain '+voidGain()+' Void. Current levels and all previous XP memories are cleared.':pending==='Rebirth'?'Begin a new life with your current levels as XP memories.':'Begin a new life. Current levels and XP memories reset. Void and permanent bonuses carry over.';
-   return '<h2>'+title+'</h2>'+(state.voidHeart?voidArt(8,90,title):sprite(artIndex.icons_amulet_65,76)+sprite(artIndex.icons_angelicorb,50)+sprite(artIndex.icons_evilorb,50))+'<p>'+story+'</p><p>Void · '+formatVoid(state.Void)+(state.voidHeart?'<br>Void skill XP ×'+(1+state.Void/10).toFixed(1):'')+'</p>'+
+   return '<h2>'+title+'</h2>'+(state.voidHeart?voidArt(8,90,title):sprite(artIndex.icons_amulet_65,76)+sprite(artIndex.icons_angelicorb,50)+sprite(artIndex.icons_evilorb,50))+'<p>'+story+'</p><p>Void · '+formatVoid(state.Void)+(state.voidHeart?'<br>Heart lifespan +'+fmt(heartYears())+' years · Void jobs and advanced arcana'+(state.superHeart?', including ordinary magic and arcane jobs':'')+' XP ×'+fmt(heartCareerFactor())+'<br>Void skill XP ×'+(1+state.Void/10).toFixed(1):'')+'</p>'+
      (!state.voidHeart?heartForge():!state.heartPair&&!state.superHeart?relicProgress('Second Heart'):state.superHeart&&!state.crossedRift?relicProgress('Rift'):'')+
      (state.voidHeart?nextVoidShop():'')+
      available.filter(a=>a!=='Void Heart').map(a=>button('ask:'+a,titles[a])).join(' ')+
@@ -590,7 +586,7 @@ function draw(){
  }
 
  const nav=['Jobs','Skills','Shop',...(age()>=25||state.voidPath?['Amulet']:[])];
- screen.innerHTML='<div class="play-controls">'+top+'<nav aria-label="Game sections">'+nav.map(t=>button('tab:'+t,t==='Amulet'&&state.voidHeart?'Heart':t,t===tab)).join('')+'</nav></div>'+noticePanel+'<section class="card">'+(tab==='Amulet'?amulet():list())+'</section><footer>'+state.job+' · Lv. '+level(state.job)+'　'+state.skill+' · Lv. '+level(state.skill)+'<p>'+button('pause',state.paused?'Resume':'Pause')+' '+(level('Time warping')?button('warp','Time warping '+(state.warp?'on':'off'),state.warp):'')+'</p>'+'<small>Choose one potion per life</small> '+['happiness','accelerating'].map(potionButton).join(' ')+'<p>Developer speed　'+[1,5,20].map(v=>button('devSpeed:'+v,v+'×',state.devSpeed===v)).join(' ')+'</p>'+statusText+'</footer>';
+ screen.innerHTML='<div class="play-controls">'+top+'<nav aria-label="Game sections">'+nav.map(t=>button('tab:'+t,t==='Amulet'&&state.voidHeart?'Heart':t,t===tab)).join('')+'</nav></div>'+noticePanel+'<section class="card">'+(tab==='Amulet'?amulet():list())+'</section><footer>'+state.job+' · Lv. '+level(state.job)+'　'+state.skill+' · Lv. '+level(state.skill)+'<p>'+button('pause',state.paused?'Resume':'Pause')+' '+(level('Time warping')?button('warp','Time warping '+(state.warp?'on':'off'),state.warp):'')+'</p>'+'<p>Developer speed　'+[1,5,20].map(v=>button('devSpeed:'+v,v+'×',state.devSpeed===v)).join(' ')+'</p>'+statusText+'</footer>';
 }
 function advance(){
  const now=Date.now(),elapsed=Math.max(0,(now-state.clock)/1000);state.clock=now;
@@ -620,7 +616,6 @@ screen.onclick=e=>{
  if(a==='cancel')pending='';
  if(a==='accept'&&pending){reset(pending);tab=state.crossedRift||['Second Heart','Super Void Heart','Cross the Rift'].includes(pending)?'Amulet':'Jobs';pending=''}
  if(a==='pause')state.paused=!state.paused;
- if(a==='potion'&&['happiness','accelerating'].includes(v))drink(v);
  if(a==='devSpeed'&&[1,5,20].includes(Number(v)))state.devSpeed=Number(v);
  if(a==='warp')state.warp=!state.warp;
  if(entries[v]&&(!voidCatalog.includes(entries[v])||state.voidHeart||entries[v].group==='Advanced dark magic'||entries[v].group==='Advanced arcana')&&!remaining(v).length&&!dead()){

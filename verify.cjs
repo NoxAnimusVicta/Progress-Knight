@@ -3,10 +3,8 @@ const root={}, storage={};const ctx={assert,console,window:{scrollY:0},document:
 vm.createContext(ctx);for(const file of ['balance.js','remastered.js'])vm.runInContext(fs.readFileSync(require('path').join(__dirname,file),'utf8'),ctx);
 vm.runInContext(`
 state.hero='Magnus';
-drink('happiness');assert(potionActive('happiness'));drink('accelerating');assert(!potionActive('accelerating'));
-state.happinessUntil=Date.now()-1;drink('happiness');assert(!potionActive('happiness'));assert(potionButton('accelerating').includes('disabled'));
-state.days=65*365;reset('Rebirth');assert(!potionSpent());state={...newLife(),hero:'Magnus'};
-
+state.happinessUntil=Date.now()+60000;state.acceleratingUntil=state.happinessUntil;
+assert.equal(happy(),1);assert.equal(daysPerSecond(Date.now()),5);migrateVoid(state);assert(!('happinessUntil' in state)&&!('acceleratingUntil' in state));
 assert.equal(catalog.filter(e=>e.group!=="City contracts"&&e.income&&!voidCatalog.includes(e)).length,20);
 assert.equal(catalog.filter(e=>e.group!=="Advanced Angelic"&&e.group!=="Augmentations"&&e.maxXp&&!e.income&&!voidCatalog.includes(e)).length,23);
 assert.equal(catalog.filter(e=>!e.side&&!voidCatalog.includes(e)&&e.group!=="City housing"&&e.expense!==undefined).length,17);
@@ -39,6 +37,13 @@ tab='Skills';assert(!list().includes('Absolute Wish'));state.days=lifespan()*365
 assert(!choices().includes('Void Heart'));state.days++;assert(choices().includes('Void Heart'));
 const lastLife=JSON.stringify(state);delete state.orbs.Evil;assert(!choices().includes('Void Heart'));
 state=JSON.parse(lastLife);reset('Void Heart');assert.equal(age(),14);assert.equal(state.Void,0);assert(remaining('Absolute Wish').length);
+const firstHeartLife=JSON.stringify(state);
+const initialLife=lifespan(),initialJobRate=rate('Beggar');
+state.Void=500;assert.equal(lifespan(),initialLife+1000);assert.equal(rate('Beggar'),initialJobRate);
+state.Void=2000;assert.equal(lifespan(),initialLife+1200);
+const normalMagic=rate('Mana control');state.superHeart=true;assert(rate('Mana control')>normalMagic);
+state.crossedRift=true;assert.equal(heartYears(),0);assert.equal(heartCareerFactor(),1);
+state=JSON.parse(firstHeartLife);
 state.days=199*365;assert(!choices().includes('Embrace Void'));state.days=200*365;assert.equal(voidGain(),1);reset('Embrace Void');
 assert.equal(state.Void,1);assert(!remaining('Absolute Wish').length);assert.deepEqual(Object.keys(state.memory),[]);
 for(const skill of voidCatalog.filter(e=>e.group==='Void Manipulation')){

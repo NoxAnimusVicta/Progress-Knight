@@ -8,7 +8,7 @@ Android package com.doelia.pkhd, version 1.9.1 (build 191), contains the Remaste
 
 - balance.js records base pay, XP thresholds, skill effects, property upkeep, equipment and prerequisites. The reference defines 20 jobs, 23 skills, nine properties and eight miscellaneous items.
 - The public release has six skills in each alignment. The amulet changes at ages 25, 45, 65, 200 and 300. Ordinary rebirth remembers the levels of the life just finished. Alignment and orb rebirths clear those memories. Each orb gives five times skill XP. The final amulet event requires both orbs and age 200.
-- The browser interface and save format are specific to this port. The two optional potions run without native ads or purchases. The game saves on the device.
+- The browser interface and save format are specific to this port. The game saves on the device.
 
 ## Run
 
@@ -25,4 +25,3 @@ The remastered-baseline-1 release adds versioned JSON campaign backup and restor
 The installed app checks for a new service worker on launch, on returning online or to the foreground, and once a minute during use. Each release must have a unique cacheName in sw.js. Precache every new runtime asset before deployment. A successfully installed release activates and the client saves before reloading. An open backup panel or pending amulet confirmation defers the reload.
 
 The complete baseline ZIP contains the static app and its personal artwork. Extract it and serve the directory over HTTPS (or localhost). Player saves are exported separately from the running game. Changes for expansions belong on main; retain the baseline commit and branch for recovery.
-

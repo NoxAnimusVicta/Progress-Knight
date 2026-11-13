@@ -62,7 +62,7 @@ function readBackup(text) {
       dst[field][name]=value;
     }
   }
-  for(const field of ['restedSpeed','restedUntil','happinessUntil','acceleratingUntil']){
+  for(const field of ['restedSpeed','restedUntil']){
     if(src[field]!==undefined){check(numeric(src[field],field==='restedSpeed'?8:Number.MAX_SAFE_INTEGER),field);dst[field]=src[field];}
   }
   check(!dst.restedUntil||dst.restedSpeed>=1,'rested speed');
