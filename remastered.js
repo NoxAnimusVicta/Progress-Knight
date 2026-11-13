@@ -214,7 +214,7 @@ function nextVoidShop(){
 }
 function remaining(n){
   const side=entries[n].side;
-  if(side&&state[side]<entries[n].requirements[side])return [side+' required'];
+  if(side&&state[side]<entries[n].requirements[side])return [side+' '+formatVoid(state[side])+' / '+entries[n].requirements[side]];
   if(!ownsSkillPath(state,entries[n].group))return [pathResource[entries[n].group]+' required'];
   if(entries[n].group==='Void Manipulation')return !state.voidHeart?['Void Heart required']:state.Void<entries[n].requirements.Void?['Void '+formatVoid(state.Void)+' / '+entries[n].requirements.Void]:[];
   if(state.unlocked[n])return [];
@@ -419,12 +419,19 @@ function list(){
     Skills:['Fundamentals','Combat','Magic',...(showAdvancedMagic()?['Advanced arcana']:[]),'Dark magic','Advanced dark magic','Light magic','Advanced Angelic','Void Manipulation'].map(group=>[group==='Advanced arcana'?'Advanced Magic':group,group]),
     Shop:[['Properties','Properties',...(state.voidHeart?['Void properties']:[])],['Equipment','Misc',...(state.voidHeart?['Void equipment']:[])]]};
  return sections[tab].map(([heading,...groups])=>{
-  const groupEntries=catalog.filter(e=>groups.includes(e.group)&&ownsSkillPath(state,e.group)&&(e.group!=='Advanced arcana'||Boolean(e.income)===(tab==='Jobs'))&&!remaining(e.name).length);
+  const candidates=catalog.filter(e=>groups.includes(e.group)&&ownsSkillPath(state,e.group)&&(e.group!=='Advanced arcana'||Boolean(e.income)===(tab==='Jobs'))&&(!e.side||state[e.side]>0));
   if(heading==='Advanced Magic'){
    const order=['Astral Body','All Seeing Eye','Temporal Dimension','Brainwashing'];
-   groupEntries.sort((a,b)=>order.indexOf(a.name)-order.indexOf(b.name));
+   candidates.sort((a,b)=>order.indexOf(a.name)-order.indexOf(b.name));
   }
-  const rows=groupEntries.map(e=>{
+  if(tab==='Shop')candidates.sort((a,b)=>shopThreshold(a)-shopThreshold(b));
+  let preview='';
+  const rows=candidates.map(e=>{
+   const missing=remaining(e.name);
+   if(missing.length){
+     if(!preview)preview='<button class="row" disabled><span aria-hidden="true">🔒</span><span><b>'+e.name+'</b><small>'+missing.join(' · ')+'</small></span><small class="right">Next unlock</small></button>';
+     return '';
+   }
    const n=e.name,g=e.group;
    const selected=[state.job,state.skill,state.home].includes(n)||state.equipment[n];
    const feedback=selected&&e.maxXp?levelGainLabel(n):'';
@@ -433,7 +440,7 @@ function list(){
    const action=e.income?'job':e.maxXp?'skill':(g==='Properties'||g==='Void properties')?'home':'gear';
    return '<button class="row '+(selected?'on':'')+(feedback?' recent-level':'')+'" aria-pressed="'+Boolean(selected)+'" data-act="'+action+':'+n+'">'+(e.side&&e.expense!==undefined?alignmentArt(e.tile):voidCatalog.includes(e)?catalogArt(e):sprite(e.tile))+'<span><b>'+n+'</b><small>'+(info+xpNote)+'</small></span><span class="right">'+(action==='gear'?(selected?'On · ':'Off · '):selected?(feedback?'<small class="row-status level-gain">'+feedback+'</small>':'<small class="row-status">✓ Active</small>'):'')+(e.maxXp?'<span>Lv. '+level(n)+'</span>'+meter(n):fmt(price(n))+' / day')+'</span></button>';
   }).join('');
-  return rows?'<h3>'+heading+'</h3>'+rows:'';
+  return rows||preview?'<h3>'+heading+'</h3>'+rows+preview:'';
  }).join('');
 }
 const amuletStory={
