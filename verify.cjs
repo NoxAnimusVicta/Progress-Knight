@@ -5,7 +5,7 @@ vm.runInContext(`
 state.hero='Magnus';
 assert.equal(catalog.filter(e=>e.group!=="City contracts"&&e.income&&!voidCatalog.includes(e)).length,20);
 assert.equal(catalog.filter(e=>e.group!=="Advanced Angelic"&&e.group!=="Augmentations"&&e.maxXp&&!e.income&&!voidCatalog.includes(e)).length,23);
-assert.equal(catalog.filter(e=>!voidCatalog.includes(e)&&e.group!=="City housing"&&e.expense!==undefined).length,17);
+assert.equal(catalog.filter(e=>!e.side&&!voidCatalog.includes(e)&&e.group!=="City housing"&&e.expense!==undefined).length,17);
 for(const e of catalog)assert.equal(typeof e.tile,'number');
 for(let i=0;i<1000&&level('Beggar')<10;i++)step(1);
 assert(remaining('Farmer').length===0);assert(state.coins>0);assert(level('Concentration')>0);
@@ -18,7 +18,7 @@ for(const side of ['Evil','Angelic']){
  assert(!entries['Good Orb']&&!entries['Evil Orb']);assert.equal(alignmentGain(side),1);
  tab='Skills';const pathName=side==='Evil'?'Dark magic':'Light magic';
  const pathSkills=catalog.filter(e=>e.group===pathName);assert.equal(pathSkills.length,6);
- const skillMenu=list();for(const skill of pathSkills)assert(skillMenu.includes('data-act="skill:'+skill.name+'"'));
+ const skillMenu=list();for(const skill of pathSkills)assert.equal(skillMenu.includes('data-act="skill:'+skill.name+'"'),remaining(skill.name).length===0);
  const first=side==='Evil'?'Dark influence':'Divine Blessing';assert.equal(remaining(first).length,0);
  state.days=299*365;assert(!choices().includes(side+' orb'));state.days=300*365;reset(side+' orb');assert(!state.orbs[side]);
  for(const [name,,target] of relicRequirements(side)){if(name===side)state[side]=target;else if(name!=='Age')state.levels[name]=Math.max(target,200)}
@@ -42,7 +42,7 @@ for(const skill of voidCatalog.filter(e=>e.group==='Void Manipulation')){
 }
 state.Void=1;
 assert(state.voidHeart&&state.voidPath&&age()===14);assert.deepEqual(Object.keys(state.orbs),[]);assert(portrait().includes('void-forms.svg'));
-tab='Shop';assert(list().includes('Town Ruler'));tab='Jobs';assert(list().includes('Corrupted'));tab='Skills';assert(list().includes('Absolute Wish'));
+tab='Shop';assert(!list().includes('Town Ruler'));tab='Jobs';assert(!list().includes('Corrupted'));tab='Skills';assert(list().includes('Absolute Wish'));
 assert.equal(voidCatalog.filter(e=>e.group==='The Void').length,8);assert.equal(voidCatalog.filter(e=>e.group==='Void Manipulation').length,7);
 for(const e of voidCatalog){for(const key of Object.keys(e.requirements))assert(entries[key]||['Age','Evil','Coins','Void'].includes(key))}
 state.days=999*365;assert(remaining('Corrupted').length);state.days=1000*365;assert.equal(remaining('Corrupted').length,0);
@@ -96,7 +96,7 @@ for(const chapter of [{},{voidPath:true,voidHeart:true},{voidPath:true,voidHeart
 }
 for(const [key,heading] of [['Evil','Advanced dark magic'],['Angelic','Advanced Angelic'],['Void','Void Manipulation']]){
  state={...newLife(),hero:'Magnus',voidPath:true,voidHeart:true};tab='Skills';assert(!list().includes('<h3>'+heading+'</h3>'));
- state[key]=1;assert(list().includes('<h3>'+heading+'</h3>'));assert(!list().includes('<h3>Advanced arcana</h3>'));
+ state[key]=key==='Void'?1:5000;assert(list().includes('<h3>'+heading+'</h3>'));assert(!list().includes('<h3>Advanced arcana</h3>'));
 }
 state.Angelic=4999;assert(remaining('Sacred Knowledge').length);state.Angelic=5000;assert.equal(remaining('Sacred Knowledge').length,0);state.Angelic=0;assert(remaining('Sacred Knowledge').length);
 state={...newLife(),hero:'Magnus'};tab='Jobs';assert(!list().includes('skill:Astral Body'));assert(!list().includes('job:Astral scholar'));
@@ -111,5 +111,10 @@ for(const name of ['Astral scholar','Astral Body','Archmage','All Seeing Eye','C
  const action=(e.income?'job:':'skill:')+name;assert(list().includes('data-act="'+action+'"'));
  screen.onclick({target:{closest:()=>({dataset:{act:action}})}});assert.equal(state[e.income?'job':'skill'],name);
 }
+state={...newLife(),hero:'Magnus',coins:1e15};tab='Shop';assert(!list().includes('Town Ruler')&&!list().includes('Ashen keep'));
+for(const [side,home,relic] of [['Evil','Ashen keep','Obsidian seal'],['Angelic','Dawn sanctuary','Ivory seal']]){
+ state[side]=1;assert(list().includes(home)&&!list().includes(relic));state[side]=25;assert(list().includes(relic));state[side]=0;assert(!list().includes(home)&&!list().includes(relic));
+}
+state.voidHeart=true;assert(list().includes('Town Ruler')&&list().includes('Void Armor'));assert.deepEqual(list().match(new RegExp('<h3>.*?</h3>','g')),['<h3>Properties</h3>','<h3>Equipment</h3>']);
 console.log('Verified base progression, orb collectibles and cumulative skill XP, Void jobs, Heart, legacy conversion and Void collection.');
 `,ctx);
