@@ -29,6 +29,7 @@ function readBackup(text) {
   const src = file.campaign;
   const plain = obj => obj !== null && typeof obj === 'object' && !Array.isArray(obj);
   if (!plain(src)) throw Error('Missing campaign.');
+  retireCity(src);
   migrateOldVoidTasks(src);
   removeOrbTraining(src);
   const dst = newLife();
@@ -45,7 +46,7 @@ function readBackup(text) {
   check([1,5,20].includes(src.devSpeed??1),'developer speed');dst.devSpeed=src.devSpeed??1;
   check(typeof (src.voidPath??false)==='boolean','Void path');dst.voidPath=src.voidPath??false;
   const hasEntry=n=>typeof n==='string' && Object.hasOwn(entries,n);
-  for(const [field,test] of [['job',e=>e.income],['skill',e=>e.maxXp&&!e.income],['home',e=>['Properties','City housing','Void properties'].includes(e.group)]]) {
+  for(const [field,test] of [['job',e=>e.income],['skill',e=>e.maxXp&&!e.income],['home',e=>['Properties','Void properties'].includes(e.group)]]) {
     check(hasEntry(src[field])&&test(entries[src[field]]),field);dst[field]=src[field];
   }
   for(const field of ['equipment','unlocked','levels','xp','memory','orbs']){
@@ -68,12 +69,9 @@ function readBackup(text) {
   check(!dst.restedUntil||dst.restedSpeed>=1,'rested speed');
   check(typeof (src.voidHeart??false)==='boolean','Void Heart');
   dst.voidHeart=src.voidHeart??false;
-  for(const key of ['heartPair','superHeart','crossedRift']){
+  for(const key of ['heartPair','superHeart']){
     check(typeof (src[key]??false)==='boolean',key);dst[key]=src[key]??false;
   }
-  dst.chrono=src.chrono??0;
-  check(Number.isInteger(dst.chrono)&&numeric(dst.chrono,5)&&(!dst.chrono||dst.crossedRift),'Chronotech progression');
-  check(!dst.crossedRift||dst.superHeart,'rift progression');
   check(!(dst.heartPair&&dst.superHeart)&&(!(dst.heartPair||dst.superHeart)||(dst.voidHeart&&dst.voidPath)),'Heart progression');
   check(numeric(src.Void??0)&&roundVoid(src.Void??0)===(src.Void??0),'Void');
   dst.Void=src.Void??0;
