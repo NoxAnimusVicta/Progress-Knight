@@ -429,7 +429,8 @@ function list(){
   const rows=candidates.map(e=>{
    const missing=remaining(e.name);
    if(missing.length){
-     if(!preview)preview='<div class="requirement-card"><span class="lock-mark" aria-hidden="true"></span><span><b>Required</b><small>'+missing.join(' · ')+'</small></span></div>';
+     if(!preview&&tab==='Skills')preview='<div class="skill-requirement"><span aria-hidden="true"></span><div><b>Required</b><small>'+missing.join(' · ')+'</small></div></div>';
+     else if(!preview)preview='<button class="row" disabled><span aria-hidden="true">🔒</span><span><b>'+e.name+'</b><small>'+missing.join(' · ')+'</small></span><small class="right">Next unlock</small></button>';
      return '';
    }
    const n=e.name,g=e.group;
@@ -440,9 +441,7 @@ function list(){
    const action=e.income?'job':e.maxXp?'skill':(g==='Properties'||g==='Void properties')?'home':'gear';
    return '<button class="row '+(selected?'on':'')+(feedback?' recent-level':'')+'" aria-pressed="'+Boolean(selected)+'" data-act="'+action+':'+n+'">'+(e.side&&e.expense!==undefined?alignmentArt(e.tile):voidCatalog.includes(e)?catalogArt(e):sprite(e.tile))+'<span><b>'+n+'</b><small>'+(info+xpNote)+'</small></span><span class="right">'+(action==='gear'?(selected?'On · ':'Off · '):selected?(feedback?'<small class="row-status level-gain">'+feedback+'</small>':'<small class="row-status">✓ Active</small>'):'')+(e.maxXp?'<span>Lv. '+level(n)+'</span>'+meter(n):fmt(price(n))+' / day')+'</span></button>';
   }).join('');
-  if(!rows&&!preview)return '';
-  const layout=tab==='Jobs'||heading==='Properties'?'item-cards':'item-rows';
-  return '<h3>'+heading+'</h3><div class="'+layout+'" data-section="'+heading+'">'+rows+preview+'</div>';
+  return rows||preview?'<h3>'+heading+'</h3>'+rows+preview:'';
  }).join('');
 }
 const amuletStory={
@@ -499,10 +498,7 @@ function amulet(){
 function render(){
  const focus=document.activeElement;
  const action=screen.contains?.(focus)?focus?.dataset?.act:null;
- const offsets=new Map(Array.from(screen.querySelectorAll?.('.item-cards')||[],row=>[row.dataset.section,row.scrollLeft]));
- draw();
- for(const row of screen.querySelectorAll?.('.item-cards')||[])row.scrollLeft=offsets.get(row.dataset.section)||0;
- bindMotion();scheduleMotion();
+ draw();bindMotion();scheduleMotion();
  if(action){
    const replacement=Array.from(screen.querySelectorAll('button[data-act]')).find(b=>b.dataset.act===action);
    replacement?.focus({preventScroll:true});
