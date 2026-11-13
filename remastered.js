@@ -452,6 +452,7 @@ const amuletStory={
 };
 let inspectingAmulet=false;
 function heartForge(){
+ if(state.voidHeart||!state.orbs.Evil||!state.orbs.Angelic)return '';
  const ready=choices().includes('Void Heart');
  const needs=relicRequirements('Void').filter(([,value,target])=>value<target)
    .map(([label,value,target])=>label==='End of this life'?label:label.endsWith('Orb')?label:label+' '+formatVoid(value)+' / '+target);

@@ -35,7 +35,13 @@ assert(state.voidPath&&!state.voidHeart);assert(!portrait().includes('void-forms
 tab='Jobs';assert(!list().includes('Rift keeper'));tab='Shop';assert(!list().includes('Watch hut'));
 tab='Skills';assert(!list().includes('Absolute Wish'));state.days=lifespan()*365-1;
 assert(!choices().includes('Void Heart'));state.days++;assert(choices().includes('Void Heart'));
-const lastLife=JSON.stringify(state);delete state.orbs.Evil;assert(!choices().includes('Void Heart'));
+assert(heartForge().includes('Create Void Heart')&&!heartForge().includes('disabled'));
+state.days--;assert(heartForge().includes('disabled'));state.days++;
+const lastLife=JSON.stringify(state);
+for(const orbs of [{},{Evil:true},{Angelic:true}]){
+ state.orbs=orbs;assert(!amulet().includes('data-act="ask:Void Heart"'));assert(!choices().includes('Void Heart'));
+}
+state=JSON.parse(lastLife);delete state.orbs.Evil;assert(!choices().includes('Void Heart'));
 state=JSON.parse(lastLife);reset('Void Heart');assert.equal(age(),14);assert.equal(state.Void,0);assert(remaining('Absolute Wish').length);
 const firstHeartLife=JSON.stringify(state);
 state.life=52;
