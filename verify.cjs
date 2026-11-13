@@ -3,6 +3,10 @@ const root={}, storage={};const ctx={assert,console,window:{scrollY:0},document:
 vm.createContext(ctx);for(const file of ['balance.js','remastered.js'])vm.runInContext(fs.readFileSync(require('path').join(__dirname,file),'utf8'),ctx);
 vm.runInContext(`
 state.hero='Magnus';
+drink('happiness');assert(potionActive('happiness'));drink('accelerating');assert(!potionActive('accelerating'));
+state.happinessUntil=Date.now()-1;drink('happiness');assert(!potionActive('happiness'));assert(potionButton('accelerating').includes('disabled'));
+state.days=65*365;reset('Rebirth');assert(!potionSpent());state={...newLife(),hero:'Magnus'};
+
 assert.equal(catalog.filter(e=>e.group!=="City contracts"&&e.income&&!voidCatalog.includes(e)).length,20);
 assert.equal(catalog.filter(e=>e.group!=="Advanced Angelic"&&e.group!=="Augmentations"&&e.maxXp&&!e.income&&!voidCatalog.includes(e)).length,23);
 assert.equal(catalog.filter(e=>!e.side&&!voidCatalog.includes(e)&&e.group!=="City housing"&&e.expense!==undefined).length,17);

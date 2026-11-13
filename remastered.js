@@ -77,11 +77,11 @@ function cityLoadout(s){
 }
 // Paired alignment rewards share their economy and unlock thresholds.
 for(const [side,home,relic,homeTile,relicTile] of [
- ['Evil','Ashen keep','Obsidian seal',50,artIndex.icons_evilorb],
- ['Angelic','Dawn sanctuary','Ivory seal',50,artIndex.icons_angelicorb]
+ ['Evil','Ashen keep','Obsidian seal',0,2],
+ ['Angelic','Dawn sanctuary','Ivory seal',1,3]
 ]){
- entries[home]={name:home,group:'Properties',side,tile:homeTile,expense:1200,effect:8,requirements:{[side]:1,Coins:120000}};
- entries[relic]={name:relic,group:'Misc',side,tile:relicTile,expense:600,effect:1.5,description:side+' skill XP',requirements:{[side]:25,Coins:60000}};
+ entries[home]={name:home,group:'Properties',side,tile:homeTile,expense:1200,effect:4.25,requirements:{[side]:1,Coins:120000}};
+ entries[relic]={name:relic,group:'Misc',side,tile:relicTile,expense:600,effect:1.25,description:side+' skill XP',requirements:{[side]:25,Coins:60000}};
 }
 const catalog = Object.values(entries);
 function newLife() {
@@ -146,7 +146,14 @@ function effect(name){
 }
 const item=n=>state.equipment[n] ? entries[n].effect : 1;
 const potionActive=kind=>Date.now()<(state[kind+'Until']||0);
-function drink(kind){if(!potionActive(kind))state[kind+'Until']=Date.now()+600000}
+function potionSpent(){return Boolean(state.happinessUntil||state.acceleratingUntil)}
+function drink(kind){if(!potionSpent())state[kind+'Until']=Date.now()+600000}
+function potionButton(kind){
+ const active=potionActive(kind),spent=potionSpent();
+ const timing=active?Math.ceil((state[kind+'Until']-Date.now())/1000)+'s':spent?'Next life':'10 min';
+ const label=(kind==='happiness'?'Happiness':'Speed')+' ×2 · '+timing;
+ return '<button data-act="potion:'+kind+'" class="'+(active?'on':'')+'"'+(spent?' disabled':'')+'>'+label+'</button>';
+}
 const happy=()=>(potionActive('happiness')?2:1)*entries[state.home].effect*effect('Meditation')*item('Butler')/effect('Mind Seize');
 const age=()=>Math.floor(state.days/365);
 const lifespan=()=>70*(state.crossedRift?effect('Life support'):1)*effect('Immortality')*effect('Super immortality')*effect('Astral Body')*effect('Ceaseless Abyss');
@@ -356,6 +363,9 @@ try{alignmentUI=localStorage.getItem('pk-alignment-ui')!=='off'}catch{}
 function sprite(i,size=54){
  return '<span aria-hidden="true" class="sprite" style="width:'+size+'px;height:'+size+'px;background-size:'+size*10+'px '+size*atlasRows+'px;background-position:'+(-size*(i%10))+'px '+(-size*Math.floor(i/10))+'px"></span>';
 }
+function alignmentArt(tile){
+ return '<span aria-hidden="true" class="sprite" style="width:54px;height:54px;background-image:url(./alignment-shop.webp);background-size:108px 108px;background-position:'+(-54*(tile%2))+'px '+(-54*Math.floor(tile/2))+'px"></span>';
+}
 function catalogArt(entry){
  const index=voidCatalog.indexOf(entry);
  return '<span aria-hidden="true" class="sprite" style="width:54px;height:54px;background-image:url(./void-catalog.webp);background-size:432px 270px;background-position:'+(-54*(index%8))+'px '+(-54*Math.floor(index/8))+'px"></span>';
@@ -480,7 +490,7 @@ function list(){
    const xpNote=e.maxXp?(dead()?' · '+fmt(state.xp[n]||0)+' / '+fmt(threshold(n))+' XP':' · '+fmt(rate(n))+' XP/day'):'';
    const info=n==='Absolute Wish'?('+'+voidGain()+' '+e.description):e.income?fmt(pay(n))+(state.crossedRift?' credits/day':' coins/day'):e.maxXp?(e.isPlusDescription?'+':'×')+effect(n).toFixed(2)+' '+e.description:'×'+e.effect+' '+(e.description||'Happiness');
    const action=e.income?'job':e.maxXp?'skill':(g==='Properties'||g==='City housing'||g==='Void properties')?'home':'gear';
-   return '<button class="row '+(selected?'on':'')+(feedback?' recent-level':'')+'" aria-pressed="'+Boolean(selected)+'" data-act="'+action+':'+n+'">'+(state.crossedRift?cityIcon(e.tile,54):voidCatalog.includes(e)?catalogArt(e):sprite(e.tile))+'<span><b>'+n+'</b><small>'+(info+xpNote)+'</small></span><span class="right">'+(action==='gear'?(selected?'On · ':'Off · '):selected?(feedback?'<small class="row-status level-gain">'+feedback+'</small>':'<small class="row-status">✓ Active</small>'):'')+(e.maxXp?'<span>Lv. '+level(n)+'</span>'+meter(n):fmt(price(n))+' / day')+'</span></button>';
+   return '<button class="row '+(selected?'on':'')+(feedback?' recent-level':'')+'" aria-pressed="'+Boolean(selected)+'" data-act="'+action+':'+n+'">'+(state.crossedRift?cityIcon(e.tile,54):e.side&&e.expense!==undefined?alignmentArt(e.tile):voidCatalog.includes(e)?catalogArt(e):sprite(e.tile))+'<span><b>'+n+'</b><small>'+(info+xpNote)+'</small></span><span class="right">'+(action==='gear'?(selected?'On · ':'Off · '):selected?(feedback?'<small class="row-status level-gain">'+feedback+'</small>':'<small class="row-status">✓ Active</small>'):'')+(e.maxXp?'<span>Lv. '+level(n)+'</span>'+meter(n):fmt(price(n))+' / day')+'</span></button>';
   }).join('');
   return rows?'<h3>'+heading+'</h3>'+rows:'';
  }).join('');
@@ -580,7 +590,7 @@ function draw(){
  }
 
  const nav=['Jobs','Skills','Shop',...(age()>=25||state.voidPath?['Amulet']:[])];
- screen.innerHTML='<div class="play-controls">'+top+'<nav aria-label="Game sections">'+nav.map(t=>button('tab:'+t,t==='Amulet'&&state.voidHeart?'Heart':t,t===tab)).join('')+'</nav></div>'+noticePanel+'<section class="card">'+(tab==='Amulet'?amulet():list())+'</section><footer>'+state.job+' · Lv. '+level(state.job)+'　'+state.skill+' · Lv. '+level(state.skill)+'<p>'+button('pause',state.paused?'Resume':'Pause')+' '+(level('Time warping')?button('warp','Time warping '+(state.warp?'on':'off'),state.warp):'')+'</p>'+['happiness','accelerating'].map(k=>button('potion:'+k,(k==='happiness'?'Happiness':'Speed')+' ×2 · '+(potionActive(k)?Math.ceil((state[k+'Until']-Date.now())/1000)+'s':'10 min'),potionActive(k))).join(' ')+'<p>Developer speed　'+[1,5,20].map(v=>button('devSpeed:'+v,v+'×',state.devSpeed===v)).join(' ')+'</p>'+statusText+'</footer>';
+ screen.innerHTML='<div class="play-controls">'+top+'<nav aria-label="Game sections">'+nav.map(t=>button('tab:'+t,t==='Amulet'&&state.voidHeart?'Heart':t,t===tab)).join('')+'</nav></div>'+noticePanel+'<section class="card">'+(tab==='Amulet'?amulet():list())+'</section><footer>'+state.job+' · Lv. '+level(state.job)+'　'+state.skill+' · Lv. '+level(state.skill)+'<p>'+button('pause',state.paused?'Resume':'Pause')+' '+(level('Time warping')?button('warp','Time warping '+(state.warp?'on':'off'),state.warp):'')+'</p>'+'<small>Choose one potion per life</small> '+['happiness','accelerating'].map(potionButton).join(' ')+'<p>Developer speed　'+[1,5,20].map(v=>button('devSpeed:'+v,v+'×',state.devSpeed===v)).join(' ')+'</p>'+statusText+'</footer>';
 }
 function advance(){
  const now=Date.now(),elapsed=Math.max(0,(now-state.clock)/1000);state.clock=now;
