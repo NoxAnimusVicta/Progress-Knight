@@ -296,9 +296,10 @@ function reset(action){
   else if(action.endsWith(' orb')){orbs={...orbs,[action.split(' ')[0]]:true};Evil=0;Angelic=0}
   state={...newLife(),hero,heartPair:state.heartPair,superHeart:state.superHeart,Void:state.Void,voidHeart:state.voidHeart,voidPath:state.voidPath||Boolean(orbs.Evil&&orbs.Angelic),devSpeed:state.devSpeed,life:life+1,Evil,Angelic,orbs,memory};
 }
-function save(){try{localStorage.setItem(saveKey,JSON.stringify(state))}catch{statusText='Save unavailable in this browser.'}}
+function save(){if(launchView!=='playing')return;try{localStorage.setItem(saveKey,JSON.stringify(state))}catch{statusText='Save unavailable in this browser.'}}
 let lastDeathShown=null;
 let upkeepNotice='',idleNotice='';
+let launchView='menu';
 let tab='Jobs',chosen='Magnus',pending='',statusText='';
 const screen=document.querySelector('#screen');
 const compactNumber=new Intl.NumberFormat('en',{notation:'compact',maximumFractionDigits:2});
@@ -494,14 +495,18 @@ function amulet(){
 function render(){
  const focus=document.activeElement;
  const action=screen.contains?.(focus)?focus?.dataset?.act:null;
- draw();bindMotion();scheduleMotion();
+ draw();if(launchView==='playing'){bindMotion();scheduleMotion();}
  if(action){
    const replacement=Array.from(screen.querySelectorAll('button[data-act]')).find(b=>b.dataset.act===action);
    replacement?.focus({preventScroll:true});
  }
 }
 function draw(){
- if(state.hero&&dead()&&lastDeathShown!==state){
+ if(launchView==='menu'){
+   screen.innerHTML='<section class="launch main-menu"><img src="./icon-192.png" width="96" height="96" alt=""><h1>Progress Knight</h1><button type="button" class="primary" data-act="continue" '+(state.hero?'':'disabled')+'>Continue</button>'+(state.hero?'<p>'+state.hero+' · Life '+state.life+' · Age '+age()+'</p>':'')+'<button type="button" data-act="new-game">New Game</button></section>';
+   return;
+ }
+ if(launchView==='playing'&&state.hero&&dead()&&lastDeathShown!==state){
    lastDeathShown=state;
    tab='Amulet';
    pending='';
@@ -512,14 +517,14 @@ function draw(){
    document.body.dataset.path=alignmentUI?theme:'';
  }
 
- if(!state.hero){
+ if(launchView==='characters'){
    const cards=['Magnus','Isabella'].map(name=>{
      const selected=chosen===name;
      const talent=name==='Magnus'?'Magic':'Military';
      const portrait=sprite(artIndex['avatar_'+name.toLowerCase()+'_14'],72);
      return `<button type="button" class="candidate ${selected?'on':''}" aria-pressed="${selected}" data-act="choose:${name}">${portrait}<span><strong>${name}</strong><small>Age 14</small><small class="talent">${talent} jobs XP ×1.1</small></span><span class="mark" aria-hidden="true">${selected?'✓':''}</span></button>`;
    }).join('');
-   screen.innerHTML=`<section class="launch"><h1>Choose your character</h1><div class="roster">${cards}</div><button type="button" class="primary" data-act="begin">Continue as ${chosen}</button></section>`;
+   screen.innerHTML=`<section class="launch"><h1>Choose your character</h1><div class="roster">${cards}</div><button type="button" class="primary" data-act="begin">Continue as ${chosen}</button><button type="button" data-act="back-menu">Back</button></section>`;
    return;
  }
  const notice=[upkeepNotice,idleNotice].filter(Boolean).map(t=>'<p>'+t+'</p>').join('');
@@ -529,6 +534,7 @@ function draw(){
  screen.innerHTML='<div class="play-controls">'+top+'<nav aria-label="Game sections">'+nav.map(t=>button('tab:'+t,t==='Amulet'&&state.voidHeart?'Heart':t,t===tab)).join('')+'</nav></div>'+noticePanel+'<section class="card">'+(tab==='Amulet'?amulet():list())+'</section><footer>'+state.job+' · Lv. '+level(state.job)+'　'+state.skill+' · Lv. '+level(state.skill)+'<p>'+button('pause',state.paused?'Resume':'Pause')+' '+(level('Time warping')?button('warp','Time warping '+(state.warp?'on':'off'),state.warp):'')+'</p>'+'<p>Developer speed　'+[1,5,20].map(v=>button('devSpeed:'+v,v+'×',state.devSpeed===v)).join(' ')+'</p>'+statusText+'</footer>';
 }
 function advance(){
+ if(launchView!=='playing')return;
  const now=Date.now(),elapsed=Math.max(0,(now-state.clock)/1000);state.clock=now;
  if(state.hero&&!state.paused&&!state.finished){
   const startDays=state.days;
@@ -543,13 +549,26 @@ function advance(){
  }
 }
 screen.onclick=e=>{
- const b=e.target.closest('button');if(!b||b.disabled)return;advance();
+ const b=e.target.closest('button');if(!b||b.disabled)return;
  const [a,v]=b.dataset.act.split(':');
+ if(launchView!=='playing'){
+   if(a==='continue'&&state.hero){launchView='playing';advance();save()}
+   else if(a==='new-game'){
+     if(state.hero&&!window.confirm('Start a new game? Your current save will be overwritten when you begin with your new character.'))return;
+     chosen='Magnus';launchView='characters';
+   }else if(a==='back-menu')launchView='menu';
+   else if(a==='choose'&&launchView==='characters')chosen=v;
+   else if(a==='begin'&&launchView==='characters'){
+     const fresh={...newLife(),hero:chosen};
+     try{localStorage.setItem(saveKey,JSON.stringify(fresh))}catch{window.alert('Could not save the new game. Please try again.');return}
+     state=fresh;launchView='playing';tab='Jobs';pending='';statusText='';idleNotice='';upkeepNotice='';inspectingAmulet=false;recentGains.clear();
+   }
+   render();return;
+ }
+ advance();
  if(a==='dismiss-notice'){upkeepNotice='';idleNotice=''}
  if(a==='inspect')inspectingAmulet=!inspectingAmulet;
  if(a==='tab'||a==='accept')inspectingAmulet=false;
- if(a==='choose')chosen=v;
- if(a==='begin'&&!state.hero)state.hero=chosen;
  const switchWhileScrolled=a==='tab'&&tab!==v&&window.scrollY>0;
  if(a==='tab'){tab=v;pending=''}
  if(a==='ask'&&choices().includes(v)){pending=v;if(v==='Rebirth')inspectingAmulet=true}
@@ -578,7 +597,7 @@ if(screen.addEventListener){
  screen.addEventListener('pointerdown',e=>{pressingControl=Boolean(e.target.closest('button'))});
  for(const event of ['pointerup','pointercancel','blur'])addEventListener(event,()=>{pressingControl=false});
 }
-advance();render();setInterval(()=>{advance();save();if(!pressingControl&&!document.querySelector('button:active'))render()},1000);
+render();setInterval(()=>{if(launchView!=='playing')return;advance();save();if(!pressingControl&&!document.querySelector('button:active'))render()},1000);
 addEventListener('pagehide',()=>{advance();save()});
 if(document.addEventListener)document.addEventListener('visibilitychange',()=>{if(!document.hidden){advance();render()}else{advance();save()}});
 

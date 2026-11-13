@@ -105,7 +105,7 @@ el('confirm-restore').onclick=()=>{
   const restored={...restoreCandidate,clock:Date.now()};
   try{localStorage.setItem(saveKey,JSON.stringify(restored));}
   catch{report('Restore failed. Device storage is unavailable.');return;}
-  recentGains.clear();state=restored;pending='';tab='Jobs';chosen=state.hero||'Magnus';inspectingAmulet=false;clearCandidate();render();
+  recentGains.clear();state=restored;launchView=state.hero?'playing':'menu';pending='';tab='Jobs';chosen=state.hero||'Magnus';inspectingAmulet=false;clearCandidate();render();
   report('Backup restored.');
 };
 
@@ -116,7 +116,8 @@ async function startUpdates(){
   function safeReload(){
     if(!reloadPending||el('save-tools').open||pending)return;
     advance();
-    try{localStorage.setItem(saveKey,JSON.stringify(state));}catch{return;}
+    if(launchView==='characters')return;
+    if(launchView==='playing'){try{localStorage.setItem(saveKey,JSON.stringify(state));}catch{return;}}
     reloadPending=false;location.reload();
   }
   manager.addEventListener('controllerchange',()=>{
