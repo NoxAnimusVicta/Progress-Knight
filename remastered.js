@@ -14,7 +14,7 @@ const voidCatalog=[
  {"name":"Mind Seize","maxXp":100,"effect":0.0006,"description":"Reduced Happiness","group":"Void Manipulation","tile":2,"requirements":{"Void": 25}},
  {"name":"Ceaseless Abyss","maxXp":100,"effect":0.000585,"description":"Longer Lifespan","group":"Void Manipulation","tile":3,"requirements":{"Void": 50}},
  {"name":"Void Symbiosis","maxXp":100,"effect":0.0015,"description":"Ability XP","group":"Void Manipulation","tile":4,"requirements":{"Void": 75}},
- {"name":"Void Embodiment","maxXp":100,"effect":0.0025,"description":"Evil Gain","group":"Void Manipulation","tile":5,"requirements":{"Void": 200}},
+ {"name":"Void Embodiment","maxXp":100,"effect":0.0025,"description":"Void gain","group":"Void Manipulation","tile":5,"requirements":{"Void": 200}},
  {"name":"Abyss Manipulation","maxXp":100,"effect":-0.01,"description":"Reduced Expenses","group":"Void Manipulation","tile":6,"requirements":{"Void": 400}},
  {"name":"Town Ruler","expense":35000000,"effect":120,"group":"Void properties","tile":0,"requirements":{"Coins":3500000000}},
  {"name":"City Ruler","expense":1100000000,"effect":500,"group":"Void properties","tile":1,"requirements":{"Coins":110000000000}},
@@ -202,6 +202,23 @@ function gain(n,amount){
     recentGains.set(n,{from:start,life:state.life,time:now});
   }
 }
+const shopEntries=catalog.filter(e=>e.expense!==undefined);
+function voidShopItem(e){return e.group==='Void properties'||e.group==='Void equipment'}
+function shopThreshold(e){return voidShopItem(e)?100*price(e.name):e.requirements.Coins}
+function recordShopUnlocks(){
+ for(const e of shopEntries){
+   if(state.unlocked[e.name]||state.crossedRift!==(e.group==='City housing')||(voidShopItem(e)&&!state.voidHeart))continue;
+   remaining(e.name);
+ }
+}
+function nextVoidShop(){
+ const lines=[];
+ for(const [group,label] of [['Void properties','Next property'],['Void equipment','Next equipment']]){
+   const next=shopEntries.find(e=>e.group===group&&remaining(e.name).length);
+   if(next)lines.push('<p>'+label+' · '+next.name+'<br>'+state.coins.toLocaleString(undefined,{maximumFractionDigits:0})+' / '+shopThreshold(next).toLocaleString()+' coins</p>');
+ }
+ return lines.length?'<section class="card"><h3>Void shop unlocks</h3>'+lines.join('')+'</section>':'';
+}
 function remaining(n){
   const side=entries[n].side;
   if(side&&state[side]<entries[n].requirements[side])return [side+' required'];
@@ -209,6 +226,7 @@ function remaining(n){
   if(entries[n].group==='Void Manipulation')return !state.voidHeart?['Void Heart required']:state.Void<entries[n].requirements.Void?['Void '+formatVoid(state.Void)+' / '+entries[n].requirements.Void]:[];
   if(state.unlocked[n])return [];
   const missing=Object.entries(entries[n].requirements).flatMap(([key,target])=>{
+    if(key==='Coins')target=shopThreshold(entries[n]);
     const value=key==='Age'?age():key==='Coins'?state.coins:['Evil','Angelic'].includes(key)?state[key]:level(key);
     return value>=target?[]:[key+' '+Math.floor(value).toLocaleString()+'/'+target.toLocaleString()];
   });
@@ -218,10 +236,17 @@ function remaining(n){
 function step(days){
   days=Math.min(days,Math.max(0,lifespan()*365-state.days));
   if(!days||state.finished)return;
+  recordShopUnlocks();
   const jobRate=rate(state.job),skillRate=rate(state.skill),net=pay(state.job)-upkeep();
   state.days+=days;state.coins+=net*days;
-  if(state.coins<0){state.coins=0;state.home=state.crossedRift?'Transit bunk':'Homeless';state.equipment={}}
+  if(state.coins<0){
+    const fallback=state.crossedRift?'Transit bunk':'Homeless';
+    const released=[...(state.home!==fallback?[state.home]:[]),...Object.keys(state.equipment)];
+    state.coins=0;state.home=fallback;state.equipment={};
+    if(released.length)upkeepNotice='Insufficient funds for upkeep. Released: '+released.join(', ')+'.';
+  }
   gain(state.job,jobRate*days);gain(state.skill,skillRate*days);
+  recordShopUnlocks();
 }
 function embraceLabel(path,gain){return 'Embrace '+path+' (+'+gain.toFixed(2)+')'}
 function alignmentGain(side){return side==='Evil'?(effect('Evil control')+effect('Blood meditation')):(effect('Pure Heart')+effect('Spiritual Meditation'))}
@@ -232,13 +257,10 @@ function voidGain(){
  if(state.crossedRift)return Math.floor(age()/200*(state.superHeart?2:1)*(state.chrono===5?2:1));
  return state.voidHeart?roundVoid((1+level('Absolute Wish')*entries['Spiritual Meditation'].effect)*effect('Void Embodiment')*(state.superHeart?2:1)):0;
 }
-function heartEvilGain(){
- return (1+.01*level('Evil control'))*(1+.01*level('Blood meditation'))*effect('Void Embodiment');
-}
 // All levels are earned in the life in which the relic is claimed.
 function relicRequirements(path){
- if(path==='Second Heart')return [['Age',age(),500],['Void Slave',level('Void Slave'),75],['Absolute Wish',level('Absolute Wish'),125],['Void Amplification',level('Void Amplification'),100],['Void',state.Void,500]];
- if(path==='Rift')return [['Age',age(),600],['Void Fiend',level('Void Fiend'),100],['Mind Seize',level('Mind Seize'),150],['Void',state.Void,2000]];
+ if(path==='Second Heart')return [['Age',age(),1100],['Void Slave',level('Void Slave'),75],['Absolute Wish',level('Absolute Wish'),125],['Void Amplification',level('Void Amplification'),100],['Void',state.Void,500]];
+ if(path==='Rift')return [['Age',age(),1300],['Void Fiend',level('Void Fiend'),100],['Mind Seize',level('Mind Seize'),150],['Void',state.Void,2000]];
  if(path==='Void')return [['End of this life',Number(dead()),1],['Evil Orb',Number(!!state.orbs.Evil),1],['Angelic Orb',Number(!!state.orbs.Angelic),1]];
  const group=path==='Evil'?'Dark magic':'Light magic';
  return [['Age',age(),300],[path,state[path],400],...catalog.filter(e=>e.group===group).map(e=>[e.name,level(e.name),e.name==="Demon's wealth"||e.name==='Bountiful Grace'?100:50])];
@@ -303,7 +325,7 @@ function reset(action){
   }
   else if(action==='Evil'){Evil+=alignmentGain('Evil');Angelic=0}
   else if(action==='Angelic'){Angelic+=alignmentGain('Angelic');Evil=0}
-  if(action==='Embrace Void'){state.Void=roundVoid(state.Void+voidGain());if(state.voidHeart&&!state.crossedRift)Evil+=heartEvilGain()}
+  if(action==='Embrace Void')state.Void=roundVoid(state.Void+voidGain());
   else if(action==='Second Heart')state.heartPair=true;
   else if(action==='Void Heart'){state.voidHeart=true;orbs={};Evil=0;Angelic=0}
   else if(action.endsWith(' orb')){orbs={...orbs,[action.split(' ')[0]]:true};Evil=0;Angelic=0}
@@ -312,6 +334,7 @@ function reset(action){
 }
 function save(){try{localStorage.setItem(saveKey,JSON.stringify(state))}catch{statusText='Save unavailable in this browser.'}}
 let lastDeathShown=null;
+let upkeepNotice='',idleNotice='';
 let tab='Jobs',chosen='Magnus',pending='',statusText='';
 const screen=document.querySelector('#screen');
 const compactNumber=new Intl.NumberFormat('en',{notation:'compact',maximumFractionDigits:2});
@@ -490,11 +513,12 @@ function amulet(){
      'Super Void Heart':'You cradle one Heart in each hand. They beat against one another until you turn the second to fit the first. The seam closes. Somewhere beyond the amulet, something knocks once in reply.'
    };
    const title=state.superHeart?'Super Void Heart':state.heartPair?'Two Void Hearts':state.voidHeart?'Void Heart':'The twin sockets';
-   const story=state.crossedRift?'You have crossed the rift. The relay can let you embrace Void or record the memories of a life.':state.superHeart?'The Super Void Heart doubles your Void gain. Across the rift, something answers its beat.':state.heartPair?'Two Hearts rest in the amulet. Turn them together to seal the bond.':state.voidHeart?'The fused orbs beat as one. From age 200, Embrace Void to gain alignment and unlock Void Manipulation skills.':'The stones draw close whenever your pulse falters. At the end of this life, set them both into the copper eye to create the Void Heart.';
+   const story=state.crossedRift?'You have crossed the rift. The relay can let you embrace Void or record the memories of a life.':state.superHeart?'The Super Void Heart doubles your Void gain. Across the rift, something answers its beat.':state.heartPair?'Two Hearts rest in the amulet. Turn them together to seal the bond.':state.voidHeart?'The fused orbs beat as one. From age 200, Embrace Void to gain Void and unlock Void Manipulation skills.':'The stones draw close whenever your pulse falters. At the end of this life, set them both into the copper eye to create the Void Heart.';
    const details=pending==='Void Heart'?'Consume the amulet and both orbs. Both orb XP bonuses end. Be reborn at 14 with the Void Heart. Current levels, possessions and XP memories reset.':pending==='Cross the Rift'?'Enter the neon city in this life. The Super Void Heart carries over. The terminal offers separate memory and Void resets.':pending==='Super Void Heart'?'The two Hearts become one. Void gain doubles permanently. This life continues.':pending==='Embrace Void'?'Gain '+voidGain()+' Void. Current levels and all previous XP memories are cleared.':pending==='Rebirth'?'Begin a new life with your current levels as XP memories.':'Begin a new life. Current levels and XP memories reset. Void and permanent bonuses carry over.';
    return '<h2>'+title+'</h2>'+(state.voidHeart?voidArt(8,90,title):sprite(artIndex.icons_amulet_65,76)+sprite(artIndex.icons_angelicorb,50)+sprite(artIndex.icons_evilorb,50))+'<p>'+story+'</p><p>Void · '+formatVoid(state.Void)+(state.voidHeart?'<br>Void skill XP ×'+(1+state.Void/10).toFixed(1):'')+'</p>'+
      (!state.voidHeart?heartForge():!state.heartPair&&!state.superHeart?relicProgress('Second Heart'):state.superHeart&&!state.crossedRift?relicProgress('Rift'):'')+
-     available.filter(a=>a!=='Void Heart').map(a=>button('ask:'+a,titles[a]+(a==='Embrace Void'&&state.voidHeart?' · +'+heartEvilGain().toFixed(2)+' Evil':''))).join(' ')+
+     (state.voidHeart?nextVoidShop():'')+
+     available.filter(a=>a!=='Void Heart').map(a=>button('ask:'+a,titles[a])).join(' ')+
      (pending?'<section class="card"><p>'+(passages[pending]||titles[pending])+'</p><p>'+details+'</p>'+button('accept',pending==='Embrace Void'?'Confirm Void':('Confirm '+pending))+' '+button('cancel','Keep playing')+'</section>':'');
 
 
@@ -545,32 +569,37 @@ function draw(){
    screen.innerHTML=`<section class="launch"><h1>Choose your character</h1><div class="roster">${cards}</div><button type="button" class="primary" data-act="begin">Continue as ${chosen}</button></section>`;
    return;
  }
+ const notice=[upkeepNotice,idleNotice].filter(Boolean).map(t=>'<p>'+t+'</p>').join('');
+ const noticePanel=notice?'<aside class="card">'+notice+button('dismiss-notice','Dismiss')+'</aside>':'';
  const rested=Date.now()<(state.restedUntil||0)?' · Rested speed ×'+state.restedSpeed.toFixed(2):'';const top='<div class="card profile">'+portrait()+'<div>'+(theme?'<small class="path-stat">'+({evil:'Evil · '+fmt(state.Evil),angelic:'Angelic · '+fmt(state.Angelic),void:'Void · '+formatVoid(state.Void)})[theme]+'</small>':'')+'<b>'+state.hero+'</b> · Life '+state.life+'<br><span data-clock>Age '+age()+' · '+Math.floor(state.days%365)+' days</span> · Lifespan '+Math.floor(lifespan())+'<br><span class="gold">◉ <span data-coins>'+fmt(state.coins)+'</span> · '+fmt(pay(state.job)-upkeep())+' net/day</span><br>Happiness ×'+happy().toFixed(2)+rested+'</div></div>';
  if(state.crossedRift){
    const where=tab==='Amulet'?'Terminal':tab==='Jobs'?'Contracts':tab==='Skills'?'Augments':'Housing';
    const tabs=[['Jobs','Contracts'],['Skills','Augments'],['Shop','Housing'],['Amulet','Terminal']];
-   screen.innerHTML='<div class="city-banner">'+cityIcon(8,66)+(state.chrono>=4?'<div><small>CITY UPLINK ACTIVE</small><h1>Still Observatory</h1></div>':'<div><small>RIFT DISTRICT</small><h1>Night Shift</h1></div>')+'</div><div class="play-controls">'+top.replace('◉','₡')+'<nav aria-label="Game sections">'+tabs.map(([key,label])=>button('tab:'+key,label,where===label)).join('')+'</nav></div><section class="card">'+(tab==='Amulet'?cityTerminal():list())+'</section><footer>'+button('pause',state.paused?'Resume':'Pause')+' · Test speed '+[1,5,20].map(v=>button('devSpeed:'+v,v+'×',state.devSpeed===v)).join(' ')+'</footer>';
+   screen.innerHTML='<div class="city-banner">'+cityIcon(8,66)+(state.chrono>=4?'<div><small>CITY UPLINK ACTIVE</small><h1>Still Observatory</h1></div>':'<div><small>RIFT DISTRICT</small><h1>Night Shift</h1></div>')+'</div><div class="play-controls">'+top.replace('◉','₡')+'<nav aria-label="Game sections">'+tabs.map(([key,label])=>button('tab:'+key,label,where===label)).join('')+'</nav></div>'+noticePanel+'<section class="card">'+(tab==='Amulet'?cityTerminal():list())+'</section><footer>'+button('pause',state.paused?'Resume':'Pause')+' · Test speed '+[1,5,20].map(v=>button('devSpeed:'+v,v+'×',state.devSpeed===v)).join(' ')+'</footer>';
    return;
  }
 
  const nav=['Jobs','Skills','Shop',...(age()>=25||state.voidPath?['Amulet']:[])];
- screen.innerHTML='<div class="play-controls">'+top+'<nav aria-label="Game sections">'+nav.map(t=>button('tab:'+t,t==='Amulet'&&state.voidHeart?'Heart':t,t===tab)).join('')+'</nav></div><section class="card">'+(tab==='Amulet'?amulet():list())+'</section><footer>'+state.job+' · Lv. '+level(state.job)+'　'+state.skill+' · Lv. '+level(state.skill)+'<p>'+button('pause',state.paused?'Resume':'Pause')+' '+(level('Time warping')?button('warp','Time warping '+(state.warp?'on':'off'),state.warp):'')+'</p>'+['happiness','accelerating'].map(k=>button('potion:'+k,(k==='happiness'?'Happiness':'Speed')+' ×2 · '+(potionActive(k)?Math.ceil((state[k+'Until']-Date.now())/1000)+'s':'10 min'),potionActive(k))).join(' ')+'<p>Developer speed　'+[1,5,20].map(v=>button('devSpeed:'+v,v+'×',state.devSpeed===v)).join(' ')+'</p>'+statusText+'</footer>';
+ screen.innerHTML='<div class="play-controls">'+top+'<nav aria-label="Game sections">'+nav.map(t=>button('tab:'+t,t==='Amulet'&&state.voidHeart?'Heart':t,t===tab)).join('')+'</nav></div>'+noticePanel+'<section class="card">'+(tab==='Amulet'?amulet():list())+'</section><footer>'+state.job+' · Lv. '+level(state.job)+'　'+state.skill+' · Lv. '+level(state.skill)+'<p>'+button('pause',state.paused?'Resume':'Pause')+' '+(level('Time warping')?button('warp','Time warping '+(state.warp?'on':'off'),state.warp):'')+'</p>'+['happiness','accelerating'].map(k=>button('potion:'+k,(k==='happiness'?'Happiness':'Speed')+' ×2 · '+(potionActive(k)?Math.ceil((state[k+'Until']-Date.now())/1000)+'s':'10 min'),potionActive(k))).join(' ')+'<p>Developer speed　'+[1,5,20].map(v=>button('devSpeed:'+v,v+'×',state.devSpeed===v)).join(' ')+'</p>'+statusText+'</footer>';
 }
 function advance(){
  const now=Date.now(),elapsed=Math.max(0,(now-state.clock)/1000);state.clock=now;
  if(state.hero&&!state.paused&&!state.finished){
-    if(elapsed>900){
-    state.restedUntil=now+30000;
-    state.restedSpeed=1.5+Math.min(6.5,elapsed/7200);
-    return;
-  }
+  const startDays=state.days;
   let days=Math.min(elapsed,300)*daysPerSecond(now);
   while(days>0&&!dead()){const slice=Math.min(5,days);step(slice);days-=slice}
+  if(elapsed>300){
+    const seconds=Math.min(30,elapsed-300);
+    state.restedUntil=now+seconds*1000;
+    state.restedSpeed=1.5+Math.min(6.5,elapsed/7200);
+    idleNotice='Away progress: '+fmt(state.days-startDays)+' game days credited. Rested speed ×'+state.restedSpeed.toFixed(2)+' for '+Math.ceil(seconds)+' seconds.';
+  }
  }
 }
 screen.onclick=e=>{
  const b=e.target.closest('button');if(!b||b.disabled)return;advance();
  const [a,v]=b.dataset.act.split(':');
+ if(a==='dismiss-notice'){upkeepNotice='';idleNotice=''}
  if(a==='inspect')inspectingAmulet=!inspectingAmulet;
  if(a==='tab'||a==='accept')inspectingAmulet=false;
  if(a==='choose')chosen=v;
@@ -592,7 +621,7 @@ screen.onclick=e=>{
  save();render();
  if(switchWhileScrolled){
    const controls=screen.querySelector('.play-controls');
-   const panel=controls?.nextElementSibling;
+   const panel=screen.querySelector('.play-controls ~ section.card');
    if(panel){
      const delta=panel.getBoundingClientRect().top-controls.getBoundingClientRect().bottom;
      if(delta<0)window.scrollBy(0,delta);
