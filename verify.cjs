@@ -44,16 +44,18 @@ state.Void=2000;assert.equal(lifespan(),initialLife);
 const normalMagic=rate('Mana control');state.superHeart=true;assert(rate('Mana control')>normalMagic);
 state=JSON.parse(firstHeartLife);
 state.days=199*365;assert(!choices().includes('Embrace Void'));state.days=200*365;assert.equal(voidGain(),1);reset('Embrace Void');
-assert.equal(state.Void,1);assert(!remaining('Absolute Wish').length);assert.deepEqual(Object.keys(state.memory),[]);
+assert.equal(state.Void,1);assert(remaining('Absolute Wish').length);assert.deepEqual(Object.keys(state.memory),[]);
 for(const skill of voidCatalog.filter(e=>e.group==='Void Manipulation')){
- for(const [name,value] of Object.entries(skill.requirements))if(name!=='Void'){
-   state.Void=skill.requirements.Void;state.levels[name]=value-1;assert(remaining(skill.name).length);state.levels[name]=value;
+ Object.assign(state.levels,skill.requirements);assert.equal(remaining(skill.name).length,0);
+ for(const [name,target] of Object.entries(skill.requirements)){
+   state.levels[name]=target-1;assert(remaining(skill.name).length);state.levels[name]=target;
  }
- const target=skill.requirements.Void;state.Void=target-0.01;assert(remaining(skill.name).length);state.Void=target;assert(!remaining(skill.name).length);
 }
+state.levels['Void Amplification']=2999;assert(remaining('Mind Seize').length);
+state.levels['Void Amplification']=3000;assert.equal(remaining('Mind Seize').length,0);
 state.levels={};state.Void=1;
 assert(state.voidHeart&&state.voidPath&&age()===14);assert.deepEqual(Object.keys(state.orbs),[]);assert(portrait().includes('void-forms.svg'));
-tab='Shop';assert(!list().includes('Town Ruler'));tab='Jobs';assert(!list().includes('Corrupted')&&list().includes('Age 14/250'));tab='Skills';assert(list().includes('Absolute Wish'));
+tab='Shop';assert(!list().includes('Town Ruler'));tab='Jobs';assert(!list().includes('Corrupted')&&list().includes('Age 14/250'));tab='Skills';assert(!list().includes('skill:Absolute Wish'));
 assert.equal(voidCatalog.filter(e=>e.group==='The Void').length,8);assert.equal(voidCatalog.filter(e=>e.group==='Void Manipulation').length,7);
 for(const e of voidCatalog){for(const key of Object.keys(e.requirements))assert(entries[key]||['Age','Evil','Coins','Void'].includes(key))}
 state.days=249*365;assert(remaining('Corrupted').length);state.days=250*365;assert.equal(remaining('Corrupted').length,0);
@@ -63,7 +65,7 @@ tab='Shop';state.equipment.Book=true;
 state.unlocked.Book=true;
 assert(list().includes('<b>Book</b><small>'+String.fromCharCode(215)+entries.Book.effect+' '+entries.Book.description+'</small>'));
 delete state.equipment.Book;
-state.days=200*365;const evilBefore=state.Evil;state.levels['Absolute Wish']=4;tab='Skills';assert(list().includes('+1.4 Void gain'));assert.equal(voidGain(),1.4);reset('Embrace Void');assert.equal(state.Void,2.4);assert.equal(state.Evil,evilBefore);assert(state.voidHeart);assert.equal(age(),14);
+state.days=200*365;const evilBefore=state.Evil;Object.assign(state.levels,entries['Absolute Wish'].requirements);state.levels['Absolute Wish']=4;tab='Skills';assert(list().includes('+1.4 Void gain'));assert.equal(voidGain(),1.4);reset('Embrace Void');assert.equal(state.Void,2.4);assert.equal(state.Evil,evilBefore);assert(state.voidHeart);assert.equal(age(),14);
 for(const [name,,target] of relicRequirements('Second Heart')){
  if(name==='Age')state.days=target*365;else if(name!=='Void')state.levels[name]=target;
 }
