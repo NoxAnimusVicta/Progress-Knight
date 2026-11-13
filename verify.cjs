@@ -50,7 +50,7 @@ for(const skill of voidCatalog.filter(e=>e.group==='Void Manipulation')){
 }
 state.Void=1;
 assert(state.voidHeart&&state.voidPath&&age()===14);assert.deepEqual(Object.keys(state.orbs),[]);assert(portrait().includes('void-forms.svg'));
-tab='Shop';assert(!list().includes('Town Ruler'));tab='Jobs';assert(!list().includes('Corrupted')&&list().includes('Age 14/1,000'));tab='Skills';assert(list().includes('Absolute Wish'));
+tab='Shop';assert(!list().includes('Town Ruler'));tab='Jobs';assert(list().includes('Corrupted')&&!list().includes('job:Corrupted'));tab='Skills';assert(list().includes('Absolute Wish'));
 assert.equal(voidCatalog.filter(e=>e.group==='The Void').length,8);assert.equal(voidCatalog.filter(e=>e.group==='Void Manipulation').length,7);
 for(const e of voidCatalog){for(const key of Object.keys(e.requirements))assert(entries[key]||['Age','Evil','Coins','Void'].includes(key))}
 state.days=999*365;assert(remaining('Corrupted').length);state.days=1000*365;assert.equal(remaining('Corrupted').length,0);
@@ -105,7 +105,7 @@ for(const name of ['Astral scholar','Astral Body','Archmage','All Seeing Eye','C
 }
 state={...newLife(),hero:'Magnus',coins:1e15};tab='Shop';assert(!list().includes('Town Ruler')&&!list().includes('Ashen keep'));
 for(const [side,home,relic] of [['Evil','Ashen keep','Obsidian seal'],['Angelic','Dawn sanctuary','Ivory seal']]){
- state[side]=1;assert(list().includes(home)&&!list().includes(relic));state[side]=25;assert(list().includes(relic));state[side]=0;assert(!list().includes(home)&&!list().includes(relic));
+ state[side]=1;assert(list().includes(home)&&list().includes(relic)&&!list().includes('gear:'+relic));state[side]=25;assert(list().includes(relic));state[side]=0;assert(!list().includes(home)&&!list().includes(relic));
 }
 state.voidHeart=true;assert(list().includes('Town Ruler')&&list().includes('Void Armor'));assert.deepEqual(list().match(new RegExp('<h3>.*?</h3>','g')),['<h3>Properties</h3>','<h3>Equipment</h3>']);
 for(const hero of ['Magnus','Isabella']){
@@ -118,6 +118,8 @@ for(const hero of ['Magnus','Isabella']){
  reset('Rebirth');assert(portrait().includes('void-forms.svg'));
 }
 state={...newLife(),hero:'Magnus'};tab='Jobs';assert(list().includes('Beggar 0/10'));assert(!list().includes('job:Farmer'));assert(!list().includes('Fisherman'));
-state.levels.Beggar=10;assert(list().includes('job:Farmer')&&list().includes('Farmer 0/10')&&!list().includes('Fisherman'));
+state.levels.Beggar=10;assert(list().includes('job:Farmer')&&list().includes('Fisherman')&&!list().includes('job:Fisherman'));
+state={...newLife(),hero:'Magnus'};tab='Skills';const firstSkills=list();assert(firstSkills.includes('skill-requirement')&&!firstSkills.includes('Next unlock'));assert(!firstSkills.includes('skill:Productivity'));
+for(const section of ['Jobs','Shop']){tab=section;assert(!list().includes('skill-requirement')&&list().includes('Next unlock'))}
 console.log('Verified base progression, orb collectibles and cumulative skill XP, Void jobs, Heart, legacy conversion and Void collection.');
 `,ctx);
