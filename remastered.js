@@ -75,6 +75,14 @@ function cityLoadout(s){
  if(entries[s.skill]?.group!=='Augmentations')s.skill='Neural link';
  if(entries[s.home]?.group!=='City housing')s.home='Transit bunk';
 }
+// Paired alignment rewards share their economy and unlock thresholds.
+for(const [side,home,relic,homeTile,relicTile] of [
+ ['Evil','Ashen keep','Obsidian seal',50,artIndex.icons_evilorb],
+ ['Angelic','Dawn sanctuary','Ivory seal',50,artIndex.icons_angelicorb]
+]){
+ entries[home]={name:home,group:'Properties',side,tile:homeTile,expense:1200,effect:8,requirements:{[side]:1,Coins:120000}};
+ entries[relic]={name:relic,group:'Misc',side,tile:relicTile,expense:600,effect:1.5,description:side+' skill XP',requirements:{[side]:25,Coins:60000}};
+}
 const catalog = Object.values(entries);
 function newLife() {
   return {days:5110, coins:0, job:'Beggar', skill:'Concentration', home:'Homeless',
@@ -166,6 +174,8 @@ function rate(n){
   if(e.group==='Void Manipulation')gain*=(1+state.Void/10)*item('Void Necklace')*item('Void Orb');
   if(n==='Strength')gain*=effect('Muscle memory')*item('Dumbbells');
   if(e.group==='Magic'||(e.group==='Advanced arcana'&&!e.income))gain*=item('Sapphire charm');
+  if(pathResource[e.group]==='Evil')gain*=item('Obsidian seal');
+  if(pathResource[e.group]==='Angelic')gain*=item('Ivory seal');
   if(e.group==='Dark magic')gain*=state.Evil;
   if(e.group==='Light magic'||e.group==='Advanced Angelic')gain*=state.Angelic;
   return Math.round(gain);
@@ -193,6 +203,8 @@ function gain(n,amount){
   }
 }
 function remaining(n){
+  const side=entries[n].side;
+  if(side&&state[side]<entries[n].requirements[side])return [side+' required'];
   if(!ownsSkillPath(state,entries[n].group))return [pathResource[entries[n].group]+' required'];
   if(entries[n].group==='Void Manipulation')return !state.voidHeart?['Void Heart required']:state.Void<entries[n].requirements.Void?['Void '+formatVoid(state.Void)+' / '+entries[n].requirements.Void]:[];
   if(state.unlocked[n])return [];
@@ -423,28 +435,27 @@ function showAdvancedMagic(){
  return (level('Chairman')>=120&&level('Super immortality')>=10)||catalog.some(e=>e.group==='Advanced arcana'&&(state.job===e.name||state.skill===e.name||state.unlocked[e.name]||level(e.name)>0));
 }
 function list(){
- const groups=state.crossedRift?[{Jobs:'City contracts',Skills:'Augmentations',Shop:'City housing'}[tab]]:tab==='Jobs'?['Common work','Military','The Arcane Association',...(showAdvancedMagic()?['Advanced arcana']:[]),...(state.voidHeart?['The Void']:[])]:tab==='Skills'?['Fundamentals','Combat','Magic',...(showAdvancedMagic()?['Advanced arcana']:[]),'Dark magic','Advanced dark magic','Light magic','Advanced Angelic','Void Manipulation']:['Properties',...(state.voidHeart?['Void properties','Void equipment']:[]),'Misc'];
- return groups.filter(g=>ownsSkillPath(state,g)).map(g=>{
-  let lockedShown=false;
-  const groupEntries=catalog.filter(e=>(e.group===g&&(g!=='Advanced arcana'||Boolean(e.income)===(tab==='Jobs'))));
-  if(g==='Advanced arcana'&&tab==='Skills'){
+ const sections=state.crossedRift?
+   {Jobs:[['Contracts','City contracts']],Skills:[['Augmentations','Augmentations']],Shop:[['Properties','City housing']]}:
+   {Jobs:[['Common','Common work'],['Military','Military'],['Arcane','The Arcane Association',...(showAdvancedMagic()?['Advanced arcana']:[])],['Void',...(state.voidHeart?['The Void']:[])]],
+    Skills:['Fundamentals','Combat','Magic',...(showAdvancedMagic()?['Advanced arcana']:[]),'Dark magic','Advanced dark magic','Light magic','Advanced Angelic','Void Manipulation'].map(group=>[group==='Advanced arcana'?'Advanced Magic':group,group]),
+    Shop:[['Properties','Properties',...(state.voidHeart?['Void properties']:[])],['Equipment','Misc',...(state.voidHeart?['Void equipment']:[])]]};
+ return sections[tab].map(([heading,...groups])=>{
+  const groupEntries=catalog.filter(e=>groups.includes(e.group)&&ownsSkillPath(state,e.group)&&(e.group!=='Advanced arcana'||Boolean(e.income)===(tab==='Jobs'))&&!remaining(e.name).length);
+  if(heading==='Advanced Magic'){
    const order=['Astral Body','All Seeing Eye','Temporal Dimension','Brainwashing'];
    groupEntries.sort((a,b)=>order.indexOf(a.name)-order.indexOf(b.name));
   }
   const rows=groupEntries.map(e=>{
-   const n=e.name,missing=remaining(n);
-   if(missing.length&&lockedShown&&!voidCatalog.includes(e)&&g!=='Dark magic'&&g!=='Light magic'&&g!=='Advanced Angelic')return '';
-   if(missing.length)lockedShown=true;
+   const n=e.name,g=e.group;
    const selected=[state.job,state.skill,state.home].includes(n)||state.equipment[n];
    const feedback=selected&&e.maxXp?levelGainLabel(n):'';
    const xpNote=e.maxXp?(dead()?' · '+fmt(state.xp[n]||0)+' / '+fmt(threshold(n))+' XP':' · '+fmt(rate(n))+' XP/day'):'';
    const info=n==='Absolute Wish'?('+'+voidGain()+' '+e.description):e.income?fmt(pay(n))+(state.crossedRift?' credits/day':' coins/day'):e.maxXp?(e.isPlusDescription?'+':'×')+effect(n).toFixed(2)+' '+e.description:'×'+e.effect+' '+(e.description||'Happiness');
    const action=e.income?'job':e.maxXp?'skill':(g==='Properties'||g==='City housing'||g==='Void properties')?'home':'gear';
-   return '<button class="row '+(selected?'on':'')+(feedback?' recent-level':'')+'" aria-pressed="'+Boolean(selected)+'" data-act="'+action+':'+n+'" '+(missing.length?'disabled':'')+'>'+(state.crossedRift?cityIcon(e.tile,54):voidCatalog.includes(e)?catalogArt(e):sprite(e.tile))+'<span><b>'+n+'</b><small>'+(missing.length?missing.join(' · '):info+xpNote)+'</small></span><span class="right">'+(action==='gear'?(selected?'On · ':'Off · '):selected?(feedback?'<small class="row-status level-gain">'+feedback+'</small>':'<small class="row-status">✓ Active</small>'):'')+(e.maxXp?'<span>Lv. '+level(n)+'</span>'+meter(n):fmt(price(n))+' / day')+'</span></button>';
+   return '<button class="row '+(selected?'on':'')+(feedback?' recent-level':'')+'" aria-pressed="'+Boolean(selected)+'" data-act="'+action+':'+n+'">'+(state.crossedRift?cityIcon(e.tile,54):voidCatalog.includes(e)?catalogArt(e):sprite(e.tile))+'<span><b>'+n+'</b><small>'+(info+xpNote)+'</small></span><span class="right">'+(action==='gear'?(selected?'On · ':'Off · '):selected?(feedback?'<small class="row-status level-gain">'+feedback+'</small>':'<small class="row-status">✓ Active</small>'):'')+(e.maxXp?'<span>Lv. '+level(n)+'</span>'+meter(n):fmt(price(n))+' / day')+'</span></button>';
   }).join('');
-  const academyHint=g==='The Arcane Association'&&!showAdvancedMagic()&&(state.unlocked.Chairman||level('Chairman')>0)
-    ? '<p>Advanced Magic requires Chairman '+level('Chairman')+' / 120 and Super immortality '+level('Super immortality')+' / 10.</p>':'';
-  return '<h3>'+(g==='Advanced arcana'?'Advanced Magic':g)+'</h3>'+rows+academyHint;
+  return rows?'<h3>'+heading+'</h3>'+rows:'';
  }).join('');
 }
 const amuletStory={
