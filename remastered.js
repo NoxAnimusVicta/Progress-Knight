@@ -429,8 +429,7 @@ function list(){
   const rows=candidates.map(e=>{
    const missing=remaining(e.name);
    if(missing.length){
-     if(!preview&&tab==='Skills')preview='<div class="skill-requirement"><span aria-hidden="true"></span><div><b>Required</b><small>'+missing.join(' · ')+'</small></div></div>';
-     else if(!preview)preview='<button class="row" disabled><span aria-hidden="true">🔒</span><span><b>'+e.name+'</b><small>'+missing.join(' · ')+'</small></span><small class="right">Next unlock</small></button>';
+     if(!preview)preview='<div class="skill-requirement"><img src="./required-lock.png" alt=""><div><b>REQUIRED</b><small>'+missing.join('　')+'</small></div></div>';
      return '';
    }
    const n=e.name,g=e.group;
