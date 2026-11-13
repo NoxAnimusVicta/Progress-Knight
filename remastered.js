@@ -10,12 +10,12 @@ const voidCatalog=[
  {"name":"Void Lord","maxXp":28000000000000000000,"income":100000000000,"group":"The Void","tile":6,"requirements":{"Void Symbiosis":3800,"Void Reaver":150}},
  {"name":"Abyss God","maxXp":400000000000000000000,"income":1000000000000,"group":"The Void","tile":7,"requirements":{"Void Embodiment":4700,"Void Lord":750}},
  {"name":"Absolute Wish","maxXp":100,"description":"Void gain","group":"Void Manipulation","tile":0,"requirements":{"Void": 1}},
- {"name":"Void Amplification","maxXp":100,"effect":0.01,"description":"The Void XP","group":"Void Manipulation","tile":1,"requirements":{"Void": 10}},
- {"name":"Mind Seize","maxXp":100,"effect":0.0006,"description":"Reduced Happiness","group":"Void Manipulation","tile":2,"requirements":{"Void": 25}},
+ {"name":"Void Amplification","maxXp":100,"effect":0.01,"description":"The Void XP","group":"Void Manipulation","tile":1,"requirements":{"Void": 10,"Absolute Wish":200}},
+ {"name":"Mind Seize","maxXp":100,"effect":0.0006,"description":"Reduced Happiness","group":"Void Manipulation","tile":2,"requirements":{"Void": 25,"Void Amplification":200}},
  {"name":"Ceaseless Abyss","maxXp":100,"effect":0.000585,"description":"Longer Lifespan","group":"Void Manipulation","tile":3,"requirements":{"Void": 50}},
- {"name":"Void Symbiosis","maxXp":100,"effect":0.0015,"description":"Ability XP","group":"Void Manipulation","tile":4,"requirements":{"Void": 75}},
- {"name":"Void Embodiment","maxXp":100,"effect":0.0025,"description":"Void gain","group":"Void Manipulation","tile":5,"requirements":{"Void": 200}},
- {"name":"Abyss Manipulation","maxXp":100,"effect":-0.01,"description":"Reduced Expenses","group":"Void Manipulation","tile":6,"requirements":{"Void": 400}},
+ {"name":"Void Symbiosis","maxXp":100,"effect":0.0015,"description":"Ability XP","group":"Void Manipulation","tile":4,"requirements":{"Void": 75,"Ceaseless Abyss":200}},
+ {"name":"Void Embodiment","maxXp":100,"effect":0.0025,"description":"Void gain","group":"Void Manipulation","tile":5,"requirements":{"Void": 200,"Void Symbiosis":200}},
+ {"name":"Abyss Manipulation","maxXp":100,"effect":-0.01,"description":"Reduced Expenses","group":"Void Manipulation","tile":6,"requirements":{"Void": 400,"Void Embodiment":200}},
  {"name":"Town Ruler","expense":35000000,"effect":120,"group":"Void properties","tile":0,"requirements":{"Coins":3500000000}},
  {"name":"City Ruler","expense":1100000000,"effect":500,"group":"Void properties","tile":1,"requirements":{"Coins":110000000000}},
  {"name":"Nation Ruler","expense":13000000000,"effect":1200,"group":"Void properties","tile":2,"requirements":{"Coins":1300000000000}},
@@ -125,7 +125,7 @@ function migrateVoid(s){
    s.voidPath=true;s.finished=false;
 
  }
- if(entries[s.skill]?.group==='Void Manipulation'&&(!s.voidHeart||s.Void<entries[s.skill].requirements.Void))s.skill='Concentration';
+ if(entries[s.skill]?.group==='Void Manipulation'&&(!s.voidHeart||Object.entries(entries[s.skill].requirements).some(([key,target])=>(key==='Void'?s.Void:(s.levels?.[key]||0))<target)))s.skill='Concentration';
  if(entries[s.skill]&&!ownsSkillPath(s,entries[s.skill].group))s.skill='Concentration';
  return s;
 }
@@ -214,14 +214,14 @@ function remaining(n){
   const side=entries[n].side;
   if(side&&state[side]<entries[n].requirements[side])return [side+' '+formatVoid(state[side])+' / '+entries[n].requirements[side]];
   if(!ownsSkillPath(state,entries[n].group))return [pathResource[entries[n].group]+' required'];
-  if(entries[n].group==='Void Manipulation')return !state.voidHeart?['Void Heart required']:state.Void<entries[n].requirements.Void?['Void '+formatVoid(state.Void)+' / '+entries[n].requirements.Void]:[];
-  if(state.unlocked[n])return [];
+  const voidSkill=entries[n].group==='Void Manipulation';
+  if(!voidSkill&&state.unlocked[n])return [];
   const missing=Object.entries(entries[n].requirements).flatMap(([key,target])=>{
     if(key==='Coins')target=shopThreshold(entries[n]);
-    const value=key==='Age'?age():key==='Coins'?state.coins:['Evil','Angelic'].includes(key)?state[key]:level(key);
+    const value=key==='Age'?age():key==='Coins'?state.coins:['Void','Evil','Angelic'].includes(key)?state[key]:level(key);
     return value>=target?[]:[key+' '+Math.floor(value).toLocaleString()+'/'+target.toLocaleString()];
   });
-  if(!missing.length)state.unlocked[n]=true;
+  if(!voidSkill&&!missing.length)state.unlocked[n]=true;
   return missing;
 }
 function step(days){
@@ -245,11 +245,11 @@ function alignmentGain(side){return side==='Evil'?(effect('Evil control')+effect
 function roundVoid(value){return Number(value.toFixed(2))}
 function formatVoid(value){return value.toLocaleString(undefined,{maximumFractionDigits:2})}
 function voidGain(){
- return state.voidHeart?roundVoid((1+level('Absolute Wish')*entries['Spiritual Meditation'].effect)*effect('Void Embodiment')*(state.superHeart?2:1)):0;
+ return state.voidHeart?roundVoid((1+level('Absolute Wish')*entries['Spiritual Meditation'].effect+level('Void Embodiment')*entries['Evil control'].effect)*(state.superHeart?2:1)):0;
 }
 // All levels are earned in the life in which the relic is claimed.
 function relicRequirements(path){
- if(path==='Second Heart')return [['Age',age(),350],['Void Slave',level('Void Slave'),75],['Absolute Wish',level('Absolute Wish'),125],['Void Amplification',level('Void Amplification'),100],['Void',state.Void,500]];
+ if(path==='Second Heart')return [['Age',age(),350],['Void Slave',level('Void Slave'),100],...voidCatalog.filter(e=>e.group==='Void Manipulation').map(e=>[e.name,level(e.name),e.name==='Abyss Manipulation'?100:50]),['Void',state.Void,800]];
  if(path==='Void')return [['End of this life',Number(dead()),1],['Evil Orb',Number(!!state.orbs.Evil),1],['Angelic Orb',Number(!!state.orbs.Angelic),1]];
  const group=path==='Evil'?'Dark magic':'Light magic';
  return [['Age',age(),300],[path,state[path],400],...catalog.filter(e=>e.group===group).map(e=>[e.name,level(e.name),e.name==="Demon's wealth"||e.name==='Bountiful Grace'?100:50])];
@@ -434,7 +434,7 @@ function list(){
    const selected=[state.job,state.skill,state.home].includes(n)||state.equipment[n];
    const feedback=selected&&e.maxXp?levelGainLabel(n):'';
    const xpNote=e.maxXp?(dead()?' · '+fmt(state.xp[n]||0)+' / '+fmt(threshold(n))+' XP':' · '+fmt(rate(n))+' XP/day'):'';
-   const info=n==='Absolute Wish'?('+'+voidGain()+' '+e.description):e.income?fmt(pay(n))+' coins/day':e.maxXp?(e.isPlusDescription?'+':'×')+effect(n).toFixed(2)+' '+e.description:'×'+e.effect+' '+(e.description||'Happiness');
+   const info=(n==='Absolute Wish'||n==='Void Embodiment')?('+'+voidGain()+' '+e.description):e.income?fmt(pay(n))+' coins/day':e.maxXp?(e.isPlusDescription?'+':'×')+effect(n).toFixed(2)+' '+e.description:'×'+e.effect+' '+(e.description||'Happiness');
    const action=e.income?'job':e.maxXp?'skill':(g==='Properties'||g==='Void properties')?'home':'gear';
    return '<button class="row '+(selected?'on':'')+(feedback?' recent-level':'')+'" aria-pressed="'+Boolean(selected)+'" data-act="'+action+':'+n+'">'+(e.side&&e.expense!==undefined?alignmentArt(e.tile):voidCatalog.includes(e)?catalogArt(e):sprite(e.tile))+'<span><b>'+n+'</b><small>'+(info+xpNote)+'</small></span><span class="right">'+(action==='gear'?(selected?'On · ':'Off · '):selected?(feedback?'<small class="row-status level-gain">'+feedback+'</small>':'<small class="row-status">✓ Active</small>'):'')+(e.maxXp?'<span>Lv. '+level(n)+'</span>'+meter(n):fmt(price(n))+' / day')+'</span></button>';
   }).join('');
