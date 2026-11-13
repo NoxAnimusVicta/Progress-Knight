@@ -59,6 +59,17 @@ body[data-path]:not([data-path=""]) .xp-track i{background:linear-gradient(90deg
 .row .right{flex:0 0 6rem;min-width:0;font-variant-numeric:tabular-nums}
 .row .row-status{height:2.4em;display:flex;align-items:flex-end;justify-content:flex-end;font-size:12px;line-height:1.2}
 @media(max-width:400px){.play-controls nav button{font-size:.9rem}.row .right{flex-basis:5.4rem}}
+ .item-cards{display:flex;overflow-x:auto;gap:8px;padding:3px 2px 7px;scroll-snap-type:x proximity}
+.item-cards>.row,.item-cards>.requirement-card{box-sizing:border-box;flex:0 0 9rem;margin:0;min-height:9rem;scroll-snap-align:start}
+.item-cards>.row{display:flex;flex-direction:column;text-align:center;justify-content:space-between}
+.item-cards>.row .sprite+span{margin:0}.item-cards>.row .right{flex:0 0 auto;width:100%;text-align:center}
+.item-cards>.row .row-status{display:none}
+.requirement-card{display:flex;align-items:center;gap:8px;min-height:58px;padding:8px 12px;background:#19161c;color:#aca5ae;border-radius:6px;text-align:center}
+.requirement-card>span:last-child{flex:1}.requirement-card b{display:block;text-transform:uppercase;font-size:.88rem;font-weight:600}.requirement-card small{display:block;margin-top:3px;color:inherit}
+.item-cards>.requirement-card{flex-direction:column;justify-content:center}.item-cards>.requirement-card>span:last-child{flex:0}
+.item-rows>.requirement-card{margin:6px 0}
+.lock-mark{position:relative;flex:none;width:20px;height:16px;border-radius:3px;background:#605a64;margin:10px 8px 0}
+.lock-mark:before{content:'';position:absolute;box-sizing:border-box;width:13px;height:12px;border:3px solid #605a64;border-bottom:0;border-radius:8px 8px 0 0;left:3.5px;bottom:13px}
 </style><main><header><img src="./icon-192.png" alt="" width="40" height="40" style="vertical-align:middle;border-radius:8px"> Progress Knight <span>REMASTERED</span></header><div id="screen"></div><details id="save-tools" class="card"><summary>Save &amp; backup</summary><p><label><input id="alignment-ui" type="checkbox"> Use alignment appearance</label></p><p><label><input id="level-feedback" type="checkbox"> Show level-up highlights</label></p><p><a href="./previous.html">Earlier prototype save</a></p><p>Download your campaign to keep a copy or move it to another device.</p><button id="export-save">Download backup</button> <label>Restore from file <input id="import-file" type="file" accept=".json,application/json"></label><p id="backup-status" aria-live="polite"></p><button hidden id="confirm-restore">Restore this campaign</button> <button hidden id="cancel-restore">Cancel</button></details></main><script src="./balance.js"></script><script src="./remastered.js"></script><script src="./save-tools.js"></script></html>
 
 
