@@ -356,6 +356,10 @@ function cityTerminal(){
 
 }
 function portrait(){
+ if(dead()&&state.voidHeart){
+   const position=state.hero==='Isabella'?'right':'left';
+   return '<span role="img" aria-label="'+state.hero+' · Void skeleton" style="display:inline-block;flex:none;width:76px;height:76px;border-radius:5px;background:url(./void-skeletons.webp) '+position+' center/200% 100%"></span>';
+ }
  if(state.crossedRift||state.voidHeart){
    const city=state.crossedRift;
    const years=age(),stage=years>=100?4:years>=65?3:years>=45?2:years>=30?1:0;
