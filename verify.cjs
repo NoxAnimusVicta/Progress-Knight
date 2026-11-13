@@ -116,5 +116,14 @@ for(const [side,home,relic] of [['Evil','Ashen keep','Obsidian seal'],['Angelic'
  state[side]=1;assert(list().includes(home)&&!list().includes(relic));state[side]=25;assert(list().includes(relic));state[side]=0;assert(!list().includes(home)&&!list().includes(relic));
 }
 state.voidHeart=true;assert(list().includes('Town Ruler')&&list().includes('Void Armor'));assert.deepEqual(list().match(new RegExp('<h3>.*?</h3>','g')),['<h3>Properties</h3>','<h3>Equipment</h3>']);
+for(const hero of ['Magnus','Isabella']){
+ for(const side of ['Evil','Angelic']){
+   state={...newLife(),hero,[side]:1};state.days=lifespan()*365;
+   assert.equal(portrait(),sprite(artIndex['avatar_'+hero.toLowerCase()+'_dead_'+side.toLowerCase()],76));
+ }
+ state={...newLife(),hero,voidHeart:true,voidPath:true,Evil:1};state.days=lifespan()*365-1;assert(portrait().includes('void-forms.svg'));
+ state.days++;assert(portrait().includes('void-skeletons.webp'));assert(portrait().includes(hero==='Isabella'?'right center':'left center'));
+ reset('Rebirth');assert(portrait().includes('void-forms.svg'));
+}
 console.log('Verified base progression, orb collectibles and cumulative skill XP, Void jobs, Heart, legacy conversion and Void collection.');
 `,ctx);
