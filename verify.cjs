@@ -42,7 +42,6 @@ const initialLife=lifespan(),initialJobRate=rate('Beggar');
 state.Void=500;assert.equal(lifespan(),initialLife+1000);assert.equal(rate('Beggar'),initialJobRate);
 state.Void=2000;assert.equal(lifespan(),initialLife+1200);
 const normalMagic=rate('Mana control');state.superHeart=true;assert(rate('Mana control')>normalMagic);
-state.crossedRift=true;assert.equal(heartYears(),0);assert.equal(heartCareerFactor(),1);
 state=JSON.parse(firstHeartLife);
 state.days=199*365;assert(!choices().includes('Embrace Void'));state.days=200*365;assert.equal(voidGain(),1);reset('Embrace Void');
 assert.equal(state.Void,1);assert(!remaining('Absolute Wish').length);assert.deepEqual(Object.keys(state.memory),[]);
@@ -69,33 +68,17 @@ assert(!choices().includes('Second Heart'));state.Void=499;reset('Second Heart')
 assert.deepEqual(choices(),['Super Void Heart']);const lifeBefore=state.life;reset('Super Void Heart');
 assert(state.superHeart&&!state.heartPair&&state.life===lifeBefore);assert(!choices().includes('Super Void Heart'));
 state.days=200*365;reset('Rebirth');assert(state.superHeart&&state.Void===500);
-state.days=1300*365;state.levels={'Void Fiend':100,'Mind Seize':150};state.Void=1999;assert(!choices().includes('Cross the Rift'));
-state.Void=2000;state.days=1299*365;assert(!choices().includes('Cross the Rift'));state.days=1300*365;
-state.levels['Void Fiend']=99;assert(!choices().includes('Cross the Rift'));state.levels['Void Fiend']=100;
-state.levels['Mind Seize']=149;assert(!choices().includes('Cross the Rift'));state.levels['Mind Seize']=150;
-state.levels['Absolute Wish']=48;assert.equal(voidGain(),11.6);reset('Cross the Rift');assert(state.crossedRift);assert(!choices().includes('Cross the Rift'));
-assert.equal(state.job,'Night courier');assert.equal(state.skill,'Neural link');assert.equal(state.home,'Transit bunk');
-const cityRate=rate(state.skill);const records=state.orbs;state.orbs={};assert.equal(rate(state.skill),cityRate);state.orbs=records;
-state.levels['Neural link']=10;state.levels['Night courier']=15;assert.equal(remaining('Relay technician').length,0);
-reset('Embrace Void');assert.equal(state.Void,2013);assert.deepEqual(Object.keys(state.memory),[]);assert(state.crossedRift&&state.job==='Night courier'&&state.home==='Transit bunk');
-for(const step of chronoSteps){
- const lives=state.life;state.days=step.age*365;Object.assign(state.levels,step.skills);
- const last=Object.keys(step.skills).pop();state.levels[last]--;assert(!choices().includes(step.action));state.levels[last]++;
- reset(step.action);assert.equal(state.life,lives+1);assert.equal(age(),14);
-}
-assert.equal(state.chrono,3);assert(state.memory['Relay technician']>=15);
-assert(!choices().includes('Fuse Continuum Heart'));const oldLife=state.life;
-reset('Transmit construct');assert.equal(state.chrono,4);reset('Fuse Continuum Heart');assert.equal(state.chrono,5);assert.equal(state.life,oldLife);
-assert(!choices().includes('Fuse Continuum Heart'));state.days=200*365;assert.equal(voidGain(),4);reset('Embrace Void');assert.equal(state.chrono,5);assert.deepEqual(Object.keys(state.memory),[]);
+state.days=1300*365;state.Void=2100;assert.deepEqual(choices(),['Embrace Void','Rebirth']);
+Object.assign(state,{crossedRift:true,chrono:5,job:'Night courier',home:'Transit bunk',skill:'Neural link',levels:{'Void Fiend':100,'Neural link':70}});
+migrateVoid(state);assert(state.superHeart&&state.Void===2100&&level('Void Fiend')===100);assert.equal(state.job,'Beggar');assert.equal(state.skill,'Concentration');assert.equal(state.home,'Homeless');assert(!('Neural link' in state.levels));
 assert(migrateVoid({orbs:{Void:true}}).voidHeart);
 Object.assign(state,newLife(),{hero:'Magnus',Evil:1});assert.equal(pathTheme(),'evil');
 state.Evil=0;state.Angelic=1;assert.equal(pathTheme(),'angelic');
 state.voidPath=true;assert.equal(pathTheme(),'');
 state.voidHeart=true;assert.equal(pathTheme(),'void');
-state.crossedRift=true;assert.equal(pathTheme(),'');
 assert(fmt(1e25).length<12);
-for(const chapter of [{},{voidPath:true,voidHeart:true},{voidPath:true,voidHeart:true,superHeart:true,crossedRift:true}]){
- state={...newLife(),hero:'Magnus',...chapter};cityLoadout(state);state.days=lifespan()*365;state.levels[state.skill]=12;state.xp[state.skill]=42;
+for(const chapter of [{},{voidPath:true,voidHeart:true},{voidPath:true,voidHeart:true,superHeart:true}]){
+ state={...newLife(),hero:'Magnus',...chapter};state.days=lifespan()*365;state.levels[state.skill]=12;state.xp[state.skill]=42;
  render();assert.equal(tab,'Amulet');
  for(const section of ['Jobs','Skills','Shop','Amulet','Skills']){
   screen.onclick({target:{closest:()=>({dataset:{act:'tab:'+section}})}});
