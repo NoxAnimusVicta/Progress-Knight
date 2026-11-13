@@ -47,12 +47,12 @@ assert.equal(voidCatalog.filter(e=>e.group==='The Void').length,8);assert.equal(
 for(const e of voidCatalog){for(const key of Object.keys(e.requirements))assert(entries[key]||['Age','Evil','Coins','Void'].includes(key))}
 state.days=999*365;assert(remaining('Corrupted').length);state.days=1000*365;assert.equal(remaining('Corrupted').length,0);
 assert(remaining('Void Fiend').length);state.levels.Brainwashing=3000;state.levels['Void Slave']=200;assert.equal(remaining('Void Fiend').length,0);
-state.coins=entries['Void Realm'].expense*100-1;assert(remaining('Void Realm').length);state.coins++;assert.equal(remaining('Void Realm').length,0);
+state.coins=price('Void Realm')*100-1;assert(remaining('Void Realm').length);state.coins++;assert.equal(remaining('Void Realm').length,0);
 tab='Shop';state.equipment.Book=true;
 state.unlocked.Book=true;
 assert(list().includes('<b>Book</b><small>'+String.fromCharCode(215)+entries.Book.effect+' '+entries.Book.description+'</small>'));
 delete state.equipment.Book;
-state.days=200*365;const evilWithoutWish=heartEvilGain();state.levels['Absolute Wish']=4;assert.equal(heartEvilGain(),evilWithoutWish);tab='Skills';assert(list().includes('+1.4 Void gain'));assert.equal(voidGain(),1.4);reset('Embrace Void');assert.equal(state.Void,2.4);assert(state.voidHeart);assert.equal(age(),14);
+state.days=200*365;const evilBefore=state.Evil;state.levels['Absolute Wish']=4;tab='Skills';assert(list().includes('+1.4 Void gain'));assert.equal(voidGain(),1.4);reset('Embrace Void');assert.equal(state.Void,2.4);assert.equal(state.Evil,evilBefore);assert(state.voidHeart);assert.equal(age(),14);
 for(const [name,,target] of relicRequirements('Second Heart')){
  if(name==='Age')state.days=target*365;else if(name!=='Void')state.levels[name]=target;
 }
@@ -60,15 +60,15 @@ assert(!choices().includes('Second Heart'));state.Void=499;reset('Second Heart')
 assert.deepEqual(choices(),['Super Void Heart']);const lifeBefore=state.life;reset('Super Void Heart');
 assert(state.superHeart&&!state.heartPair&&state.life===lifeBefore);assert(!choices().includes('Super Void Heart'));
 state.days=200*365;reset('Rebirth');assert(state.superHeart&&state.Void===500);
-state.days=600*365;state.levels={'Void Fiend':100,'Mind Seize':150};state.Void=1999;assert(!choices().includes('Cross the Rift'));
-state.Void=2000;state.days=599*365;assert(!choices().includes('Cross the Rift'));state.days=600*365;
+state.days=1300*365;state.levels={'Void Fiend':100,'Mind Seize':150};state.Void=1999;assert(!choices().includes('Cross the Rift'));
+state.Void=2000;state.days=1299*365;assert(!choices().includes('Cross the Rift'));state.days=1300*365;
 state.levels['Void Fiend']=99;assert(!choices().includes('Cross the Rift'));state.levels['Void Fiend']=100;
 state.levels['Mind Seize']=149;assert(!choices().includes('Cross the Rift'));state.levels['Mind Seize']=150;
 state.levels['Absolute Wish']=48;assert.equal(voidGain(),11.6);reset('Cross the Rift');assert(state.crossedRift);assert(!choices().includes('Cross the Rift'));
 assert.equal(state.job,'Night courier');assert.equal(state.skill,'Neural link');assert.equal(state.home,'Transit bunk');
 const cityRate=rate(state.skill);const records=state.orbs;state.orbs={};assert.equal(rate(state.skill),cityRate);state.orbs=records;
 state.levels['Neural link']=10;state.levels['Night courier']=15;assert.equal(remaining('Relay technician').length,0);
-reset('Embrace Void');assert.equal(state.Void,2006);assert.deepEqual(Object.keys(state.memory),[]);assert(state.crossedRift&&state.job==='Night courier'&&state.home==='Transit bunk');
+reset('Embrace Void');assert.equal(state.Void,2013);assert.deepEqual(Object.keys(state.memory),[]);assert(state.crossedRift&&state.job==='Night courier'&&state.home==='Transit bunk');
 for(const step of chronoSteps){
  const lives=state.life;state.days=step.age*365;Object.assign(state.levels,step.skills);
  const last=Object.keys(step.skills).pop();state.levels[last]--;assert(!choices().includes(step.action));state.levels[last]++;
