@@ -2,10 +2,12 @@ const fs=require('fs'),vm=require('vm'),assert=require('assert/strict');
 const root={}, storage={};const ctx={assert,console,window:{scrollY:0},document:{querySelector:()=>root},navigator:{},localStorage:{getItem:k=>storage[k],setItem:(k,v)=>storage[k]=v},addEventListener(){},setInterval(){}};
 vm.createContext(ctx);for(const file of ['balance.js','remastered.js'])vm.runInContext(fs.readFileSync(require('path').join(__dirname,file),'utf8'),ctx);
 vm.runInContext(`
-state.hero='Magnus';
+assert(screen.innerHTML.includes('New Game'));assert(screen.innerHTML.includes('disabled'));launchView='playing';state.hero='Magnus';
+state.happinessUntil=Date.now()+60000;state.acceleratingUntil=state.happinessUntil;
+assert.equal(happy(),1);assert.equal(daysPerSecond(Date.now()),5);migrateVoid(state);assert(!('happinessUntil' in state)&&!('acceleratingUntil' in state));
 assert.equal(catalog.filter(e=>e.group!=="City contracts"&&e.income&&!voidCatalog.includes(e)).length,20);
-assert.equal(catalog.filter(e=>e.group!=="Advanced Angelic"&&e.group!=="Augmentations"&&e.maxXp&&!e.income&&!voidCatalog.includes(e)).length,23);
-assert.equal(catalog.filter(e=>!e.side&&!voidCatalog.includes(e)&&e.group!=="City housing"&&e.expense!==undefined).length,17);
+assert.equal(catalog.filter(e=>e.group!=="Advanced arcana"&&e.group!=="Advanced Angelic"&&e.group!=="Augmentations"&&e.maxXp&&!e.income&&!voidCatalog.includes(e)).length,23);
+assert.equal(catalog.filter(e=>!e.rank&&!e.side&&!voidCatalog.includes(e)&&e.group!=="City housing"&&e.expense!==undefined).length,17);
 for(const e of catalog)assert.equal(typeof e.tile,'number');
 for(let i=0;i<1000&&level('Beggar')<10;i++)step(1);
 assert(remaining('Farmer').length===0);assert(state.coins>0);assert(level('Concentration')>0);
@@ -33,60 +35,66 @@ assert(state.voidPath&&!state.voidHeart);assert(!portrait().includes('void-forms
 tab='Jobs';assert(!list().includes('Rift keeper'));tab='Shop';assert(!list().includes('Watch hut'));
 tab='Skills';assert(!list().includes('Absolute Wish'));state.days=lifespan()*365-1;
 assert(!choices().includes('Void Heart'));state.days++;assert(choices().includes('Void Heart'));
-const lastLife=JSON.stringify(state);delete state.orbs.Evil;assert(!choices().includes('Void Heart'));
-state=JSON.parse(lastLife);reset('Void Heart');assert.equal(age(),14);assert.equal(state.Void,0);assert(remaining('Absolute Wish').length);
-state.days=199*365;assert(!choices().includes('Embrace Void'));state.days=200*365;assert.equal(voidGain(),1);reset('Embrace Void');
-assert.equal(state.Void,1);assert(!remaining('Absolute Wish').length);assert.deepEqual(Object.keys(state.memory),[]);
-for(const skill of voidCatalog.filter(e=>e.group==='Void Manipulation')){
- const target=skill.requirements.Void;state.Void=target-0.01;assert(remaining(skill.name).length);state.Void=target;assert(!remaining(skill.name).length);
+assert(heartForge().includes('Create Void Heart')&&!heartForge().includes('disabled'));
+state.days--;assert(heartForge().includes('disabled'));state.days++;
+const lastLife=JSON.stringify(state);
+for(const orbs of [{},{Evil:true},{Angelic:true}]){
+ state.orbs=orbs;assert(!amulet().includes('data-act="ask:Void Heart"'));assert(!choices().includes('Void Heart'));
 }
-state.Void=1;
+state=JSON.parse(lastLife);delete state.orbs.Evil;assert(!choices().includes('Void Heart'));
+state=JSON.parse(lastLife);reset('Void Heart');assert.equal(age(),14);assert.equal(state.Void,0);assert(remaining('Absolute Wish').length);
+const firstHeartLife=JSON.stringify(state);
+state.life=52;
+for(const task of ['Beggar','Concentration','Void Influence','Corrupted']){
+ state.voidHeart=false;const baseline=rate(task);state.voidHeart=true;assert.equal(rate(task),52*baseline);state.superHeart=true;assert.equal(rate(task),104*baseline);state.superHeart=false;
+}
+state.Evil=50000;assert(remaining('Void Influence').length);state.Evil=0;state.Void=1;assert.equal(remaining('Void Influence').length,0);state.Void=0;
+const initialLife=lifespan(),initialJobRate=rate('Beggar');
+state.Void=500;assert.equal(lifespan(),initialLife);assert.equal(rate('Beggar'),initialJobRate);
+state.Void=2000;assert.equal(lifespan(),initialLife);
+const normalMagic=rate('Mana control');state.superHeart=true;assert(rate('Mana control')>normalMagic);
+state=JSON.parse(firstHeartLife);
+state.days=199*365;assert(!choices().includes('Embrace Void'));state.days=200*365;assert.equal(voidGain(),1);reset('Embrace Void');
+assert.equal(state.Void,1);assert(remaining('Absolute Wish').length);assert.deepEqual(Object.keys(state.memory),[]);
+for(const skill of voidCatalog.filter(e=>e.group==='Void Manipulation')){
+ state.Void=1;Object.assign(state.levels,skill.requirements);assert.equal(remaining(skill.name).length,0);
+ for(const [name,target] of Object.entries(skill.requirements)){
+   if(name==='Void'){state.Void=0;assert(remaining(skill.name).length);state.Void=1}else{state.levels[name]=target-1;assert(remaining(skill.name).length);state.levels[name]=target;}
+ }
+}
+state.levels['Void Amplification']=2999;assert(remaining('Mind Seize').length);
+state.levels['Void Amplification']=3000;assert.equal(remaining('Mind Seize').length,0);
+state.levels={};state.Void=1;
 assert(state.voidHeart&&state.voidPath&&age()===14);assert.deepEqual(Object.keys(state.orbs),[]);assert(portrait().includes('void-forms.svg'));
-tab='Shop';assert(!list().includes('Town Ruler'));tab='Jobs';assert(!list().includes('Corrupted'));tab='Skills';assert(list().includes('Absolute Wish'));
-assert.equal(voidCatalog.filter(e=>e.group==='The Void').length,8);assert.equal(voidCatalog.filter(e=>e.group==='Void Manipulation').length,7);
+tab='Shop';assert(!list().includes('Town Ruler'));tab='Jobs';assert(!list().includes('Corrupted')&&list().includes('Age 14/250'));tab='Skills';assert(!list().includes('skill:Absolute Wish'));
+assert.equal(voidCatalog.filter(e=>e.group==='The Void').length,8);assert.equal(voidCatalog.filter(e=>e.group==='Void Manipulation').length,8);
 for(const e of voidCatalog){for(const key of Object.keys(e.requirements))assert(entries[key]||['Age','Evil','Coins','Void'].includes(key))}
-state.days=999*365;assert(remaining('Corrupted').length);state.days=1000*365;assert.equal(remaining('Corrupted').length,0);
+state.days=249*365;assert(remaining('Corrupted').length);state.days=250*365;assert.equal(remaining('Corrupted').length,0);
 assert(remaining('Void Fiend').length);state.levels.Brainwashing=3000;state.levels['Void Slave']=200;assert.equal(remaining('Void Fiend').length,0);
-state.coins=entries['Void Realm'].expense*100-1;assert(remaining('Void Realm').length);state.coins++;assert.equal(remaining('Void Realm').length,0);
+state.coins=price('Void Realm')*100-1;assert(remaining('Void Realm').length);state.coins++;assert.equal(remaining('Void Realm').length,0);
 tab='Shop';state.equipment.Book=true;
 state.unlocked.Book=true;
 assert(list().includes('<b>Book</b><small>'+String.fromCharCode(215)+entries.Book.effect+' '+entries.Book.description+'</small>'));
 delete state.equipment.Book;
-state.days=200*365;const evilWithoutWish=heartEvilGain();state.levels['Absolute Wish']=4;assert.equal(heartEvilGain(),evilWithoutWish);tab='Skills';assert(list().includes('+1.4 Void gain'));assert.equal(voidGain(),1.4);reset('Embrace Void');assert.equal(state.Void,2.4);assert(state.voidHeart);assert.equal(age(),14);
+state.days=200*365;const evilBefore=state.Evil;Object.assign(state.levels,entries['Absolute Wish'].requirements);state.levels['Absolute Wish']=4;tab='Skills';assert(list().includes('+1.4 Void gain'));assert.equal(voidGain(),1.4);reset('Embrace Void');assert.equal(state.Void,2.4);assert.equal(state.Evil,evilBefore);assert(state.voidHeart);assert.equal(age(),14);
 for(const [name,,target] of relicRequirements('Second Heart')){
  if(name==='Age')state.days=target*365;else if(name!=='Void')state.levels[name]=target;
 }
-assert(!choices().includes('Second Heart'));state.Void=499;reset('Second Heart');assert(!state.heartPair);state.Void=500;reset('Second Heart');assert(state.heartPair&&!state.superHeart&&age()===14);
+assert(!choices().includes('Second Heart'));state.Void=799;reset('Second Heart');assert(!state.heartPair);state.Void=800;state.days=350*365-1;assert(!choices().includes('Second Heart'));state.days++;assert(choices().includes('Second Heart'));reset('Second Heart');assert(state.heartPair&&!state.superHeart&&age()===14);
 assert.deepEqual(choices(),['Super Void Heart']);const lifeBefore=state.life;reset('Super Void Heart');
 assert(state.superHeart&&!state.heartPair&&state.life===lifeBefore);assert(!choices().includes('Super Void Heart'));
-state.days=200*365;reset('Rebirth');assert(state.superHeart&&state.Void===500);
-state.days=600*365;state.levels={'Void Fiend':100,'Mind Seize':150};state.Void=1999;assert(!choices().includes('Cross the Rift'));
-state.Void=2000;state.days=599*365;assert(!choices().includes('Cross the Rift'));state.days=600*365;
-state.levels['Void Fiend']=99;assert(!choices().includes('Cross the Rift'));state.levels['Void Fiend']=100;
-state.levels['Mind Seize']=149;assert(!choices().includes('Cross the Rift'));state.levels['Mind Seize']=150;
-state.levels['Absolute Wish']=48;assert.equal(voidGain(),11.6);reset('Cross the Rift');assert(state.crossedRift);assert(!choices().includes('Cross the Rift'));
-assert.equal(state.job,'Night courier');assert.equal(state.skill,'Neural link');assert.equal(state.home,'Transit bunk');
-const cityRate=rate(state.skill);const records=state.orbs;state.orbs={};assert.equal(rate(state.skill),cityRate);state.orbs=records;
-state.levels['Neural link']=10;state.levels['Night courier']=15;assert.equal(remaining('Relay technician').length,0);
-reset('Embrace Void');assert.equal(state.Void,2006);assert.deepEqual(Object.keys(state.memory),[]);assert(state.crossedRift&&state.job==='Night courier'&&state.home==='Transit bunk');
-for(const step of chronoSteps){
- const lives=state.life;state.days=step.age*365;Object.assign(state.levels,step.skills);
- const last=Object.keys(step.skills).pop();state.levels[last]--;assert(!choices().includes(step.action));state.levels[last]++;
- reset(step.action);assert.equal(state.life,lives+1);assert.equal(age(),14);
-}
-assert.equal(state.chrono,3);assert(state.memory['Relay technician']>=15);
-assert(!choices().includes('Fuse Continuum Heart'));const oldLife=state.life;
-reset('Transmit construct');assert.equal(state.chrono,4);reset('Fuse Continuum Heart');assert.equal(state.chrono,5);assert.equal(state.life,oldLife);
-assert(!choices().includes('Fuse Continuum Heart'));state.days=200*365;assert.equal(voidGain(),4);reset('Embrace Void');assert.equal(state.chrono,5);assert.deepEqual(Object.keys(state.memory),[]);
+state.days=200*365;reset('Rebirth');assert(state.superHeart&&state.Void===800);
+state.days=1300*365;state.Void=2100;assert.deepEqual(choices(),['Embrace Void','Rebirth']);
+Object.assign(state,{crossedRift:true,chrono:5,job:'Night courier',home:'Transit bunk',skill:'Neural link',levels:{'Void Fiend':100,'Neural link':70}});
+migrateVoid(state);assert(state.superHeart&&state.Void===2100&&level('Void Fiend')===100);assert.equal(state.job,'Beggar');assert.equal(state.skill,'Concentration');assert.equal(state.home,'Homeless');assert(!('Neural link' in state.levels));
 assert(migrateVoid({orbs:{Void:true}}).voidHeart);
 Object.assign(state,newLife(),{hero:'Magnus',Evil:1});assert.equal(pathTheme(),'evil');
 state.Evil=0;state.Angelic=1;assert.equal(pathTheme(),'angelic');
 state.voidPath=true;assert.equal(pathTheme(),'');
 state.voidHeart=true;assert.equal(pathTheme(),'void');
-state.crossedRift=true;assert.equal(pathTheme(),'');
 assert(fmt(1e25).length<12);
-for(const chapter of [{},{voidPath:true,voidHeart:true},{voidPath:true,voidHeart:true,superHeart:true,crossedRift:true}]){
- state={...newLife(),hero:'Magnus',...chapter};cityLoadout(state);state.days=lifespan()*365;state.levels[state.skill]=12;state.xp[state.skill]=42;
+for(const chapter of [{},{voidPath:true,voidHeart:true},{voidPath:true,voidHeart:true,superHeart:true}]){
+ state={...newLife(),hero:'Magnus',...chapter};state.days=lifespan()*365;state.levels[state.skill]=12;state.xp[state.skill]=42;
  render();assert.equal(tab,'Amulet');
  for(const section of ['Jobs','Skills','Shop','Amulet','Skills']){
   screen.onclick({target:{closest:()=>({dataset:{act:'tab:'+section}})}});
@@ -115,6 +123,17 @@ state={...newLife(),hero:'Magnus',coins:1e15};tab='Shop';assert(!list().includes
 for(const [side,home,relic] of [['Evil','Ashen keep','Obsidian seal'],['Angelic','Dawn sanctuary','Ivory seal']]){
  state[side]=1;assert(list().includes(home)&&!list().includes(relic));state[side]=25;assert(list().includes(relic));state[side]=0;assert(!list().includes(home)&&!list().includes(relic));
 }
+for(const [side,seal] of [['Evil','Obsidian seal'],['Angelic','Ivory seal']]){
+ state={...newLife(),hero:'Magnus',[side]:24,coins:60000};
+ const swordAt=shopThreshold(entries['Steel longsword']);
+ assert(swordAt>state.coins);
+ const equipment=()=>list().split('<h3>Equipment</h3>')[1];
+ assert(equipment().includes('Coins 60,000/'+swordAt.toLocaleString()));
+ state.coins=swordAt;assert(equipment().includes('gear:Steel longsword')&&!equipment().includes('gear:'+seal));
+ screen.onclick({target:{closest:()=>({dataset:{act:'gear:Steel longsword'}})}});assert(state.equipment['Steel longsword']);
+ state[side]=25;assert(equipment().includes('gear:'+seal));
+}
+state={...newLife(),hero:'Magnus',coins:1e15};
 state.voidHeart=true;assert(list().includes('Town Ruler')&&list().includes('Void Armor'));assert.deepEqual(list().match(new RegExp('<h3>.*?</h3>','g')),['<h3>Properties</h3>','<h3>Equipment</h3>']);
 for(const hero of ['Magnus','Isabella']){
  for(const side of ['Evil','Angelic']){
@@ -124,6 +143,19 @@ for(const hero of ['Magnus','Isabella']){
  state={...newLife(),hero,voidHeart:true,voidPath:true,Evil:1};state.days=lifespan()*365-1;assert(portrait().includes('void-forms.svg'));
  state.days++;assert(portrait().includes('void-skeletons.webp'));assert(portrait().includes(hero==='Isabella'?'right center':'left center'));
  reset('Rebirth');assert(portrait().includes('void-forms.svg'));
+}
+state={...newLife(),hero:'Magnus'};tab='Jobs';assert(list().includes('Beggar 0/10'));assert(!list().includes('job:Farmer'));assert(!list().includes('Fisherman'));
+state.levels.Beggar=10;assert(list().includes('job:Farmer')&&list().includes('Farmer 0/10')&&!list().includes('Fisherman'));
+state={...newLife(),hero:'Magnus'};tab='Skills';const firstSkills=list();assert(firstSkills.includes('skill-requirement')&&!firstSkills.includes('Next unlock'));assert(!firstSkills.includes('skill:Productivity'));
+for(const section of ['Jobs','Shop']){tab=section;assert(list().includes('required-lock.png')&&!list().includes('Next unlock')&&!list().includes(String.fromCodePoint(0x1f512)))}
+state={...newLife(),hero:'Magnus',coins:1e14};tab='Shop';assert(!list().includes('Astral tower'));
+for(const e of catalog.filter(e=>e.rank)){
+ state.levels[e.rank]=e.requirements[e.rank]-1;assert(!list().includes(':'+e.name+'"'));
+ state.levels[e.rank]++;assert(list().includes(':'+e.name+'"'));
+}
+for(const side of ['Evil','Angelic','Void']){
+ state={...newLife(),hero:'Magnus',voidHeart:side==='Void',voidPath:side==='Void',days:201*365};
+ state.levels['Alignment Resonance']=100;reset(side==='Void'?'Embrace Void':side);assert.equal(state[side],1.5);
 }
 console.log('Verified base progression, orb collectibles and cumulative skill XP, Void jobs, Heart, legacy conversion and Void collection.');
 `,ctx);
