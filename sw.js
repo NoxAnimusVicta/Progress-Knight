@@ -1,5 +1,5 @@
 const prefix = 'progress-knight-' + self.registration.scope + '-';
-const cacheName = prefix + 'sequential-shop-1';
+const cacheName = prefix + 'independent-void-shop-1';
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(cacheName).then(cache => cache.addAll([
     './', './index.html','./required-lock.png', './previous.html','./centenarians.jpg','./isabella-100.jpg','./save-tools.js','./balance.js','./remastered.js','./remastered-art.jpg','./alignment-shop.webp','./advanced-magic.webp','./void-icons.webp','./void-catalog.webp','./void-forms.svg','./void-skeletons.webp','./game.js', './late-art.jpg', './activity-art.jpg', './Magnus.png', './Isabella.png', './icon-180.png','./icon-192.png', './icon-512.png', './manifest.webmanifest'
