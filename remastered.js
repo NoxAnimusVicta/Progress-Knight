@@ -16,7 +16,7 @@ const voidCatalog=[
  {"name":"Void Symbiosis","maxXp":100,"effect":0.0015,"description":"Ability XP","group":"Void Manipulation","tile":4,"requirements":{"Ceaseless Abyss":3500,"Void Reaver":50}},
  {"name":"Void Embodiment","maxXp":100,"effect":0.0025,"description":"Void gain","group":"Void Manipulation","tile":5,"requirements":{"Void Amplification":4600,"Void Lord":50}},
  {"name":"Abyss Manipulation","maxXp":100,"effect":-0.01,"description":"Reduced Expenses","group":"Void Manipulation","tile":6,"requirements":{"Abyss God":350,"Void Amplification":6000,"Void Influence":6000}},
- {"name":"Town Ruler","expense":35000000,"effect":120,"group":"Void properties","tile":0,"requirements":{"Coins":3500000000}},
+ {"name":"Town Ruler","expense":35000000,"effect":200,"group":"Void properties","tile":0,"requirements":{"Coins":3500000000}},
  {"name":"City Ruler","expense":1100000000,"effect":500,"group":"Void properties","tile":1,"requirements":{"Coins":110000000000}},
  {"name":"Nation Ruler","expense":13000000000,"effect":1200,"group":"Void properties","tile":2,"requirements":{"Coins":1300000000000}},
  {"name":"Pocket Dimension","expense":49000000000,"effect":5000,"group":"Void properties","tile":3,"requirements":{"Coins":4900000000000}},
@@ -71,14 +71,17 @@ entries['Alignment Resonance']={
  maxXp:100,effect:0.2,description:'Alignment gain',requirements:{Archmage:25}
 };
 for(const [name,group,art,rank,required,expense,effect,description] of [
- ['Astral tower','Properties','Small palace','Astral scholar',10,6000000,85,'Happiness'],
+ ['Astral tower','Properties','Small palace','Astral scholar',10,38000000,205,'Happiness'],
  ['Celestial citadel','Properties','Grand palace','Archmage',25,45000000,225,'Happiness'],
  ['Planar sanctum','Properties','Mansion','Chronomancer',50,180000000,360,'Happiness'],
- ['Star chart','Misc','Book','Astral scholar',10,500000,1.2,'Advanced Magic skill XP'],
- ['Astral lens','Misc','Sapphire charm','Archmage',25,6000000,1.35,'Advanced Magic skill XP'],
+ ['Star chart','Misc','Book','Astral scholar',10,12000000,1.2,'Advanced Magic skill XP'],
+ ['Astral lens','Misc','Sapphire charm','Archmage',25,22000000,1.35,'Advanced Magic skill XP'],
  ['Chronometer','Misc','Study desk','Chronomancer',50,45000000,1.5,'Advanced Magic skill XP']
 ]){
  entries[name]={name,group,tile:entries[art].tile,rank,expense,effect,description,requirements:{[rank]:required,Coins:100*expense}};
+}
+for(const e of Object.values(entries)){
+ if(e.rank||voidShopItem(e))e.prerequisite=['Properties','Void properties'].includes(e.group)?'Mansion':'Library';
 }
 const catalog = Object.values(entries);
 function newLife() {
@@ -222,7 +225,11 @@ function gain(n,amount){
 }
 const shopEntries=catalog.filter(e=>e.expense!==undefined);
 function voidShopItem(e){return e.group==='Void properties'||e.group==='Void equipment'}
-function shopThreshold(e){return voidShopItem(e)?100*price(e.name):e.requirements.Coins}
+function shopThreshold(e){
+ if(!voidShopItem(e))return e.requirements.Coins;
+ const base=entries[e.prerequisite].requirements.Coins;
+ return base+Math.round((e.requirements.Coins-base)*price(e.name)/e.expense);
+}
 function recordShopUnlocks(){
  for(const e of shopEntries){
    if(state.unlocked[e.name]||(voidShopItem(e)&&!state.voidHeart))continue;
@@ -233,6 +240,7 @@ function nextVoidShop(){
  const lines=[];
  for(const [group,label] of [['Void properties','Next property'],['Void equipment','Next equipment']]){
    const next=shopEntries.find(e=>e.group===group&&remaining(e.name).length);
+   if(next&&!state.acquiredBasics[next.prerequisite]){lines.push('<p>'+label+' · Select '+next.prerequisite+'</p>');continue}
    if(next)lines.push('<p>'+label+' Â· '+next.name+'<br>'+state.coins.toLocaleString(undefined,{maximumFractionDigits:0})+' / '+shopThreshold(next).toLocaleString()+' coins</p>');
  }
  return lines.length?'<section class="card"><h3>Void shop unlocks</h3>'+lines.join('')+'</section>':'';
@@ -458,7 +466,7 @@ function list(){
    const order=['Astral Body','All Seeing Eye','Alignment Resonance','Temporal Dimension','Brainwashing'];
    candidates.sort((a,b)=>order.indexOf(a.name)-order.indexOf(b.name));
   }
-  if(tab==='Shop')candidates.sort((a,b)=>shopThreshold(a)-shopThreshold(b));
+  if(tab==='Shop')candidates.sort((a,b)=>Number(Boolean(a.prerequisite))-Number(Boolean(b.prerequisite))||shopThreshold(a)-shopThreshold(b));
   let preview='';
   const rows=candidates.map(e=>{
    const missing=remaining(e.name);
