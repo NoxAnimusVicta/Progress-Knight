@@ -68,7 +68,7 @@ for(const [side,home,relic,homeTile,relicTile] of [
 }
 entries['Alignment Resonance']={
  name:'Alignment Resonance',group:'Advanced arcana',tile:entries['Meditation'].tile,
- maxXp:100,effect:0.005,description:'Alignment gain',requirements:{Archmage:25}
+ maxXp:100,effect:0.2,description:'Alignment gain',requirements:{Archmage:25}
 };
 for(const [name,group,art,rank,required,expense,effect,description] of [
  ['Astral tower','Properties','Small palace','Astral scholar',10,6000000,85,'Happiness'],
@@ -148,6 +148,7 @@ function level(name){return state.levels[name] || 0}
 function threshold(name){const l=level(name);return Math.round(entries[name].maxXp*(l+1)*1.01**l)}
 function effect(name){
   const l=level(name), log=Math.log1p(l);
+  if(name==='Alignment Resonance')return 1+entries[name].effect*l/(250+l);
   if(['Bargaining','Intimidation','Healing Aura','Brainwashing','Abyss Manipulation'].includes(name))return Math.max(.1,1-log/Math.log(7)/10);
   if(['Immortality','Super immortality'].includes(name))return 1+log/Math.log(33);
   if(name==='Time warping')return 1+log/Math.log(13);
@@ -336,6 +337,11 @@ try{alignmentUI=localStorage.getItem('pk-alignment-ui')!=='off'}catch{}
 function sprite(i,size=54){
  return '<span aria-hidden="true" class="sprite" style="width:'+size+'px;height:'+size+'px;background-size:'+size*10+'px '+size*atlasRows+'px;background-position:'+(-size*(i%10))+'px '+(-size*Math.floor(i/10))+'px"></span>';
 }
+const advancedArtNames=['Astral tower','Celestial citadel','Planar sanctum','Star chart','Astral lens','Chronometer','Alignment Resonance'];
+function advancedArt(name){
+ const tile=advancedArtNames.indexOf(name);
+ return '<span aria-hidden="true" class="sprite" style="width:54px;height:54px;background-image:url(./advanced-magic.webp);background-size:378px 54px;background-position:'+(-54*tile)+'px 0"></span>';
+}
 function alignmentArt(tile){
  return '<span aria-hidden="true" class="sprite" style="width:54px;height:54px;background-image:url(./alignment-shop.webp);background-size:108px 108px;background-position:'+(-54*(tile%2))+'px '+(-54*Math.floor(tile/2))+'px"></span>';
 }
@@ -452,7 +458,7 @@ function list(){
    const xpNote=e.maxXp?(dead()?' · '+fmt(state.xp[n]||0)+' / '+fmt(threshold(n))+' XP':' · '+fmt(rate(n))+' XP/day'):'';
    const info=(n==='Absolute Wish'||n==='Void Embodiment')?('+'+voidGain()+' '+e.description):e.income?fmt(pay(n))+' coins/day':e.maxXp?(e.isPlusDescription?'+':'×')+effect(n).toFixed(2)+' '+e.description:'×'+e.effect+' '+(e.description||'Happiness');
    const action=e.income?'job':e.maxXp?'skill':(g==='Properties'||g==='Void properties')?'home':'gear';
-   return '<button class="row '+(selected?'on':'')+(feedback?' recent-level':'')+'" aria-pressed="'+Boolean(selected)+'" data-act="'+action+':'+n+'">'+(e.side&&e.expense!==undefined?alignmentArt(e.tile):voidCatalog.includes(e)?catalogArt(e):sprite(e.tile))+'<span><b>'+n+'</b><small>'+(info+xpNote)+'</small></span><span class="right">'+(action==='gear'?(selected?'On · ':'Off · '):selected?(feedback?'<small class="row-status level-gain">'+feedback+'</small>':'<small class="row-status">✓ Active</small>'):'')+(e.maxXp?'<span>Lv. '+level(n)+'</span>'+meter(n):fmt(price(n))+' / day')+'</span></button>';
+   return '<button class="row '+(selected?'on':'')+(feedback?' recent-level':'')+'" aria-pressed="'+Boolean(selected)+'" data-act="'+action+':'+n+'">'+(advancedArtNames.includes(n)?advancedArt(n):e.side&&e.expense!==undefined?alignmentArt(e.tile):voidCatalog.includes(e)?catalogArt(e):sprite(e.tile))+'<span><b>'+n+'</b><small>'+(info+xpNote)+'</small></span><span class="right">'+(action==='gear'?(selected?'On · ':'Off · '):selected?(feedback?'<small class="row-status level-gain">'+feedback+'</small>':'<small class="row-status">✓ Active</small>'):'')+(e.maxXp?'<span>Lv. '+level(n)+'</span>'+meter(n):fmt(price(n))+' / day')+'</span></button>';
   }).join('');
   return rows||preview?'<h3>'+heading+'</h3>'+rows+preview:'';
  }).join('');
