@@ -81,8 +81,7 @@ for(const [name,group,art,rank,required,expense,effect,description] of [
  entries[name]={name,group,tile:entries[art].tile,rank,expense,effect,description,requirements:{[rank]:required,Coins:100*expense}};
 }
 for(const e of Object.values(entries)){
- if(e.rank)e.prerequisite=e.group==='Properties'?'Mansion':'Library';
- if(voidShopItem(e))e.prerequisite=e.group==='Void properties'?'Planar sanctum':'Chronometer';
+ if(e.rank||voidShopItem(e))e.prerequisite=['Properties','Void properties'].includes(e.group)?'Mansion':'Library';
 }
 const catalog = Object.values(entries);
 function newLife() {
@@ -133,12 +132,10 @@ function retireCity(s){
 function migrateShop(s){
  s.acquiredBasics??={};
  s.shopEarnings??={};
- if(s.home==='Planar sanctum'){s.acquiredBasics.Mansion=true;s.acquiredBasics[s.home]=true}
- if(s.equipment?.Chronometer){s.acquiredBasics.Library=true;s.acquiredBasics.Chronometer=true}
  if(s.home==='Mansion')s.acquiredBasics.Mansion=true;
  if(s.equipment?.Library)s.acquiredBasics.Library=true;
  for(const e of catalog){
-   if(!missingShopPrerequisite(e,s))continue;
+   if(!e.prerequisite||s.acquiredBasics[e.prerequisite])continue;
    delete s.unlocked?.[e.name];
    if(s.home===e.name)s.home='Homeless';
    delete s.equipment?.[e.name];
@@ -229,16 +226,10 @@ function gain(n,amount){
 }
 const shopEntries=catalog.filter(e=>e.expense!==undefined);
 function voidShopItem(e){return e.group==='Void properties'||e.group==='Void equipment'}
-function missingShopPrerequisite(e,s=state){
- if(voidShopItem(e)){
-   return ['Planar sanctum','Chronometer'].find(name=>!s.acquiredBasics[name]);
- }
- return e.prerequisite&&!s.acquiredBasics[e.prerequisite]?e.prerequisite:null;
-}
 function shopTier(e){return voidShopItem(e)?3:e.rank?2:e.side?1:0}
 function shopThreshold(e){
  if(!voidShopItem(e))return e.requirements.Coins;
- const base=entries[e.group==='Void properties'?'Mansion':'Library'].requirements.Coins;
+ const base=entries[e.prerequisite].requirements.Coins;
  return base+Math.round((e.requirements.Coins-base)*price(e.name)/e.expense);
 }
 // Times are per tier in 1x seconds. Offset the four tracks so parallel progress
@@ -254,7 +245,7 @@ function creditShopEarnings(income,seconds){
    const tier=track.items.findIndex(e=>!state.unlocked[e.name]);
    if(tier<0)continue;
    const next=track.items[tier];
-   if(missingShopPrerequisite(next))continue;
+   if(!state.acquiredBasics[next.prerequisite])continue;
    if(voidShopItem(next)?!state.voidHeart:level(next.rank)<next.requirements[next.rank])continue;
    const target=shopThreshold(next);
    const credit=Math.min(income,target*seconds/track.seconds[tier]);
@@ -271,14 +262,14 @@ function nextVoidShop(){
  const lines=[];
  for(const [group,label] of [['Void properties','Next property'],['Void equipment','Next equipment']]){
    const next=shopEntries.find(e=>e.group===group&&remaining(e.name).length);
-   if(next&&missingShopPrerequisite(next)){lines.push('<p>'+label+' � Select '+missingShopPrerequisite(next)+'</p>');continue}
+   if(next&&!state.acquiredBasics[next.prerequisite]){lines.push('<p>'+label+' · Select '+next.prerequisite+'</p>');continue}
    if(next)lines.push('<p>'+label+' · '+next.name+'<br>'+state.coins.toLocaleString(undefined,{maximumFractionDigits:0})+' / '+shopThreshold(next).toLocaleString()+' coins</p>');
  }
  return lines.length?'<section class="card"><h3>Void shop unlocks</h3>'+lines.join('')+'</section>':'';
 }
 function remaining(n){
-  const prerequisite=missingShopPrerequisite(entries[n]);
-  if(prerequisite)return [prerequisite+' required'];
+  const prerequisite=entries[n].prerequisite;
+  if(prerequisite&&!state.acquiredBasics[prerequisite])return [prerequisite+' required'];
   const side=entries[n].side;
   if(side&&state[side]<entries[n].requirements[side])return [side+' '+formatVoid(state[side])+' / '+entries[n].requirements[side]];
   if(!ownsSkillPath(state,entries[n].group))return [pathResource[entries[n].group]+' required'];
@@ -499,7 +490,7 @@ function list(){
     Skills:['Fundamentals','Combat','Magic',...(showAdvancedMagic()?['Advanced arcana']:[]),'Dark magic','Advanced dark magic','Light magic','Advanced Angelic','Void Manipulation'].map(group=>[group==='Advanced arcana'?'Advanced Magic':group,group]),
     Shop:[['Properties','Properties',...(state.voidHeart?['Void properties']:[])],['Equipment','Misc',...(state.voidHeart?['Void equipment']:[])]]};
  return sections[tab].map(([heading,...groups])=>{
-  const candidates=catalog.filter(e=>groups.includes(e.group)&&!missingShopPrerequisite(e)&&ownsSkillPath(state,e.group)&&(e.group!=='Advanced arcana'||Boolean(e.income)===(tab==='Jobs'))&&(!e.rank||level(e.rank)>=e.requirements[e.rank])&&(!e.side||state[e.side]>=e.requirements[e.side]));
+  const candidates=catalog.filter(e=>groups.includes(e.group)&&(!e.prerequisite||state.acquiredBasics[e.prerequisite])&&ownsSkillPath(state,e.group)&&(e.group!=='Advanced arcana'||Boolean(e.income)===(tab==='Jobs'))&&(!e.rank||level(e.rank)>=e.requirements[e.rank])&&(!e.side||state[e.side]>=e.requirements[e.side]));
   if(heading==='Advanced Magic'){
    const order=['Astral Body','All Seeing Eye','Alignment Resonance','Temporal Dimension','Brainwashing'];
    candidates.sort((a,b)=>order.indexOf(a.name)-order.indexOf(b.name));
@@ -664,7 +655,7 @@ screen.onclick=e=>{
   if(['job','skill'].includes(a))state[a]=v;
   if(a==='home')state.home=state.home===v?('Homeless'):v;
   if(a==='gear'){if(state.equipment[v])delete state.equipment[v];else state.equipment[v]=true}
-  if((a==='home'&&state.home===v&&['Mansion','Planar sanctum'].includes(v))||(a==='gear'&&['Library','Chronometer'].includes(v)&&state.equipment[v]))state.acquiredBasics[v]=true;
+  if((a==='home'&&state.home==='Mansion')||(a==='gear'&&v==='Library'&&state.equipment.Library))state.acquiredBasics[v]=true;
  }
  save();render();
  if(switchWhileScrolled){
