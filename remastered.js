@@ -28,7 +28,7 @@ const voidCatalog=[
  {"name":"Void Armor","expense":197050000000,"effect":3,"description":"The Void XP","group":"Void equipment","tile":3,"requirements":{"Coins":19705000000000}},
  {"name":"Void Blade","expense":502050000000,"effect":3,"description":"Ability XP","group":"Void equipment","tile":4,"requirements":{"Coins":50205000000000}},
  {"name":"Void Orb","expense":1202050000000,"effect":3,"description":"Void Manipulation XP","group":"Void equipment","tile":5,"requirements":{"Coins":120205000000000}},
- {"name":"Void Dust","expense":25002050000000,"effect":3,"description":"The Void XP","group":"Void equipment","tile":6,"requirements":{"Coins":2500205000000000}},
+ {"name":"Void Dust","expense":5000410000000,"effect":3,"description":"The Void XP","group":"Void equipment","tile":6,"requirements":{"Coins":500041000000000}},
  {"name":"Astral scholar","maxXp":1500000000000,"income":4000000,"group":"Advanced arcana","tile":0,"requirements":{"Chairman":120,"Super immortality":10}},
  {"name":"Archmage","maxXp":6000000000000,"income":16000000,"group":"Advanced arcana","tile":1,"requirements":{"Astral scholar":25,"Astral Body":50}},
  {"name":"Chronomancer","maxXp":24000000000000,"income":64000000,"group":"Advanced arcana","tile":2,"requirements":{"Archmage":25,"All Seeing Eye":50}},
@@ -231,20 +231,24 @@ function shopThreshold(e){
  const base=entries[e.prerequisite].requirements.Coins;
  return base+Math.round((e.requirements.Coins-base)*price(e.name)/e.expense);
 }
+// Times are per tier in 1x seconds. Offset the four tracks so parallel progress
+// produces a succession of shop choices even when income is already very high.
 const shopTracks=[
- shopEntries.filter(e=>e.rank&&e.group==='Properties'),
- shopEntries.filter(e=>e.rank&&e.group==='Misc'),
- shopEntries.filter(e=>e.group==='Void properties'),
- shopEntries.filter(e=>e.group==='Void equipment')
+ {items:shopEntries.filter(e=>e.rank&&e.group==='Properties'),seconds:[85,200,215]},
+ {items:shopEntries.filter(e=>e.rank&&e.group==='Misc'),seconds:[22,170,202]},
+ {items:shopEntries.filter(e=>e.group==='Void properties'),seconds:[65,100,100,100,100,100]},
+ {items:shopEntries.filter(e=>e.group==='Void equipment'),seconds:[42,95,95,95,95,95,95]}
 ];
 function creditShopEarnings(income,seconds){
  for(const track of shopTracks){
-   const next=track.find(e=>!state.unlocked[e.name]);
-   if(!next||!state.acquiredBasics[next.prerequisite])continue;
+   const tier=track.items.findIndex(e=>!state.unlocked[e.name]);
+   if(tier<0)continue;
+   const next=track.items[tier];
+   if(!state.acquiredBasics[next.prerequisite])continue;
    if(voidShopItem(next)?!state.voidHeart:level(next.rank)<next.requirements[next.rank])continue;
    const target=shopThreshold(next);
-   // Spread each tier over at least 30 seconds of active 1x play, even at late-life income.
-   state.shopEarnings[next.name]=Math.min(target,(state.shopEarnings[next.name]||0)+Math.min(income,target*seconds/30));
+   const credit=Math.min(income,target*seconds/track.seconds[tier]);
+   state.shopEarnings[next.name]=Math.min(target,(state.shopEarnings[next.name]||0)+credit);
  }
 }
 function recordShopUnlocks(){

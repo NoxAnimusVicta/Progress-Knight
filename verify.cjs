@@ -152,7 +152,7 @@ assert(nextVoidShop().includes('Select Mansion')&&nextVoidShop().includes('Selec
 for(const [basic,action] of [['Mansion','home'],['Library','gear']]){
  shopTap(action,basic);
  for(const e of postBasic.filter(e=>e.prerequisite===basic))assert(remaining(e.name).length);
- for(let i=0;i<7;i++){creditShopEarnings(1e18,30);recordShopUnlocks()}
+ for(let i=0;i<7;i++){creditShopEarnings(1e18,215);recordShopUnlocks()}
  for(const e of postBasic.filter(e=>e.prerequisite===basic)){
    const rows=list();assert(rows.indexOf(action+':'+e.name)>rows.indexOf(action+':'+basic));
    assert(shopThreshold(e)>shopThreshold(entries[basic]));
