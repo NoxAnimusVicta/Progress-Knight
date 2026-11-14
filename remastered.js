@@ -86,7 +86,7 @@ for(const e of Object.values(entries)){
 const catalog = Object.values(entries);
 function newLife() {
   return {days:5110, coins:0, job:'Beggar', skill:'Concentration', home:'Homeless',
-    equipment:{}, acquiredBasics:{}, levels:{}, xp:{}, unlocked:{}, memory:{}, hero:'', life:1,
+    equipment:{}, acquiredBasics:{}, shopEarnings:{}, levels:{}, xp:{}, unlocked:{}, memory:{}, hero:'', life:1,
     voidPath:false, voidHeart:false, heartPair:false, superHeart:false,  Void:0, Evil:0, Angelic:0, orbs:{}, finished:false, paused:false, warp:true, devSpeed:1, clock:Date.now()};
 }
 let state = newLife();
@@ -131,6 +131,7 @@ function retireCity(s){
 }
 function migrateShop(s){
  s.acquiredBasics??={};
+ s.shopEarnings??={};
  if(s.home==='Mansion')s.acquiredBasics.Mansion=true;
  if(s.equipment?.Library)s.acquiredBasics.Library=true;
  for(const e of catalog){
@@ -230,6 +231,22 @@ function shopThreshold(e){
  const base=entries[e.prerequisite].requirements.Coins;
  return base+Math.round((e.requirements.Coins-base)*price(e.name)/e.expense);
 }
+const shopTracks=[
+ shopEntries.filter(e=>e.rank&&e.group==='Properties'),
+ shopEntries.filter(e=>e.rank&&e.group==='Misc'),
+ shopEntries.filter(e=>e.group==='Void properties'),
+ shopEntries.filter(e=>e.group==='Void equipment')
+];
+function creditShopEarnings(income,seconds){
+ for(const track of shopTracks){
+   const next=track.find(e=>!state.unlocked[e.name]);
+   if(!next||!state.acquiredBasics[next.prerequisite])continue;
+   if(voidShopItem(next)?!state.voidHeart:level(next.rank)<next.requirements[next.rank])continue;
+   const target=shopThreshold(next);
+   // Spread each tier over at least 30 seconds of active 1x play, even at late-life income.
+   state.shopEarnings[next.name]=Math.min(target,(state.shopEarnings[next.name]||0)+Math.min(income,target*seconds/30));
+ }
+}
 function recordShopUnlocks(){
  for(const e of shopEntries){
    if(state.unlocked[e.name]||(voidShopItem(e)&&!state.voidHeart))continue;
@@ -253,6 +270,12 @@ function remaining(n){
   if(!ownsSkillPath(state,entries[n].group))return [pathResource[entries[n].group]+' required'];
   const voidSkill=entries[n].group==='Void Manipulation';
   if(!voidSkill&&state.unlocked[n])return [];
+  const entry=entries[n];
+  if(entry.rank||voidShopItem(entry)){
+    if(voidShopItem(entry)&&!state.voidHeart)return ['Void Heart required'];
+    const earned=state.shopEarnings[n]||0,target=shopThreshold(entry);
+    if(earned<target)return ['Income progress '+fmt(earned)+' / '+fmt(target)];
+  }
   const missing=Object.entries(entries[n].requirements).flatMap(([key,target])=>{
     if(key==='Coins')target=shopThreshold(entries[n]);
     const value=key==='Age'?age():key==='Coins'?state.coins:['Void','Evil','Angelic'].includes(key)?state[key]:level(key);
@@ -266,6 +289,7 @@ function step(days){
   if(!days||state.finished)return;
   recordShopUnlocks();
   const jobRate=rate(state.job),skillRate=rate(state.skill),net=pay(state.job)-upkeep();
+  creditShopEarnings(pay(state.job)*days,days/daysPerSecond(Date.now())*state.devSpeed);
   state.days+=days;state.coins+=net*days;
   if(state.coins<0){
     const fallback='Homeless';

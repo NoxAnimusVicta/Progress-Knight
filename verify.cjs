@@ -71,7 +71,7 @@ assert.equal(voidCatalog.filter(e=>e.group==='The Void').length,8);assert.equal(
 for(const e of voidCatalog){for(const key of Object.keys(e.requirements))assert(entries[key]||['Age','Evil','Coins','Void'].includes(key))}
 state.days=249*365;assert(remaining('Corrupted').length);state.days=250*365;assert.equal(remaining('Corrupted').length,0);
 assert(remaining('Void Fiend').length);state.levels.Brainwashing=3000;state.levels['Void Slave']=200;assert.equal(remaining('Void Fiend').length,0);
-state.acquiredBasics.Mansion=true;state.coins=shopThreshold(entries['Void Realm'])-1;assert(remaining('Void Realm').length);state.coins++;assert.equal(remaining('Void Realm').length,0);
+state.acquiredBasics.Mansion=true;state.shopEarnings['Void Realm']=shopThreshold(entries['Void Realm']);state.coins=shopThreshold(entries['Void Realm'])-1;assert(remaining('Void Realm').length);state.coins++;assert.equal(remaining('Void Realm').length,0);
 tab='Shop';state.equipment.Book=true;
 state.unlocked.Book=true;
 assert(list().includes('<b>Book</b><small>'+String.fromCharCode(215)+entries.Book.effect+' '+entries.Book.description+'</small>'));
@@ -151,6 +151,8 @@ for(const e of postBasic){assert(!list().includes(':'+e.name+'"'));assert(remain
 assert(nextVoidShop().includes('Select Mansion')&&nextVoidShop().includes('Select Library'));
 for(const [basic,action] of [['Mansion','home'],['Library','gear']]){
  shopTap(action,basic);
+ for(const e of postBasic.filter(e=>e.prerequisite===basic))assert(remaining(e.name).length);
+ for(let i=0;i<7;i++){creditShopEarnings(1e18,30);recordShopUnlocks()}
  for(const e of postBasic.filter(e=>e.prerequisite===basic)){
    const rows=list();assert(rows.indexOf(action+':'+e.name)>rows.indexOf(action+':'+basic));
    assert(shopThreshold(e)>shopThreshold(entries[basic]));
@@ -174,7 +176,7 @@ for(const section of ['Jobs','Shop']){tab=section;assert(list().includes('requir
 state={...newLife(),hero:'Magnus',coins:1e14};tab='Shop';assert(!list().includes('Astral tower'));
 state.acquiredBasics={Mansion:true,Library:true};
 for(const e of catalog.filter(e=>e.rank)){
- state.levels[e.rank]=e.requirements[e.rank]-1;assert(!list().includes(':'+e.name+'"'));
+ state.shopEarnings[e.name]=shopThreshold(e);state.levels[e.rank]=e.requirements[e.rank]-1;assert(!list().includes(':'+e.name+'"'));
  state.levels[e.rank]++;assert(list().includes(':'+e.name+'"'));
 }
 for(const side of ['Evil','Angelic','Void']){
