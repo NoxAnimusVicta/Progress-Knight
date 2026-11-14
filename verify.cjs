@@ -71,7 +71,7 @@ assert.equal(voidCatalog.filter(e=>e.group==='The Void').length,8);assert.equal(
 for(const e of voidCatalog){for(const key of Object.keys(e.requirements))assert(entries[key]||['Age','Evil','Coins','Void'].includes(key))}
 state.days=249*365;assert(remaining('Corrupted').length);state.days=250*365;assert.equal(remaining('Corrupted').length,0);
 assert(remaining('Void Fiend').length);state.levels.Brainwashing=3000;state.levels['Void Slave']=200;assert.equal(remaining('Void Fiend').length,0);
-state.acquiredBasics.Mansion=true;state.shopEarnings['Void Realm']=shopThreshold(entries['Void Realm']);state.coins=shopThreshold(entries['Void Realm'])-1;assert(remaining('Void Realm').length);state.coins++;assert.equal(remaining('Void Realm').length,0);
+state.acquiredBasics={'Planar sanctum':true,Chronometer:true};state.shopEarnings['Void Realm']=shopThreshold(entries['Void Realm']);state.coins=shopThreshold(entries['Void Realm'])-1;assert(remaining('Void Realm').length);state.coins++;assert.equal(remaining('Void Realm').length,0);
 tab='Shop';state.equipment.Book=true;
 state.unlocked.Book=true;
 assert(list().includes('<b>Book</b><small>'+String.fromCharCode(215)+entries.Book.effect+' '+entries.Book.description+'</small>'));
@@ -148,7 +148,7 @@ for(const e of catalog.filter(e=>e.rank))state.levels[e.rank]=e.requirements[e.r
 const postBasic=catalog.filter(e=>e.rank||voidShopItem(e));
 const shopTap=(action,name)=>screen.onclick({target:{closest:()=>({dataset:{act:action+':'+name}})}});
 for(const e of postBasic){assert(!list().includes(':'+e.name+'"'));assert(remaining(e.name).length)}
-assert(nextVoidShop().includes('Select Mansion')&&nextVoidShop().includes('Select Library'));
+assert(nextVoidShop().includes('Select Planar sanctum'));
 for(const [basic,action] of [['Mansion','home'],['Library','gear']]){
  shopTap(action,basic);
  for(const e of postBasic.filter(e=>e.prerequisite===basic))assert(remaining(e.name).length);
@@ -159,6 +159,13 @@ for(const [basic,action] of [['Mansion','home'],['Library','gear']]){
  }
  if(basic==='Mansion')assert(!list().includes('gear:Star chart')&&!list().includes('gear:Observatory'));
 }
+assert(!list().includes('Town Ruler')&&!list().includes('Void Armor'));
+for(const [action,n] of [['home','Planar sanctum'],['gear','Chronometer']]){
+ shopTap(action,n);for(let i=0;i<7;i++){creditShopEarnings(1e18,215);recordShopUnlocks()}
+ if(action==='home')assert(!list().includes('Town Ruler')&&nextVoidShop().includes('Select Chronometer'));
+}
+assert(list().indexOf('home:Town Ruler')>list().indexOf('home:Planar sanctum'));
+assert(list().indexOf('gear:Observatory')>list().indexOf('gear:Chronometer'));
 assert(list().includes('Town Ruler')&&list().includes('Void Armor'));assert.deepEqual(list().match(new RegExp('<h3>.*?</h3>','g')),['<h3>Properties</h3>','<h3>Equipment</h3>']);
 for(const hero of ['Magnus','Isabella']){
  for(const side of ['Evil','Angelic']){
