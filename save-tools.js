@@ -48,6 +48,10 @@ function readBackup(text) {
   for(const name of ['Mansion','Library']){
     if(src.acquiredBasics?.[name]===true)dst.acquiredBasics[name]=true;
   }
+  for(const [name,value] of Object.entries(src.shopEarnings||{})){
+    check((entries[name]?.rank||voidShopItem(entries[name]||{}))&&numeric(value,Number.MAX_VALUE),'shop income');
+    dst.shopEarnings[name]=value;
+  }
   const hasEntry=n=>typeof n==='string' && Object.hasOwn(entries,n);
   for(const [field,test] of [['job',e=>e.income],['skill',e=>e.maxXp&&!e.income],['home',e=>['Properties','Void properties'].includes(e.group)]]) {
     check(hasEntry(src[field])&&test(entries[src[field]]),field);dst[field]=src[field];
