@@ -155,7 +155,8 @@ for(const e of catalog.filter(e=>e.rank)){
 }
 for(const side of ['Evil','Angelic','Void']){
  state={...newLife(),hero:'Magnus',voidHeart:side==='Void',voidPath:side==='Void',days:201*365};
- state.levels['Alignment Resonance']=100;reset(side==='Void'?'Embrace Void':side);assert.equal(state[side],1.5);
+ state.levels['Alignment Resonance']=100;reset(side==='Void'?'Embrace Void':side);assert.equal(state[side],1.06);
 }
+state.levels['Alignment Resonance']=6000;assert(effect('Alignment Resonance')<1.2);
 console.log('Verified base progression, orb collectibles and cumulative skill XP, Void jobs, Heart, legacy conversion and Void collection.');
 `,ctx);
