@@ -6,8 +6,8 @@ assert(screen.innerHTML.includes('New Game'));assert(screen.innerHTML.includes('
 state.happinessUntil=Date.now()+60000;state.acceleratingUntil=state.happinessUntil;
 assert.equal(happy(),1);assert.equal(daysPerSecond(Date.now()),5);migrateVoid(state);assert(!('happinessUntil' in state)&&!('acceleratingUntil' in state));
 assert.equal(catalog.filter(e=>e.group!=="City contracts"&&e.income&&!voidCatalog.includes(e)).length,20);
-assert.equal(catalog.filter(e=>e.group!=="Advanced Angelic"&&e.group!=="Augmentations"&&e.maxXp&&!e.income&&!voidCatalog.includes(e)).length,23);
-assert.equal(catalog.filter(e=>!e.side&&!voidCatalog.includes(e)&&e.group!=="City housing"&&e.expense!==undefined).length,17);
+assert.equal(catalog.filter(e=>e.group!=="Advanced arcana"&&e.group!=="Advanced Angelic"&&e.group!=="Augmentations"&&e.maxXp&&!e.income&&!voidCatalog.includes(e)).length,23);
+assert.equal(catalog.filter(e=>!e.rank&&!e.side&&!voidCatalog.includes(e)&&e.group!=="City housing"&&e.expense!==undefined).length,17);
 for(const e of catalog)assert.equal(typeof e.tile,'number');
 for(let i=0;i<1000&&level('Beggar')<10;i++)step(1);
 assert(remaining('Farmer').length===0);assert(state.coins>0);assert(level('Concentration')>0);
@@ -148,5 +148,14 @@ state={...newLife(),hero:'Magnus'};tab='Jobs';assert(list().includes('Beggar 0/1
 state.levels.Beggar=10;assert(list().includes('job:Farmer')&&list().includes('Farmer 0/10')&&!list().includes('Fisherman'));
 state={...newLife(),hero:'Magnus'};tab='Skills';const firstSkills=list();assert(firstSkills.includes('skill-requirement')&&!firstSkills.includes('Next unlock'));assert(!firstSkills.includes('skill:Productivity'));
 for(const section of ['Jobs','Shop']){tab=section;assert(list().includes('required-lock.png')&&!list().includes('Next unlock')&&!list().includes(String.fromCodePoint(0x1f512)))}
+state={...newLife(),hero:'Magnus',coins:1e14};tab='Shop';assert(!list().includes('Astral tower'));
+for(const e of catalog.filter(e=>e.rank)){
+ state.levels[e.rank]=e.requirements[e.rank]-1;assert(!list().includes(':'+e.name+'"'));
+ state.levels[e.rank]++;assert(list().includes(':'+e.name+'"'));
+}
+for(const side of ['Evil','Angelic','Void']){
+ state={...newLife(),hero:'Magnus',voidHeart:side==='Void',voidPath:side==='Void',days:201*365};
+ state.levels['Alignment Resonance']=100;reset(side==='Void'?'Embrace Void':side);assert.equal(state[side],1.5);
+}
 console.log('Verified base progression, orb collectibles and cumulative skill XP, Void jobs, Heart, legacy conversion and Void collection.');
 `,ctx);

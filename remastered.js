@@ -66,6 +66,20 @@ for(const [side,home,relic,homeTile,relicTile] of [
  entries[home]={name:home,group:'Properties',side,tile:homeTile,expense:1200,effect:4.25,requirements:{[side]:1,Coins:120000}};
  entries[relic]={name:relic,group:'Misc',side,tile:relicTile,expense:600,effect:1.25,description:side+' skill XP',requirements:{[side]:25,Coins:60000}};
 }
+entries['Alignment Resonance']={
+ name:'Alignment Resonance',group:'Advanced arcana',tile:entries['Meditation'].tile,
+ maxXp:100,effect:0.005,description:'Alignment gain',requirements:{Archmage:25}
+};
+for(const [name,group,art,rank,required,expense,effect,description] of [
+ ['Astral tower','Properties','Small palace','Astral scholar',10,6000000,85,'Happiness'],
+ ['Celestial citadel','Properties','Grand palace','Archmage',25,45000000,225,'Happiness'],
+ ['Planar sanctum','Properties','Mansion','Chronomancer',50,180000000,360,'Happiness'],
+ ['Star chart','Misc','Book','Astral scholar',10,500000,1.2,'Advanced Magic skill XP'],
+ ['Astral lens','Misc','Sapphire charm','Archmage',25,6000000,1.35,'Advanced Magic skill XP'],
+ ['Chronometer','Misc','Study desk','Chronomancer',50,45000000,1.5,'Advanced Magic skill XP']
+]){
+ entries[name]={name,group,tile:entries[art].tile,rank,expense,effect,description,requirements:{[rank]:required,Coins:100*expense}};
+}
 const catalog = Object.values(entries);
 function newLife() {
   return {days:5110, coins:0, job:'Beggar', skill:'Concentration', home:'Homeless',
@@ -157,6 +171,7 @@ function rate(n){
   gain*=(state.voidHeart&&state.Void>=1?effect('Void Influence'):1)*effect('Celestial Influence');
   if(e.income)gain*=effect('Dark Knowledge')*effect('Sacred Knowledge');
   else gain*=effect('Void Symbiosis')*item('Void Blade')*effect('Evil Incarnate')*effect('Grace Incarnate');
+  if(e.group==='Advanced arcana'&&!e.income)gain*=item('Star chart')*item('Astral lens')*item('Chronometer');
   if(e.group==='The Void')gain*=effect('Void Amplification')*item('Void Armor')*item('Void Dust');
   if(e.group==='Advanced dark magic')gain*=state.Evil;
   if(e.group==='Fundamentals')gain*=item("Mind's Eye");
@@ -239,12 +254,13 @@ function step(days){
   recordShopUnlocks();
 }
 function embraceLabel(path,gain){return 'Embrace '+path+' (+'+gain.toFixed(2)+')'}
-function alignmentGain(side){return side==='Evil'?(effect('Evil control')+effect('Blood meditation')):(effect('Pure Heart')+effect('Spiritual Meditation'))}
+function alignmentPayout(base){return roundVoid(base*effect('Alignment Resonance'))}
+function alignmentGain(side){return alignmentPayout(side==='Evil'?(effect('Evil control')+effect('Blood meditation')):(effect('Pure Heart')+effect('Spiritual Meditation')))}
 // Bank in hundredths so small payouts accumulate exactly at relic thresholds.
 function roundVoid(value){return Number(value.toFixed(2))}
 function formatVoid(value){return value.toLocaleString(undefined,{maximumFractionDigits:2})}
 function voidGain(){
- return state.voidHeart?roundVoid((1+level('Absolute Wish')*entries['Spiritual Meditation'].effect+level('Void Embodiment')*entries['Evil control'].effect)*(state.superHeart?2:1)):0;
+ return state.voidHeart?alignmentPayout((1+level('Absolute Wish')*entries['Spiritual Meditation'].effect+level('Void Embodiment')*entries['Evil control'].effect)*(state.superHeart?2:1)):0;
 }
 // All levels are earned in the life in which the relic is claimed.
 function relicRequirements(path){
@@ -417,9 +433,9 @@ function list(){
     Skills:['Fundamentals','Combat','Magic',...(showAdvancedMagic()?['Advanced arcana']:[]),'Dark magic','Advanced dark magic','Light magic','Advanced Angelic','Void Manipulation'].map(group=>[group==='Advanced arcana'?'Advanced Magic':group,group]),
     Shop:[['Properties','Properties',...(state.voidHeart?['Void properties']:[])],['Equipment','Misc',...(state.voidHeart?['Void equipment']:[])]]};
  return sections[tab].map(([heading,...groups])=>{
-  const candidates=catalog.filter(e=>groups.includes(e.group)&&ownsSkillPath(state,e.group)&&(e.group!=='Advanced arcana'||Boolean(e.income)===(tab==='Jobs'))&&(!e.side||state[e.side]>=e.requirements[e.side]));
+  const candidates=catalog.filter(e=>groups.includes(e.group)&&ownsSkillPath(state,e.group)&&(e.group!=='Advanced arcana'||Boolean(e.income)===(tab==='Jobs'))&&(!e.rank||level(e.rank)>=e.requirements[e.rank])&&(!e.side||state[e.side]>=e.requirements[e.side]));
   if(heading==='Advanced Magic'){
-   const order=['Astral Body','All Seeing Eye','Temporal Dimension','Brainwashing'];
+   const order=['Astral Body','All Seeing Eye','Alignment Resonance','Temporal Dimension','Brainwashing'];
    candidates.sort((a,b)=>order.indexOf(a.name)-order.indexOf(b.name));
   }
   if(tab==='Shop')candidates.sort((a,b)=>shopThreshold(a)-shopThreshold(b));
