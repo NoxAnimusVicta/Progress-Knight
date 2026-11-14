@@ -45,6 +45,9 @@ function readBackup(text) {
   check(['','Magnus','Isabella'].includes(src.hero),'character'); dst.hero=src.hero;
   check([1,5,20].includes(src.devSpeed??1),'developer speed');dst.devSpeed=src.devSpeed??1;
   check(typeof (src.voidPath??false)==='boolean','Void path');dst.voidPath=src.voidPath??false;
+  for(const name of ['Mansion','Library']){
+    if(src.acquiredBasics?.[name]===true)dst.acquiredBasics[name]=true;
+  }
   const hasEntry=n=>typeof n==='string' && Object.hasOwn(entries,n);
   for(const [field,test] of [['job',e=>e.income],['skill',e=>e.maxXp&&!e.income],['home',e=>['Properties','Void properties'].includes(e.group)]]) {
     check(hasEntry(src[field])&&test(entries[src[field]]),field);dst[field]=src[field];

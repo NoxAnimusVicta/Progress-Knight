@@ -63,8 +63,8 @@ for(const [side,home,relic,homeTile,relicTile] of [
  ['Evil','Ashen keep','Obsidian seal',0,2],
  ['Angelic','Dawn sanctuary','Ivory seal',1,3]
 ]){
- entries[home]={name:home,group:'Properties',side,tile:homeTile,expense:40000000,effect:215,requirements:{[side]:1,Coins:4000000000}};
- entries[relic]={name:relic,group:'Misc',side,tile:relicTile,expense:15000000,effect:1.75,description:side+' skill XP',requirements:{[side]:25,Coins:1500000000}};
+ entries[home]={name:home,group:'Properties',prerequisite:'Mansion',side,tile:homeTile,expense:40000000,effect:215,requirements:{[side]:1,Coins:4000000000}};
+ entries[relic]={name:relic,group:'Misc',prerequisite:'Library',side,tile:relicTile,expense:15000000,effect:1.75,description:side+' skill XP',requirements:{[side]:25,Coins:1500000000}};
 }
 entries['Alignment Resonance']={
  name:'Alignment Resonance',group:'Advanced arcana',tile:entries['Meditation'].tile,
@@ -83,7 +83,7 @@ for(const [name,group,art,rank,required,expense,effect,description] of [
 const catalog = Object.values(entries);
 function newLife() {
   return {days:5110, coins:0, job:'Beggar', skill:'Concentration', home:'Homeless',
-    equipment:{}, levels:{}, xp:{}, unlocked:{}, memory:{}, hero:'', life:1,
+    equipment:{}, acquiredBasics:{}, levels:{}, xp:{}, unlocked:{}, memory:{}, hero:'', life:1,
     voidPath:false, voidHeart:false, heartPair:false, superHeart:false,  Void:0, Evil:0, Angelic:0, orbs:{}, finished:false, paused:false, warp:true, devSpeed:1, clock:Date.now()};
 }
 let state = newLife();
@@ -126,7 +126,19 @@ function retireCity(s){
  }
  delete s.crossedRift;delete s.chrono;
 }
+function migrateShop(s){
+ s.acquiredBasics??={};
+ if(s.home==='Mansion')s.acquiredBasics.Mansion=true;
+ if(s.equipment?.Library)s.acquiredBasics.Library=true;
+ for(const e of catalog){
+   if(!e.prerequisite||s.acquiredBasics[e.prerequisite])continue;
+   delete s.unlocked?.[e.name];
+   if(s.home===e.name)s.home='Homeless';
+   delete s.equipment?.[e.name];
+ }
+}
 function migrateVoid(s){
+ migrateShop(s);
  delete s.happinessUntil;delete s.acceleratingUntil;
  migrateOldVoidTasks(s);
  removeOrbTraining(s);
@@ -226,6 +238,8 @@ function nextVoidShop(){
  return lines.length?'<section class="card"><h3>Void shop unlocks</h3>'+lines.join('')+'</section>':'';
 }
 function remaining(n){
+  const prerequisite=entries[n].prerequisite;
+  if(prerequisite&&!state.acquiredBasics[prerequisite])return [prerequisite+' required'];
   const side=entries[n].side;
   if(side&&state[side]<entries[n].requirements[side])return [side+' '+formatVoid(state[side])+' / '+entries[n].requirements[side]];
   if(!ownsSkillPath(state,entries[n].group))return [pathResource[entries[n].group]+' required'];
@@ -439,7 +453,7 @@ function list(){
     Skills:['Fundamentals','Combat','Magic',...(showAdvancedMagic()?['Advanced arcana']:[]),'Dark magic','Advanced dark magic','Light magic','Advanced Angelic','Void Manipulation'].map(group=>[group==='Advanced arcana'?'Advanced Magic':group,group]),
     Shop:[['Properties','Properties',...(state.voidHeart?['Void properties']:[])],['Equipment','Misc',...(state.voidHeart?['Void equipment']:[])]]};
  return sections[tab].map(([heading,...groups])=>{
-  const candidates=catalog.filter(e=>groups.includes(e.group)&&ownsSkillPath(state,e.group)&&(e.group!=='Advanced arcana'||Boolean(e.income)===(tab==='Jobs'))&&(!e.rank||level(e.rank)>=e.requirements[e.rank])&&(!e.side||state[e.side]>=e.requirements[e.side]));
+  const candidates=catalog.filter(e=>groups.includes(e.group)&&(!e.prerequisite||state.acquiredBasics[e.prerequisite])&&ownsSkillPath(state,e.group)&&(e.group!=='Advanced arcana'||Boolean(e.income)===(tab==='Jobs'))&&(!e.rank||level(e.rank)>=e.requirements[e.rank])&&(!e.side||state[e.side]>=e.requirements[e.side]));
   if(heading==='Advanced Magic'){
    const order=['Astral Body','All Seeing Eye','Alignment Resonance','Temporal Dimension','Brainwashing'];
    candidates.sort((a,b)=>order.indexOf(a.name)-order.indexOf(b.name));
@@ -604,6 +618,7 @@ screen.onclick=e=>{
   if(['job','skill'].includes(a))state[a]=v;
   if(a==='home')state.home=state.home===v?('Homeless'):v;
   if(a==='gear'){if(state.equipment[v])delete state.equipment[v];else state.equipment[v]=true}
+  if((a==='home'&&state.home==='Mansion')||(a==='gear'&&v==='Library'&&state.equipment.Library))state.acquiredBasics[v]=true;
  }
  save();render();
  if(switchWhileScrolled){
