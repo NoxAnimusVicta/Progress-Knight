@@ -121,10 +121,10 @@ for(const name of ['Astral scholar','Astral Body','Archmage','All Seeing Eye','C
 }
 state={...newLife(),hero:'Magnus',coins:1e15};tab='Shop';assert(!list().includes('Town Ruler')&&!list().includes('Ashen keep'));
 for(const [side,home,relic] of [['Evil','Ashen keep','Obsidian seal'],['Angelic','Dawn sanctuary','Ivory seal']]){
- state[side]=1;assert(list().includes(home)&&!list().includes(relic));state[side]=25;assert(list().includes(relic));state[side]=0;assert(!list().includes(home)&&!list().includes(relic));
+ state.acquiredBasics={Mansion:true,Library:true};state[side]=1;assert(list().includes(home)&&!list().includes(relic));state[side]=25;assert(list().includes(relic));state[side]=0;assert(!list().includes(home)&&!list().includes(relic));
 }
 for(const [side,seal] of [['Evil','Obsidian seal'],['Angelic','Ivory seal']]){
- state={...newLife(),hero:'Magnus',[side]:24,coins:60000};
+ state={...newLife(),hero:'Magnus',[side]:24,coins:60000,paused:true};
  const swordAt=shopThreshold(entries['Steel longsword']);
  assert(swordAt>state.coins);
  const equipment=()=>list().split('<h3>Equipment</h3>')[1];
@@ -136,7 +136,10 @@ for(const [side,seal] of [['Evil','Obsidian seal'],['Angelic','Ivory seal']]){
  for(const [basic,reward,action] of [['Library',seal,'gear'],['Mansion',home,'home']]){
    const threshold=shopThreshold(entries[reward]);state.coins=threshold-1;
    assert(list().includes(action+':'+basic)&&!list().includes(action+':'+reward));
-   state.coins++;const rows=list();assert(rows.includes(action+':'+reward)&&rows.indexOf(action+':'+basic)<rows.indexOf(action+':'+reward));
+   state.coins++;assert(!list().includes(action+':'+reward));
+   const tap=n=>screen.onclick({target:{closest:()=>({dataset:{act:action+':'+n}})}});
+   tap(reward);assert(state.home!==reward&&!state.equipment[reward]);
+   tap(basic);tap(basic);const rows=list();assert(rows.includes(action+':'+reward)&&rows.indexOf(action+':'+basic)<rows.indexOf(action+':'+reward));
  }
 }
 state={...newLife(),hero:'Magnus',coins:1e15};
