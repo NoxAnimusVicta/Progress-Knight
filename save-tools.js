@@ -45,7 +45,7 @@ function readBackup(text) {
   check(['','Magnus','Isabella'].includes(src.hero),'character'); dst.hero=src.hero;
   check([1,5,20].includes(src.devSpeed??1),'developer speed');dst.devSpeed=src.devSpeed??1;
   check(typeof (src.voidPath??false)==='boolean','Void path');dst.voidPath=src.voidPath??false;
-  for(const name of ['Mansion','Library']){
+  for(const name of ['Mansion','Library','Planar sanctum','Chronometer']){
     if(src.acquiredBasics?.[name]===true)dst.acquiredBasics[name]=true;
   }
   for(const [name,value] of Object.entries(src.shopEarnings||{})){
