@@ -63,8 +63,8 @@ for(const [side,home,relic,homeTile,relicTile] of [
  ['Evil','Ashen keep','Obsidian seal',0,2],
  ['Angelic','Dawn sanctuary','Ivory seal',1,3]
 ]){
- entries[home]={name:home,group:'Properties',side,tile:homeTile,expense:1200,effect:4.25,requirements:{[side]:1,Coins:120000}};
- entries[relic]={name:relic,group:'Misc',side,tile:relicTile,expense:600,effect:1.25,description:side+' skill XP',requirements:{[side]:25,Coins:60000}};
+ entries[home]={name:home,group:'Properties',side,tile:homeTile,expense:40000000,effect:215,requirements:{[side]:1,Coins:4000000000}};
+ entries[relic]={name:relic,group:'Misc',side,tile:relicTile,expense:15000000,effect:1.75,description:side+' skill XP',requirements:{[side]:25,Coins:1500000000}};
 }
 entries['Alignment Resonance']={
  name:'Alignment Resonance',group:'Advanced arcana',tile:entries['Meditation'].tile,
