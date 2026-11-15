@@ -145,7 +145,8 @@ const entries = {
     "income": 50000,
     "requirements": {
       "Mana control": 1000,
-      "Battle tactics": 1000
+      "Battle tactics": 1000,
+      "Holy knight": 10
     },
     "group": "Military",
     "tile": 13

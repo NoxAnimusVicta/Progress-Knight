@@ -143,6 +143,11 @@ function migrateShop(s){
 }
 function migrateVoid(s){
  migrateShop(s);
+ const promotion=entries['Legendary knight'].requirements;
+ if(Object.entries(promotion).some(([name,required])=>(s.levels?.[name]||0)<required)){
+   delete s.unlocked?.['Legendary knight'];
+   if(s.job==='Legendary knight')s.job='Beggar';
+ }
  delete s.happinessUntil;delete s.acceleratingUntil;
  migrateOldVoidTasks(s);
  removeOrbTraining(s);
