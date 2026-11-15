@@ -188,5 +188,9 @@ for(const side of ['Evil','Angelic','Void']){
  state.levels['Alignment Resonance']=100;reset(side==='Void'?'Embrace Void':side);assert.equal(state[side],1.06);
 }
 state.levels['Alignment Resonance']=6000;assert(effect('Alignment Resonance')<1.2);
+state={...newLife(),hero:'Magnus',job:'Legendary knight',levels:{'Mana control':1000,'Battle tactics':1000},unlocked:{'Legendary knight':true}};
+migrateVoid(state);tab='Jobs';assert.equal(state.job,'Beggar');assert(!list().includes('job:Legendary knight'));
+state.levels['Holy knight']=9;assert(remaining('Legendary knight').length);
+state.levels['Holy knight']=10;assert(list().includes('job:Legendary knight'));
 console.log('Verified base progression, orb collectibles and cumulative skill XP, Void jobs, Heart, legacy conversion and Void collection.');
 `,ctx);
