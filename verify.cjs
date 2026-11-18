@@ -50,12 +50,12 @@ for(const task of ['Beggar','Concentration','Void Influence','Corrupted']){
 }
 state.Evil=50000;assert(remaining('Void Influence').length);state.Evil=0;state.Void=1;assert.equal(remaining('Void Influence').length,0);state.Void=0;
 const initialLife=lifespan(),initialJobRate=rate('Beggar');
-state.Void=500;assert.equal(lifespan(),initialLife);assert.equal(rate('Beggar'),initialJobRate);
+state.Void=500;assert.equal(lifespan(),initialLife);assert.equal(rate('Beggar'),initialJobRate*501);
 state.Void=2000;assert.equal(lifespan(),initialLife);
 const normalMagic=rate('Mana control');state.superHeart=true;assert(rate('Mana control')>normalMagic);
 state=JSON.parse(firstHeartLife);
 state.days=199*365;assert(!choices().includes('Embrace Void'));state.days=200*365;assert.equal(voidGain(),1);reset('Embrace Void');
-assert.equal(state.Void,1);assert(remaining('Absolute Wish').length);assert.deepEqual(Object.keys(state.memory),[]);
+assert.equal(state.Void,1);assert.equal(remaining('Absolute Wish').length,0);assert.deepEqual(Object.keys(state.memory),[]);
 for(const skill of voidCatalog.filter(e=>e.group==='Void Manipulation')){
  state.Void=1;Object.assign(state.levels,skill.requirements);assert.equal(remaining(skill.name).length,0);
  for(const [name,target] of Object.entries(skill.requirements)){
@@ -66,7 +66,7 @@ state.levels['Void Amplification']=2999;assert(remaining('Mind Seize').length);
 state.levels['Void Amplification']=3000;assert.equal(remaining('Mind Seize').length,0);
 state.levels={};state.Void=1;
 assert(state.voidHeart&&state.voidPath&&age()===14);assert.deepEqual(Object.keys(state.orbs),[]);assert(portrait().includes('void-forms.svg'));
-tab='Shop';assert(!list().includes('Town Ruler'));tab='Jobs';assert(!list().includes('Corrupted')&&list().includes('Age 14/200'));tab='Skills';assert(!list().includes('skill:Absolute Wish'));
+tab='Shop';assert(!list().includes('Town Ruler'));tab='Jobs';assert(!list().includes('Corrupted')&&list().includes('Age 14/200'));tab='Skills';assert(list().includes('skill:Absolute Wish'));
 assert.equal(voidCatalog.filter(e=>e.group==='The Void').length,8);assert.equal(voidCatalog.filter(e=>e.group==='Void Manipulation').length,8);
 for(const e of voidCatalog){for(const key of Object.keys(e.requirements))assert(entries[key]||['Age','Evil','Coins','Void'].includes(key))}
 state.days=199*365;assert(remaining('Corrupted').length);state.days=200*365;assert.equal(remaining('Corrupted').length,0);
@@ -192,5 +192,14 @@ state={...newLife(),hero:'Magnus',job:'Legendary knight',levels:{'Mana control':
 migrateVoid(state);tab='Jobs';assert.equal(state.job,'Beggar');assert(!list().includes('job:Legendary knight'));
 state.levels['Holy knight']=9;assert(remaining('Legendary knight').length);
 state.levels['Holy knight']=10;assert(list().includes('job:Legendary knight'));
+state={...newLife(),hero:'Magnus'};
+for(const n of ['Concentration','Immortality','Chairman','Legendary knight']){
+ state.levels[n]=3000;assert.equal(threshold(n),Math.round(entries[n].maxXp*3001*1.01**3000));
+}
+for(const n of ['Void Influence','Astral Body','Corrupted','Imperator']){
+ const boundary=entries[n].income?200:2000;
+ state.levels[n]=boundary;const before=threshold(n);state.levels[n]++;assert(threshold(n)>before);
+}
+state={...newLife(),hero:'Magnus',Void:100,voidHeart:true};const gainBefore=voidGain();const xpBefore=rate('Beggar');state.superHeart=true;assert.equal(voidGain(),gainBefore*2);assert.equal(rate('Beggar'),xpBefore*2);
 console.log('Verified base progression, orb collectibles and cumulative skill XP, Void jobs, Heart, legacy conversion and Void collection.');
 `,ctx);
