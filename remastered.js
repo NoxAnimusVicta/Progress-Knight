@@ -1,7 +1,7 @@
 const saveKey = 'pk-remastered-191';
 // Tables and prerequisites from Symb1/progress_knight_2 at c099d6f.
 const voidCatalog=[
- {"name":"Corrupted","maxXp":10000000000,"income":25000000,"group":"The Void","tile":0,"requirements":{"Age":175}},
+ {"name":"Corrupted","maxXp":100000000000000,"income":25000000,"group":"The Void","tile":0,"requirements":{"Age":200}},
  {"name":"Void Slave","maxXp":650000000000000,"income":200000000,"group":"The Void","tile":1,"requirements":{"Corrupted":30}},
  {"name":"Void Fiend","maxXp":18000000000000000,"income":600000000,"group":"The Void","tile":2,"requirements":{"Brainwashing":3000,"Void Slave":200}},
  {"name":"Abyss Anomaly","maxXp":18000000000000000,"income":1200000000,"group":"The Void","tile":3,"requirements":{"Mind Seize":3000,"Void Fiend":200}},
