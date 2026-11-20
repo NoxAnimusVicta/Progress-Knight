@@ -55,7 +55,7 @@ state.Void=2000;assert.equal(lifespan(),initialLife);
 const normalMagic=rate('Mana control');state.superHeart=true;assert(rate('Mana control')>normalMagic);
 state=JSON.parse(firstHeartLife);
 state.days=199*365;assert(!choices().includes('Embrace Void'));state.days=200*365;assert.equal(voidGain(),1);reset('Embrace Void');
-assert.equal(state.Void,1);assert.equal(remaining('Absolute Wish').length,0);assert.deepEqual(Object.keys(state.memory),[]);
+assert.equal(state.Void,1);assert(remaining('Absolute Wish').length);assert.deepEqual(Object.keys(state.memory),[]);
 for(const skill of voidCatalog.filter(e=>e.group==='Void Manipulation')){
  state.Void=1;Object.assign(state.levels,skill.requirements);assert.equal(remaining(skill.name).length,0);
  for(const [name,target] of Object.entries(skill.requirements)){
@@ -66,7 +66,7 @@ state.levels['Void Amplification']=2999;assert(remaining('Mind Seize').length);
 state.levels['Void Amplification']=3000;assert.equal(remaining('Mind Seize').length,0);
 state.levels={};state.Void=1;
 assert(state.voidHeart&&state.voidPath&&age()===14);assert.deepEqual(Object.keys(state.orbs),[]);assert(portrait().includes('void-forms.svg'));
-tab='Shop';assert(!list().includes('Town Ruler'));tab='Jobs';assert(!list().includes('Corrupted')&&list().includes('Age 14/200'));tab='Skills';assert(list().includes('skill:Absolute Wish'));
+tab='Shop';assert(!list().includes('Town Ruler'));tab='Jobs';assert(!list().includes('Corrupted')&&list().includes('Age 14/200'));tab='Skills';assert(!list().includes('skill:Absolute Wish'));
 assert.equal(voidCatalog.filter(e=>e.group==='The Void').length,8);assert.equal(voidCatalog.filter(e=>e.group==='Void Manipulation').length,8);
 for(const e of voidCatalog){for(const key of Object.keys(e.requirements))assert(entries[key]||['Age','Evil','Coins','Void'].includes(key))}
 state.days=199*365;assert(remaining('Corrupted').length);state.days=200*365;assert.equal(remaining('Corrupted').length,0);
