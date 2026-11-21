@@ -71,7 +71,7 @@ assert.equal(voidCatalog.filter(e=>e.group==='The Void').length,8);assert.equal(
 for(const e of voidCatalog){for(const key of Object.keys(e.requirements))assert(entries[key]||['Age','Evil','Coins','Void'].includes(key))}
 state.days=199*365;assert(remaining('Corrupted').length);state.days=200*365;assert(remaining('Corrupted').length);state.levels.Imperator=99;assert(remaining('Corrupted').length);state.levels.Imperator=100;state.Void=24;assert(remaining('Corrupted').length);state.Void=25;assert.equal(remaining('Corrupted').length,0);
 assert(remaining('Void Fiend').length);state.levels['Void Influence']=3000;state.levels['Void Slave']=200;state.Void=150;assert.equal(remaining('Void Fiend').length,0);
-state.Void=1000;state.levels['Void Reaver']=100;state.acquiredBasics['Planar sanctum']=true;state.acquiredBasics.Chronometer=true;state.shopEarnings['Void Realm']=shopThreshold(entries['Void Realm']);state.coins=shopThreshold(entries['Void Realm'])-1;assert(remaining('Void Realm').length);state.coins++;assert.equal(remaining('Void Realm').length,0);
+state.Void=1000;state.levels['Void Reaver']=100;state.acquiredBasics['Planar sanctum']=true;state.acquiredBasics.Chronometer=true;state.shopEarnings['Void Realm']=shopThreshold(entries['Void Realm']);state.coins=shopThreshold(entries['Void Realm'])*.999999;assert(remaining('Void Realm').length);state.coins=shopThreshold(entries['Void Realm']);assert.equal(remaining('Void Realm').length,0);
 tab='Shop';state.equipment.Book=true;
 state.unlocked.Book=true;
 assert(list().includes('<b>Book</b><small>'+String.fromCharCode(215)+entries.Book.effect+' '+entries.Book.description+'</small>'));
@@ -245,5 +245,14 @@ for(const e of voidCatalog.filter(e=>e.group==='The Void')){
  for(const [key,value] of Object.entries(e.requirements))if(key!=='Void'&&key!=='Age')state.levels[key]=value;
  assert(remaining(e.name).length);state.Void=e.requirements.Void;assert.equal(remaining(e.name).length,0);
 }
+state={...newLife(),hero:'Magnus',voidHeart:true,voidEconomyVersion:0,Void:911,job:'Void Wraith',home:'Void Universe',equipment:{'Void Dust':true},coins:1e30};
+const savedCoins=state.coins;reviewVoidEconomy();assert(state.paused&&state.voidEconomyReview&&upkeepNotice.includes('Review'));
+assert.equal(state.coins,savedCoins);assert.equal(state.home,'Void Universe');assert(state.equipment['Void Dust']);
+launchView='playing';screen.onclick({target:{closest:()=>({dataset:{act:'pause'}})}});assert(!state.paused&&!state.voidEconomyReview);reviewVoidEconomy();assert(!state.paused);
+state={...newLife(),hero:'Magnus',voidHeart:true,Void:800,job:'Void Wraith',levels:{'Void Wraith':250,'All Seeing Eye':15000,Bargaining:15000,Brainwashing:15000}};
+assert(price('Void Universe')+price('Void Dust')>pay('Void Wraith')*10);
+state={...newLife(),hero:'Magnus',voidHeart:true,Void:1600,job:'Abyss God',home:'Void Universe',levels:{'Abyss God':250,'All Seeing Eye':8000,Bargaining:4000,Brainwashing:8000,'Abyss Manipulation':8000}};
+for(const e of shopEntries.filter(voidShopItem))if(e.group==='Void equipment')state.equipment[e.name]=true;
+assert(upkeep()/pay(state.job)>.3&&upkeep()/pay(state.job)<.8);
 console.log('Verified base progression, orb collectibles and cumulative skill XP, Void jobs, Heart, legacy conversion and Void collection.');
 `,ctx);
