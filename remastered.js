@@ -385,7 +385,7 @@ let upkeepNotice='',idleNotice='';
 let launchView='menu';
 let tab='Jobs',chosen='Magnus',pending='',statusText='';
 const screen=document.querySelector('#screen');
-const numberUnits=['million','billion','trillion','quadrillion','quintillion','sextillion','septillion','octillion','nonillion','decillion','undecillion','duodecillion','tredecillion','quattuordecillion','quindecillion','sexdecillion','septendecillion','octodecillion','novemdecillion','vigintillion'];
+const numberUnits=['Million','Billion','Trillion','Quadrillion','Quintillion','Sextillion','Septillion','Octillion','Nonillion','Decillion','Undecillion','Duodecillion','Tredecillion','Quattuordecillion','Quindecillion','Sexdecillion','Septendecillion','Octodecillion','Novemdecillion','Vigintillion'];
 const namedNumber=new Intl.NumberFormat('en',{maximumFractionDigits:2});
 function fmt(value){
  if(Math.abs(value)<1e6)return Math.floor(value).toLocaleString();
