@@ -1,11 +1,11 @@
 const saveKey = 'pk-remastered-191';
 // Catalog adapted from Symb1/progress_knight_2 at c099d6f for the Heart's separate Void economy.
 const voidCatalog=[
- {"name":"Corrupted","maxXp":100000000000000,"income":25000000,"group":"The Void","tile":0,"requirements":{"Age":200}},
- {"name":"Void Slave","maxXp":5200000000000000,"income":200000000,"group":"The Void","tile":1,"requirements":{"Corrupted":30}},
- {"name":"Void Fiend","maxXp":216000000000000000,"income":600000000,"group":"The Void","tile":2,"requirements":{"Brainwashing":3000,"Void Slave":200}},
- {"name":"Abyss Anomaly","maxXp":432000000000000000,"income":1200000000,"group":"The Void","tile":3,"requirements":{"Mind Seize":3000,"Void Fiend":200}},
- {"name":"Void Wraith","maxXp":2880000000000000000,"income":5000000000,"group":"The Void","tile":4,"requirements":{"Temporal Dimension":3400,"Abyss Anomaly":300}},
+ {"name":"Corrupted","maxXp":100000000000000,"income":512000000,"group":"The Void","tile":0,"requirements":{"Age":200,"Imperator":100}},
+ {"name":"Void Slave","maxXp":5200000000000000,"income":1024000000,"group":"The Void","tile":1,"requirements":{"Corrupted":30}},
+ {"name":"Void Fiend","maxXp":216000000000000000,"income":2048000000,"group":"The Void","tile":2,"requirements":{"Void Influence":3000,"Void Slave":200}},
+ {"name":"Abyss Anomaly","maxXp":432000000000000000,"income":4096000000,"group":"The Void","tile":3,"requirements":{"Mind Seize":3000,"Void Fiend":200}},
+ {"name":"Void Wraith","maxXp":2880000000000000000,"income":8192000000,"group":"The Void","tile":4,"requirements":{"Ceaseless Abyss":3400,"Abyss Anomaly":300}},
  {"name":"Void Reaver","maxXp":20800000000000000000,"income":25000000000,"group":"The Void","tile":5,"requirements":{"Void Amplification":3400,"Void Wraith":250}},
  {"name":"Void Lord","maxXp":3500000000000000000,"income":100000000000,"group":"The Void","tile":6,"requirements":{"Void Symbiosis":3800,"Void Reaver":150}},
  {"name":"Abyss God","maxXp":50000000000000000000,"income":1000000000000,"group":"The Void","tile":7,"requirements":{"Void Embodiment":4700,"Void Lord":750}},
@@ -16,8 +16,8 @@ const voidCatalog=[
  {"name":"Void Symbiosis","maxXp":100,"effect":0.0015,"description":"Ability XP","group":"Void Manipulation","tile":4,"requirements":{"Void":400}},
  {"name":"Void Embodiment","maxXp":100,"effect":0.0025,"description":"Void gain","group":"Void Manipulation","tile":5,"requirements":{"Void":800}},
  {"name":"Abyss Manipulation","maxXp":100,"effect":-0.01,"description":"Reduced Expenses","group":"Void Manipulation","tile":6,"requirements":{"Void":1600}},
- {"name":"Town Ruler","expense":35000000,"effect":200,"group":"Void properties","tile":0,"requirements":{"Coins":3500000000}},
- {"name":"City Ruler","expense":1100000000,"effect":500,"group":"Void properties","tile":1,"requirements":{"Coins":110000000000}},
+ {"name":"Town Ruler","expense":250000000,"effect":450,"group":"Void properties","tile":0,"requirements":{"Coins":25000000000}},
+ {"name":"City Ruler","expense":1100000000,"effect":750,"group":"Void properties","tile":1,"requirements":{"Coins":110000000000}},
  {"name":"Nation Ruler","expense":13000000000,"effect":1200,"group":"Void properties","tile":2,"requirements":{"Coins":1300000000000}},
  {"name":"Pocket Dimension","expense":49000000000,"effect":5000,"group":"Void properties","tile":3,"requirements":{"Coins":4900000000000}},
  {"name":"Void Realm","expense":121000000000,"effect":15000,"group":"Void properties","tile":4,"requirements":{"Coins":12100000000000}},
@@ -32,8 +32,8 @@ const voidCatalog=[
  {"name":"Astral scholar","maxXp":1500000000000,"income":4000000,"group":"Advanced arcana","tile":0,"requirements":{"Chairman":120,"Super immortality":10}},
  {"name":"Archmage","maxXp":6000000000000,"income":16000000,"group":"Advanced arcana","tile":1,"requirements":{"Astral scholar":25,"Astral Body":50}},
  {"name":"Chronomancer","maxXp":24000000000000,"income":64000000,"group":"Advanced arcana","tile":2,"requirements":{"Archmage":25,"All Seeing Eye":50}},
- {"name":"Imperator","maxXp":9000000000000000,"income":256000000,"group":"Advanced arcana","tile":3,"requirements":{"Chronomancer":50,"Temporal Dimension":100}},
- {"name":"All Seeing Eye","maxXp":100,"effect":0.0027,"description":"T.A.A Pay","group":"Advanced arcana","tile":4,"requirements":{"Archmage":10}},
+ {"name":"Imperator","maxXp":96000000000000,"income":256000000,"group":"Advanced arcana","tile":3,"requirements":{"Chronomancer":50,"Temporal Dimension":100}},
+ {"name":"All Seeing Eye","maxXp":100,"effect":0.0027,"description":"Arcane and Void pay","group":"Advanced arcana","tile":4,"requirements":{"Archmage":10}},
  {"name":"Temporal Dimension","maxXp":100,"effect":0.025,"description":"Gamespeed","group":"Advanced arcana","tile":5,"requirements":{"Chronomancer":25}},
  {"name":"Brainwashing","maxXp":100,"effect":-0.01,"description":"Reduced Expenses","group":"Advanced arcana","tile":6,"requirements":{"Imperator":100}},
  {"name":"Astral Body","maxXp":100,"effect":0.0035,"description":"Longer lifespan","group":"Advanced arcana","tile":7,"requirements":{"Astral scholar":10}},
@@ -81,7 +81,11 @@ for(const [name,group,art,rank,required,expense,effect,description] of [
  entries[name]={name,group,tile:entries[art].tile,rank,expense,effect,description,requirements:{[rank]:required,Coins:100*expense}};
 }
 for(const e of Object.values(entries)){
- if(e.rank||voidShopItem(e))e.prerequisite=['Properties','Void properties'].includes(e.group)?'Mansion':'Library';
+ if(e.rank)e.prerequisite=e.group==='Properties'?'Mansion':'Library';
+ if(voidShopItem(e)){
+  e.prerequisite=e.group==='Void properties'?'Planar sanctum':'Chronometer';
+  e.secondaryPrerequisite=e.group==='Void properties'?'Chronometer':'Planar sanctum';
+ }
 }
 const catalog = Object.values(entries);
 function newLife() {
@@ -134,8 +138,13 @@ function migrateShop(s){
  s.shopEarnings??={};
  if(s.home==='Mansion')s.acquiredBasics.Mansion=true;
  if(s.equipment?.Library)s.acquiredBasics.Library=true;
+ // Honour previously earned Void shop access when loading an existing life.
+ if(catalog.some(e=>voidShopItem(e)&&(s.unlocked?.[e.name]||s.home===e.name||s.equipment?.[e.name]))){s.acquiredBasics['Planar sanctum']=true;s.acquiredBasics.Chronometer=true}
+ for(const [group,previous] of [['Void properties','Planar sanctum'],['Void equipment','Chronometer']]){
+  if(s.home===previous||s.equipment?.[previous]||catalog.some(e=>e.group===group&&(s.unlocked?.[e.name]||s.home===e.name||s.equipment?.[e.name])))s.acquiredBasics[previous]=true;
+ }
  for(const e of catalog){
-   if(!e.prerequisite||s.acquiredBasics[e.prerequisite])continue;
+   if(shopPrerequisites(e).every(n=>s.acquiredBasics[n]))continue;
    delete s.unlocked?.[e.name];
    if(s.home===e.name)s.home='Homeless';
    delete s.equipment?.[e.name];
@@ -217,7 +226,7 @@ function rate(n){
   if(e.group==='Light magic'||e.group==='Advanced Angelic')gain*=state.Angelic;
   return Math.round(gain);
 }
-function pay(n){return Math.round(entries[n].income*voidIncomeMultiplier()*(['Advanced arcana','The Arcane Association'].includes(entries[n].group)?effect('All Seeing Eye'):1)*(1+Math.log10(level(n)+1))*effect("Demon's wealth")*effect('Bountiful Grace')*(entries[n].group==='Military'?effect('Strength'):1))}
+function pay(n){return Math.round(entries[n].income*voidIncomeMultiplier()*(['Advanced arcana','The Arcane Association','The Void'].includes(entries[n].group)?effect('All Seeing Eye'):1)*(1+Math.log10(level(n)+1))*effect("Demon's wealth")*effect('Bountiful Grace')*(entries[n].group==='Military'?effect('Strength'):1))}
 function price(n){return Math.round(entries[n].expense*effect('Bargaining')*effect('Intimidation')*effect('Healing Aura')*effect('Brainwashing')*effect('Abyss Manipulation'))}
 function upkeep(){return Object.keys(state.equipment).reduce((sum,n)=>sum+price(n),price(state.home))}
 const recentGains=new Map();
@@ -240,6 +249,7 @@ function gain(n,amount){
   }
 }
 const shopEntries=catalog.filter(e=>e.expense!==undefined);
+function shopPrerequisites(e){return [e.prerequisite,e.secondaryPrerequisite].filter(Boolean)}
 function voidShopItem(e){return e.group==='Void properties'||e.group==='Void equipment'}
 function shopTier(e){return voidShopItem(e)?3:e.rank?2:e.side?1:0}
 function shopThreshold(e){
@@ -247,8 +257,8 @@ function shopThreshold(e){
  const base=entries[e.prerequisite].requirements.Coins;
  return base+Math.round((e.requirements.Coins-base)*price(e.name)/e.expense);
 }
-// Times are per tier in 1x seconds. Offset the four tracks so parallel progress
-// produces a succession of shop choices even when income is already very high.
+// Times are per tier in 1x seconds. Void tracks start after selecting
+// both final Advanced Magic shop upgrades.
 const shopTracks=[
  {items:shopEntries.filter(e=>e.rank&&e.group==='Properties'),seconds:[85,200,215]},
  {items:shopEntries.filter(e=>e.rank&&e.group==='Misc'),seconds:[22,170,202]},
@@ -260,7 +270,7 @@ function creditShopEarnings(income,seconds){
    const tier=track.items.findIndex(e=>!state.unlocked[e.name]);
    if(tier<0)continue;
    const next=track.items[tier];
-   if(!state.acquiredBasics[next.prerequisite])continue;
+   if(!shopPrerequisites(next).every(n=>state.acquiredBasics[n]))continue;
    if(voidShopItem(next)?!state.voidHeart:level(next.rank)<next.requirements[next.rank])continue;
    const target=shopThreshold(next);
    const credit=Math.min(income,target*seconds/track.seconds[tier]);
@@ -277,14 +287,14 @@ function nextVoidShop(){
  const lines=[];
  for(const [group,label] of [['Void properties','Next property'],['Void equipment','Next equipment']]){
    const next=shopEntries.find(e=>e.group===group&&remaining(e.name).length);
-   if(next&&!state.acquiredBasics[next.prerequisite]){lines.push('<p>'+label+' · Select '+next.prerequisite+'</p>');continue}
+   if(next){const missing=shopPrerequisites(next).filter(n=>!state.acquiredBasics[n]);if(missing.length){lines.push('<p>'+label+' � Select '+missing.join(' and ')+'</p>');continue}}
    if(next)lines.push('<p>'+label+' · '+next.name+'<br>'+fmt(state.coins)+' / '+fmt(shopThreshold(next))+' coins</p>');
  }
  return lines.length?'<section class="card"><h3>Void shop unlocks</h3>'+lines.join('')+'</section>':'';
 }
 function remaining(n){
-  const prerequisite=entries[n].prerequisite;
-  if(prerequisite&&!state.acquiredBasics[prerequisite])return [prerequisite+' required'];
+  const prerequisites=shopPrerequisites(entries[n]).filter(key=>!state.acquiredBasics[key]);
+  if(prerequisites.length)return prerequisites.map(key=>key+' required');
   const side=entries[n].side;
   if(side&&state[side]<entries[n].requirements[side])return [side+' '+formatVoid(state[side])+' / '+entries[n].requirements[side]];
   if(!ownsSkillPath(state,entries[n].group))return [pathResource[entries[n].group]+' required'];
@@ -509,7 +519,7 @@ function list(){
     Skills:['Fundamentals','Combat','Magic',...(showAdvancedMagic()?['Advanced arcana']:[]),'Dark magic','Advanced dark magic','Light magic','Advanced Angelic','Void Manipulation'].map(group=>[group==='Advanced arcana'?'Advanced Magic':group,group]),
     Shop:[['Properties','Properties',...(state.voidHeart?['Void properties']:[])],['Equipment','Misc',...(state.voidHeart?['Void equipment']:[])]]};
  return sections[tab].map(([heading,...groups])=>{
-  const candidates=catalog.filter(e=>groups.includes(e.group)&&(!e.prerequisite||state.acquiredBasics[e.prerequisite])&&ownsSkillPath(state,e.group)&&(e.group!=='Advanced arcana'||Boolean(e.income)===(tab==='Jobs'))&&(!e.rank||level(e.rank)>=e.requirements[e.rank])&&(!e.side||state[e.side]>=e.requirements[e.side]));
+  const candidates=catalog.filter(e=>groups.includes(e.group)&&shopPrerequisites(e).every(n=>state.acquiredBasics[n])&&ownsSkillPath(state,e.group)&&(e.group!=='Advanced arcana'||Boolean(e.income)===(tab==='Jobs'))&&(!e.rank||level(e.rank)>=e.requirements[e.rank])&&(!e.side||state[e.side]>=e.requirements[e.side]));
   if(heading==='Advanced Magic'){
    const order=['Astral Body','All Seeing Eye','Alignment Resonance','Temporal Dimension','Brainwashing'];
    candidates.sort((a,b)=>order.indexOf(a.name)-order.indexOf(b.name));
@@ -682,7 +692,7 @@ screen.onclick=e=>{
   if(['job','skill'].includes(a))state[a]=v;
   if(a==='home')state.home=state.home===v?('Homeless'):v;
   if(a==='gear'){if(state.equipment[v])delete state.equipment[v];else state.equipment[v]=true}
-  if((a==='home'&&state.home==='Mansion')||(a==='gear'&&v==='Library'&&state.equipment.Library))state.acquiredBasics[v]=true;
+  if((a==='home'||a==='gear')&&catalog.some(e=>e.prerequisite===v)&&(state.home===v||state.equipment[v]))state.acquiredBasics[v]=true;
  }
  save();render();
  if(switchWhileScrolled){
