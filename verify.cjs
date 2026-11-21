@@ -57,13 +57,13 @@ state=JSON.parse(firstHeartLife);
 state.days=199*365;assert(!choices().includes('Embrace Void'));state.days=200*365;assert.equal(voidGain(),1);reset('Embrace Void');
 assert.equal(state.Void,1);assert(remaining('Absolute Wish').length);assert.deepEqual(Object.keys(state.memory),[]);
 for(const skill of voidCatalog.filter(e=>e.group==='Void Manipulation')){
- state.Void=1;Object.assign(state.levels,skill.requirements);assert.equal(remaining(skill.name).length,0);
+ state.Void=skill.requirements.Void;Object.assign(state.levels,skill.requirements);assert.equal(remaining(skill.name).length,0);
  for(const [name,target] of Object.entries(skill.requirements)){
-   if(name==='Void'){state.Void=0;assert(remaining(skill.name).length);state.Void=1}else{state.levels[name]=target-1;assert(remaining(skill.name).length);state.levels[name]=target;}
+   if(name==='Void'){state.Void=target-1;assert(remaining(skill.name).length);state.Void=target}else{state.levels[name]=target-1;assert(remaining(skill.name).length);state.levels[name]=target;}
  }
 }
-state.levels['Void Amplification']=2999;assert(remaining('Mind Seize').length);
-state.levels['Void Amplification']=3000;assert.equal(remaining('Mind Seize').length,0);
+state.Void=74;state.levels['Void Amplification']=3000;assert(remaining('Mind Seize').length);
+state.Void=75;state.levels={};assert.equal(remaining('Mind Seize').length,0);
 state.levels={};state.Void=1;
 assert(state.voidHeart&&state.voidPath&&age()===14);assert.deepEqual(Object.keys(state.orbs),[]);assert(portrait().includes('void-forms.svg'));
 tab='Shop';assert(!list().includes('Town Ruler'));tab='Jobs';assert(!list().includes('Corrupted')&&list().includes('Age 14/200'));tab='Skills';assert(!list().includes('skill:Absolute Wish'));
@@ -76,14 +76,14 @@ tab='Shop';state.equipment.Book=true;
 state.unlocked.Book=true;
 assert(list().includes('<b>Book</b><small>'+String.fromCharCode(215)+entries.Book.effect+' '+entries.Book.description+'</small>'));
 delete state.equipment.Book;
-state.days=200*365;const evilBefore=state.Evil;Object.assign(state.levels,entries['Absolute Wish'].requirements);state.levels['Absolute Wish']=4;tab='Skills';assert(list().includes('+1.4 Void gain'));assert.equal(voidGain(),1.4);reset('Embrace Void');assert.equal(state.Void,2.4);assert.equal(state.Evil,evilBefore);assert(state.voidHeart);assert.equal(age(),14);
+state.days=200*365;const evilBefore=state.Evil;state.Void=10;state.levels['Absolute Wish']=4;tab='Skills';assert(list().includes('+1.1 Void gain'));assert.equal(voidGain(),1.1);reset('Embrace Void');assert.equal(state.Void,11.1);assert.equal(state.Evil,evilBefore);assert(state.voidHeart);assert.equal(age(),14);
 for(const [name,,target] of relicRequirements('Second Heart')){
  if(name==='Age')state.days=target*365;else if(name!=='Void')state.levels[name]=target;
 }
-assert(!choices().includes('Second Heart'));state.Void=799;reset('Second Heart');assert(!state.heartPair);state.Void=800;state.days=350*365-1;assert(!choices().includes('Second Heart'));state.days++;assert(choices().includes('Second Heart'));reset('Second Heart');assert(state.heartPair&&!state.superHeart&&age()===14);
+assert(!choices().includes('Second Heart'));state.Void=1599;reset('Second Heart');assert(!state.heartPair);state.Void=1600;state.days=350*365-1;assert(!choices().includes('Second Heart'));state.days++;assert(choices().includes('Second Heart'));reset('Second Heart');assert(state.heartPair&&!state.superHeart&&age()===14);
 assert.deepEqual(choices(),['Super Void Heart']);const lifeBefore=state.life;reset('Super Void Heart');
 assert(state.superHeart&&!state.heartPair&&state.life===lifeBefore);assert(!choices().includes('Super Void Heart'));
-state.days=200*365;reset('Rebirth');assert(state.superHeart&&state.Void===800);
+state.days=200*365;reset('Rebirth');assert(state.superHeart&&state.Void===1600);
 state.days=1300*365;state.Void=2100;assert.deepEqual(choices(),['Embrace Void','Rebirth']);
 Object.assign(state,{crossedRift:true,chrono:5,job:'Night courier',home:'Transit bunk',skill:'Neural link',levels:{'Void Fiend':100,'Neural link':70}});
 migrateVoid(state);assert(state.superHeart&&state.Void===2100&&level('Void Fiend')===100);assert.equal(state.job,'Beggar');assert.equal(state.skill,'Concentration');assert.equal(state.home,'Homeless');assert(!('Neural link' in state.levels));
