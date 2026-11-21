@@ -16,19 +16,19 @@ const voidCatalog=[
  {"name":"Void Symbiosis","maxXp":100,"effect":0.0015,"description":"Ability XP","group":"Void Manipulation","tile":4,"requirements":{"Void":400}},
  {"name":"Void Embodiment","maxXp":100,"effect":0.0025,"description":"Void gain","group":"Void Manipulation","tile":5,"requirements":{"Void":800}},
  {"name":"Abyss Manipulation","maxXp":100,"effect":-0.01,"description":"Reduced Expenses","group":"Void Manipulation","tile":6,"requirements":{"Void":1600}},
- {"name":"Town Ruler","expense":250000000,"effect":450,"group":"Void properties","tile":0,"requirements":{"Coins":25000000000,"Corrupted":10,"Void":25}},
- {"name":"City Ruler","expense":1100000000,"effect":750,"group":"Void properties","tile":1,"requirements":{"Coins":110000000000,"Void Slave":50,"Void":75}},
- {"name":"Nation Ruler","expense":13000000000,"effect":1200,"group":"Void properties","tile":2,"requirements":{"Coins":1300000000000,"Void Fiend":100,"Void":150}},
- {"name":"Pocket Dimension","expense":49000000000,"effect":5000,"group":"Void properties","tile":3,"requirements":{"Coins":4900000000000,"Abyss Anomaly":150,"Void":400}},
- {"name":"Void Realm","expense":121000000000,"effect":15000,"group":"Void properties","tile":4,"requirements":{"Coins":12100000000000,"Void Reaver":100,"Void":1000}},
- {"name":"Void Universe","expense":2000000000000,"effect":30000,"group":"Void properties","tile":5,"requirements":{"Coins":200000000000000,"Abyss God":100,"Void":1600}},
- {"name":"Observatory","expense":140000000,"effect":5,"description":"Magic XP","group":"Void equipment","tile":0,"requirements":{"Coins":14000000000,"Corrupted":20,"Void":25}},
- {"name":"Mind's Eye","expense":3250000000,"effect":10,"description":"Fundamentals XP","group":"Void equipment","tile":1,"requirements":{"Coins":325000000000,"Void Slave":100,"Void":75}},
- {"name":"Void Necklace","expense":28050000000,"effect":3,"description":"Void Manipulation XP","group":"Void equipment","tile":2,"requirements":{"Coins":2805000000000,"Void Fiend":150,"Void":150}},
- {"name":"Void Armor","expense":197050000000,"effect":3,"description":"The Void XP","group":"Void equipment","tile":3,"requirements":{"Coins":19705000000000,"Abyss Anomaly":200,"Void":400}},
- {"name":"Void Blade","expense":502050000000,"effect":3,"description":"Ability XP","group":"Void equipment","tile":4,"requirements":{"Coins":50205000000000,"Void Wraith":150,"Void":800}},
- {"name":"Void Orb","expense":1202050000000,"effect":3,"description":"Void Manipulation XP","group":"Void equipment","tile":5,"requirements":{"Coins":120205000000000,"Void Lord":100,"Void":1200}},
- {"name":"Void Dust","expense":5000410000000,"effect":3,"description":"The Void XP","group":"Void equipment","tile":6,"requirements":{"Coins":500041000000000,"Abyss God":250,"Void":1600}},
+ {"name":"Town Ruler","expense":250000000000,"effect":600,"group":"Void properties","tile":0,"requirements":{"Coins":25000000000000,"Corrupted":10,"Void":25}},
+ {"name":"City Ruler","expense":900000000000,"effect":1200,"group":"Void properties","tile":1,"requirements":{"Coins":90000000000000,"Void Slave":50,"Void":75}},
+ {"name":"Nation Ruler","expense":2400000000000,"effect":2400,"group":"Void properties","tile":2,"requirements":{"Coins":240000000000000,"Void Fiend":100,"Void":150}},
+ {"name":"Pocket Dimension","expense":12000000000000,"effect":5000,"group":"Void properties","tile":3,"requirements":{"Coins":1200000000000000,"Abyss Anomaly":150,"Void":400}},
+ {"name":"Void Realm","expense":100000000000000,"effect":12000,"group":"Void properties","tile":4,"requirements":{"Coins":10000000000000000,"Void Reaver":100,"Void":1000}},
+ {"name":"Void Universe","expense":6000000000000000,"effect":30000,"group":"Void properties","tile":5,"requirements":{"Coins":600000000000000000,"Abyss God":100,"Void":1600}},
+ {"name":"Observatory","expense":80000000000,"effect":5,"description":"Magic XP","group":"Void equipment","tile":0,"requirements":{"Coins":8000000000000,"Corrupted":20,"Void":25}},
+ {"name":"Mind's Eye","expense":500000000000,"effect":10,"description":"Fundamentals XP","group":"Void equipment","tile":1,"requirements":{"Coins":50000000000000,"Void Slave":100,"Void":75}},
+ {"name":"Void Necklace","expense":1800000000000,"effect":3,"description":"Void Manipulation XP","group":"Void equipment","tile":2,"requirements":{"Coins":180000000000000,"Void Fiend":150,"Void":150}},
+ {"name":"Void Armor","expense":6000000000000,"effect":3,"description":"The Void XP","group":"Void equipment","tile":3,"requirements":{"Coins":600000000000000,"Abyss Anomaly":200,"Void":400}},
+ {"name":"Void Blade","expense":16000000000000,"effect":3,"description":"Ability XP","group":"Void equipment","tile":4,"requirements":{"Coins":1600000000000000,"Void Wraith":150,"Void":800}},
+ {"name":"Void Orb","expense":400000000000000,"effect":3,"description":"Void Manipulation XP","group":"Void equipment","tile":5,"requirements":{"Coins":40000000000000000,"Void Lord":100,"Void":1200}},
+ {"name":"Void Dust","expense":4000000000000000,"effect":3,"description":"The Void XP","group":"Void equipment","tile":6,"requirements":{"Coins":400000000000000000,"Abyss God":250,"Void":1600}},
  {"name":"Astral scholar","maxXp":1500000000000,"income":4000000,"group":"Advanced arcana","tile":0,"requirements":{"Chairman":120,"Super immortality":10}},
  {"name":"Archmage","maxXp":6000000000000,"income":16000000,"group":"Advanced arcana","tile":1,"requirements":{"Astral scholar":25,"Astral Body":50}},
  {"name":"Chronomancer","maxXp":24000000000000,"income":64000000,"group":"Advanced arcana","tile":2,"requirements":{"Archmage":25,"All Seeing Eye":50}},
@@ -91,10 +91,10 @@ const catalog = Object.values(entries);
 function newLife() {
   return {days:5110, coins:0, job:'Beggar', skill:'Concentration', home:'Homeless',
     equipment:{}, acquiredBasics:{}, shopEarnings:{}, levels:{}, xp:{}, unlocked:{}, memory:{}, hero:'', life:1,
-    voidPath:false, voidHeart:false, heartPair:false, superHeart:false,  Void:0, Evil:0, Angelic:0, orbs:{}, finished:false, paused:false, warp:true, devSpeed:1, clock:Date.now()};
+    voidEconomyVersion:1, voidEconomyReview:false, voidPath:false, voidHeart:false, heartPair:false, superHeart:false,  Void:0, Evil:0, Angelic:0, orbs:{}, finished:false, paused:false, warp:true, devSpeed:1, clock:Date.now()};
 }
 let state = newLife();
-try {Object.assign(state,JSON.parse(localStorage.getItem(saveKey)))} catch {}
+try {const loaded=JSON.parse(localStorage.getItem(saveKey));if(loaded){Object.assign(state,loaded);state.voidEconomyVersion=loaded.voidEconomyVersion||0}} catch {}
 function removeOrbTraining(s){
  for(const name of ['Good Orb','Evil Orb']){
    if(s.skill===name)s.skill='Concentration';
@@ -264,13 +264,13 @@ function shopThreshold(e){
  const base=entries[e.prerequisite].requirements.Coins;
  return base+Math.round((e.requirements.Coins-base)*price(e.name)/e.expense);
 }
-// Times are per tier in 1x seconds. Void tracks start after selecting
-// both final Advanced Magic shop upgrades.
+// Advanced Magic uses its existing earning pace. Void tiers use actual earned
+// income after the shop handoff and career milestones, with no timer.
 const shopTracks=[
  {items:shopEntries.filter(e=>e.rank&&e.group==='Properties'),seconds:[85,200,215]},
  {items:shopEntries.filter(e=>e.rank&&e.group==='Misc'),seconds:[22,170,202]},
- {items:shopEntries.filter(e=>e.group==='Void properties'),seconds:[65,100,100,100,100,100]},
- {items:shopEntries.filter(e=>e.group==='Void equipment'),seconds:[42,95,95,95,95,95,95]}
+ {items:shopEntries.filter(e=>e.group==='Void properties')},
+ {items:shopEntries.filter(e=>e.group==='Void equipment')}
 ];
 function creditShopEarnings(income,seconds){
  for(const track of shopTracks){
@@ -280,7 +280,7 @@ function creditShopEarnings(income,seconds){
    if(!shopPrerequisites(next).every(n=>state.acquiredBasics[n]))continue;
    if(voidShopItem(next)?(!state.voidHeart||voidMilestoneRequirements(next).length):level(next.rank)<next.requirements[next.rank])continue;
    const target=shopThreshold(next);
-   const credit=Math.min(income,target*seconds/track.seconds[tier]);
+   const credit=voidShopItem(next)?income:Math.min(income,target*seconds/track.seconds[tier]);
    state.shopEarnings[next.name]=Math.min(target,(state.shopEarnings[next.name]||0)+credit);
  }
 }
@@ -400,6 +400,17 @@ function reset(action){
 function save(){if(launchView!=='playing')return;try{localStorage.setItem(saveKey,JSON.stringify(state))}catch{statusText='Save unavailable in this browser.'}}
 let lastDeathShown=null;
 let upkeepNotice='',idleNotice='';
+function reviewVoidEconomy(){
+ if(state.voidEconomyVersion<1){
+  state.voidEconomyVersion=1;
+  const hasVoidUpkeep=voidShopItem(entries[state.home])||Object.keys(state.equipment).some(n=>voidShopItem(entries[n]));
+  if(state.voidHeart&&hasVoidUpkeep&&!dead()&&upkeep()>pay(state.job)){
+   state.paused=true;state.voidEconomyReview=true;state.clock=Date.now();
+  }
+ }
+ if(state.voidEconomyReview)upkeepNotice='Game paused: Void upkeep has changed. Review your property and equipment costs, then resume.';
+}
+
 let launchView='menu';
 let tab='Jobs',chosen='Magnus',pending='',statusText='';
 const screen=document.querySelector('#screen');
@@ -693,7 +704,7 @@ screen.onclick=e=>{
  if(a==='ask'&&choices().includes(v)){pending=v;if(v==='Rebirth')inspectingAmulet=true}
  if(a==='cancel')pending='';
  if(a==='accept'&&pending){reset(pending);tab=['Second Heart','Super Void Heart'].includes(pending)?'Amulet':'Jobs';pending=''}
- if(a==='pause')state.paused=!state.paused;
+ if(a==='pause'){state.paused=!state.paused;if(!state.paused&&state.voidEconomyReview){state.voidEconomyReview=false;upkeepNotice=''}}
  if(a==='devSpeed'&&[1,5,20].includes(Number(v)))state.devSpeed=Number(v);
  if(a==='warp')state.warp=!state.warp;
  if(entries[v]&&(!voidCatalog.includes(entries[v])||state.voidHeart||entries[v].group==='Advanced dark magic'||entries[v].group==='Advanced arcana')&&!remaining(v).length&&!dead()){
@@ -717,7 +728,7 @@ if(screen.addEventListener){
  screen.addEventListener('pointerdown',e=>{pressingControl=Boolean(e.target.closest('button'))});
  for(const event of ['pointerup','pointercancel','blur'])addEventListener(event,()=>{pressingControl=false});
 }
-render();setInterval(()=>{if(launchView!=='playing')return;advance();save();if(!pressingControl&&!document.querySelector('button:active'))render()},1000);
+reviewVoidEconomy();render();setInterval(()=>{if(launchView!=='playing')return;advance();save();if(!pressingControl&&!document.querySelector('button:active'))render()},1000);
 addEventListener('pagehide',()=>{advance();save()});
 if(document.addEventListener)document.addEventListener('visibilitychange',()=>{if(!document.hidden){advance();render()}else{advance();save()}});
 

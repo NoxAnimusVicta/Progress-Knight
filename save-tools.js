@@ -39,6 +39,10 @@ function readBackup(text) {
     check(numeric(src[field],field==='coins'?Number.MAX_VALUE:Number.MAX_SAFE_INTEGER),field); dst[field]=src[field];
   }
   check(dst.days>=5110 && Number.isSafeInteger(dst.life) && dst.life>=1,'age or life');
+  check([0,1].includes(src.voidEconomyVersion??0),'Void economy version');
+  check(typeof (src.voidEconomyReview??false)==='boolean','Void economy review');
+  dst.voidEconomyVersion=src.voidEconomyVersion??0;
+  dst.voidEconomyReview=src.voidEconomyReview??false;
   for(const field of ['paused','warp','finished']) {
     check(typeof src[field]==='boolean',field); dst[field]=src[field];
   }
@@ -112,7 +116,7 @@ el('confirm-restore').onclick=()=>{
   const restored={...restoreCandidate,clock:Date.now()};
   try{localStorage.setItem(saveKey,JSON.stringify(restored));}
   catch{report('Restore failed. Device storage is unavailable.');return;}
-  recentGains.clear();state=restored;launchView=state.hero?'playing':'menu';pending='';tab='Jobs';chosen=state.hero||'Magnus';inspectingAmulet=false;clearCandidate();render();
+  recentGains.clear();state=restored;reviewVoidEconomy();launchView=state.hero?'playing':'menu';save();pending='';tab='Jobs';chosen=state.hero||'Magnus';inspectingAmulet=false;clearCandidate();render();
   report('Backup restored.');
 };
 
