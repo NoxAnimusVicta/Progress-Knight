@@ -39,7 +39,7 @@ function readBackup(text) {
     check(numeric(src[field],field==='coins'?Number.MAX_VALUE:Number.MAX_SAFE_INTEGER),field); dst[field]=src[field];
   }
   check(dst.days>=5110 && Number.isSafeInteger(dst.life) && dst.life>=1,'age or life');
-  check([0,1].includes(src.voidEconomyVersion??0),'Void economy version');
+  check([0,1,2].includes(src.voidEconomyVersion??0),'Void economy version');
   check(typeof (src.voidEconomyReview??false)==='boolean','Void economy review');
   dst.voidEconomyVersion=src.voidEconomyVersion??0;
   dst.voidEconomyReview=src.voidEconomyReview??false;

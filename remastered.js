@@ -37,10 +37,10 @@ const voidCatalog=[
  {"name":"Temporal Dimension","maxXp":100,"effect":0.025,"description":"Gamespeed","group":"Advanced arcana","tile":5,"requirements":{"Chronomancer":25}},
  {"name":"Brainwashing","maxXp":100,"effect":-0.01,"description":"Reduced Expenses","group":"Advanced arcana","tile":6,"requirements":{"Imperator":100}},
  {"name":"Astral Body","maxXp":100,"effect":0.0035,"description":"Longer lifespan","group":"Advanced arcana","tile":7,"requirements":{"Astral scholar":10}},
- {"name":"Dark Knowledge","maxXp":100,"effect":0.003,"description":"Class XP","group":"Advanced dark magic","tile":0,"requirements":{"Evil":5000}},
+ {"name":"Dark Knowledge","maxXp":100,"effect":0.0005,"description":"Class XP","group":"Advanced dark magic","tile":0,"requirements":{"Evil":50}},
  {"name":"Void Influence","maxXp":100,"effect":0.0028,"description":"All XP","group":"Void Manipulation","tile":1,"requirements":{"Void":1}},
- {"name":"Time Loop","maxXp":100,"effect":0.001,"description":"Gamespeed","group":"Advanced dark magic","tile":2,"requirements":{"Evil":2500000}},
- {"name":"Evil Incarnate","maxXp":100,"effect":0.0004,"description":"Ability XP","group":"Advanced dark magic","tile":3,"requirements":{"Evil":1000000000}}
+ {"name":"Time Loop","maxXp":100,"effect":0.0001,"description":"Gamespeed","group":"Advanced dark magic","tile":2,"requirements":{"Evil":200}},
+ {"name":"Evil Incarnate","maxXp":100,"effect":0.0001,"description":"Ability XP","group":"Advanced dark magic","tile":3,"requirements":{"Evil":300}}
 ];
 // Angelic counterparts use the same thresholds and effects as the advanced Evil skills.
 for(const [name,mirror,art] of [
@@ -50,8 +50,9 @@ for(const [name,mirror,art] of [
  ['Grace Incarnate','Evil Incarnate','Bountiful Grace']
 ]){
  const source=voidCatalog.find(entry=>entry.name===mirror);
- entries[name]={...source,name,group:'Advanced Angelic',tile:entries[art].tile,requirements:{Angelic:mirror==='Void Influence'?50000:source.requirements.Evil}};
+ entries[name]={...source,name,effect:mirror==='Void Influence'?0.0003:source.effect,group:'Advanced Angelic',tile:entries[art].tile,requirements:{Angelic:mirror==='Void Influence'?100:source.requirements.Evil}};
 }
+entries['Infernal Influence']={name:'Infernal Influence',maxXp:100,effect:0.0003,description:'All XP',group:'Advanced dark magic',tile:entries['Dark influence'].tile,requirements:{Evil:100}};
 const pathResource={'Dark magic':'Evil','Advanced dark magic':'Evil','Light magic':'Angelic','Advanced Angelic':'Angelic','Void Manipulation':'Void'};
 function ownsSkillPath(s,group){
  const key=pathResource[group];
@@ -71,12 +72,12 @@ entries['Alignment Resonance']={
  maxXp:100,effect:0.2,description:'Alignment gain',requirements:{Archmage:25}
 };
 for(const [name,group,art,rank,required,expense,effect,description] of [
- ['Astral tower','Properties','Small palace','Astral scholar',10,38000000,205,'Happiness'],
- ['Celestial citadel','Properties','Grand palace','Archmage',25,45000000,225,'Happiness'],
- ['Planar sanctum','Properties','Mansion','Chronomancer',50,180000000,360,'Happiness'],
- ['Star chart','Misc','Book','Astral scholar',10,12000000,1.2,'Advanced Magic skill XP'],
- ['Astral lens','Misc','Sapphire charm','Archmage',25,22000000,1.35,'Advanced Magic skill XP'],
- ['Chronometer','Misc','Study desk','Chronomancer',50,45000000,1.5,'Advanced Magic skill XP']
+ ['Astral tower','Properties','Small palace','Astral scholar',10,60000000,260,'Happiness'],
+ ['Celestial citadel','Properties','Grand palace','Archmage',25,2000000000,330,'Happiness'],
+ ['Planar sanctum','Properties','Mansion','Chronomancer',50,8000000000,420,'Happiness'],
+ ['Star chart','Misc','Book','Astral scholar',10,30000000,1.2,'Advanced Magic skill XP'],
+ ['Astral lens','Misc','Sapphire charm','Archmage',25,1000000000,1.35,'Advanced Magic skill XP'],
+ ['Chronometer','Misc','Study desk','Chronomancer',50,4000000000,1.5,'Advanced Magic skill XP']
 ]){
  entries[name]={name,group,tile:entries[art].tile,rank,expense,effect,description,requirements:{[rank]:required,Coins:100*expense}};
 }
@@ -91,7 +92,7 @@ const catalog = Object.values(entries);
 function newLife() {
   return {days:5110, coins:0, job:'Beggar', skill:'Concentration', home:'Homeless',
     equipment:{}, acquiredBasics:{}, shopEarnings:{}, levels:{}, xp:{}, unlocked:{}, memory:{}, hero:'', life:1,
-    voidEconomyVersion:1, voidEconomyReview:false, voidPath:false, voidHeart:false, heartPair:false, superHeart:false,  Void:0, Evil:0, Angelic:0, orbs:{}, finished:false, paused:false, warp:true, devSpeed:1, clock:Date.now()};
+    voidEconomyVersion:2, voidEconomyReview:false, voidPath:false, voidHeart:false, heartPair:false, superHeart:false,  Void:0, Evil:0, Angelic:0, orbs:{}, finished:false, paused:false, warp:true, devSpeed:1, clock:Date.now()};
 }
 let state = newLife();
 try {const loaded=JSON.parse(localStorage.getItem(saveKey));if(loaded){Object.assign(state,loaded);state.voidEconomyVersion=loaded.voidEconomyVersion||0}} catch {}
@@ -209,7 +210,7 @@ function rate(n){
   else gain*=effect('Concentration')*item('Book')*item('Study desk')*item('Library')*(state.orbs.Evil?5:1)*(state.orbs.Angelic?5:1);
   if(e.group==='Military')gain*=effect('Battle tactics')*item('Steel longsword')*(state.hero==='Isabella'?1.1:1);
   if(e.group==='The Arcane Association'||(e.group==='Advanced arcana'&&e.income))gain*=effect('Mana control')*(state.hero==='Magnus'?1.1:1);
-  gain*=(state.voidHeart&&state.Void>=1?effect('Void Influence'):1)*effect('Celestial Influence');
+  gain*=(state.voidHeart&&state.Void>=1?effect('Void Influence'):1)*effect('Celestial Influence')*effect('Infernal Influence');
   if(e.income)gain*=effect('Dark Knowledge')*effect('Sacred Knowledge');
   else gain*=effect('Void Symbiosis')*item('Void Blade')*effect('Evil Incarnate')*effect('Grace Incarnate');
   if(e.group==='Advanced arcana'&&!e.income)gain*=item('Star chart')*item('Astral lens')*item('Chronometer');
@@ -264,11 +265,10 @@ function shopThreshold(e){
  const base=entries[e.prerequisite].requirements.Coins;
  return base+Math.round((e.requirements.Coins-base)*price(e.name)/e.expense);
 }
-// Advanced Magic uses its existing earning pace. Void tiers use actual earned
-// income after the shop handoff and career milestones, with no timer.
+// Shop tracks advance through actual earned income and their progression requirements.
 const shopTracks=[
- {items:shopEntries.filter(e=>e.rank&&e.group==='Properties'),seconds:[85,200,215]},
- {items:shopEntries.filter(e=>e.rank&&e.group==='Misc'),seconds:[22,170,202]},
+ {items:shopEntries.filter(e=>e.rank&&e.group==='Properties')},
+ {items:shopEntries.filter(e=>e.rank&&e.group==='Misc')},
  {items:shopEntries.filter(e=>e.group==='Void properties')},
  {items:shopEntries.filter(e=>e.group==='Void equipment')}
 ];
@@ -280,7 +280,7 @@ function creditShopEarnings(income,seconds){
    if(!shopPrerequisites(next).every(n=>state.acquiredBasics[n]))continue;
    if(voidShopItem(next)?(!state.voidHeart||voidMilestoneRequirements(next).length):level(next.rank)<next.requirements[next.rank])continue;
    const target=shopThreshold(next);
-   const credit=voidShopItem(next)?income:Math.min(income,target*seconds/track.seconds[tier]);
+   const credit=income;
    state.shopEarnings[next.name]=Math.min(target,(state.shopEarnings[next.name]||0)+credit);
  }
 }
@@ -345,14 +345,15 @@ function alignmentGain(side){return alignmentPayout(side==='Evil'?(effect('Evil 
 function roundVoid(value){return Number(value.toFixed(2))}
 function formatVoid(value){return value.toLocaleString(undefined,{maximumFractionDigits:2})}
 function voidGain(){
- return state.voidHeart?alignmentPayout((1+level('Absolute Wish')*0.025+level('Void Embodiment')*entries['Evil control'].effect)*(state.superHeart?2:1)):0;
+ return state.voidHeart?alignmentPayout((1+level('Absolute Wish')*0.025+level('Void Embodiment')*entries['Void Embodiment'].effect)*(state.superHeart?2:1)):0;
 }
 // All levels are earned in the life in which the relic is claimed.
 function relicRequirements(path){
  if(path==='Second Heart')return [['Age',age(),350],['Abyss God',level('Abyss God'),350],...voidCatalog.filter(e=>e.group==='Void Manipulation').map(e=>[e.name,level(e.name),e.name==='Abyss Manipulation'?100:50]),['Void',state.Void,1600]];
  if(path==='Void')return [['End of this life',Number(dead()),1],['Evil Orb',Number(!!state.orbs.Evil),1],['Angelic Orb',Number(!!state.orbs.Angelic),1]];
  const group=path==='Evil'?'Dark magic':'Light magic';
- return [['Age',age(),300],[path,state[path],400],...catalog.filter(e=>e.group===group).map(e=>[e.name,level(e.name),e.name==="Demon's wealth"||e.name==='Bountiful Grace'?100:50])];
+ const advanced=path==='Evil'?'Advanced dark magic':'Advanced Angelic';
+ return [['Age',age(),300],[path,state[path],400],...catalog.filter(e=>e.group===group||e.group===advanced).map(e=>[e.name,level(e.name),["Demon's wealth",'Bountiful Grace','Evil Incarnate','Grace Incarnate'].includes(e.name)?100:50])];
 }
 function relicReady(path){return relicRequirements(path).every(([,current,target])=>current>=target)}
 function relicProgress(path){
@@ -401,14 +402,15 @@ function save(){if(launchView!=='playing')return;try{localStorage.setItem(saveKe
 let lastDeathShown=null;
 let upkeepNotice='',idleNotice='';
 function reviewVoidEconomy(){
- if(state.voidEconomyVersion<1){
-  state.voidEconomyVersion=1;
-  const hasVoidUpkeep=voidShopItem(entries[state.home])||Object.keys(state.equipment).some(n=>voidShopItem(entries[n]));
-  if(state.voidHeart&&hasVoidUpkeep&&!dead()&&upkeep()>pay(state.job)){
+ if(state.voidEconomyVersion<2){
+  state.voidEconomyVersion=2;
+  const repriced=e=>e.rank||voidShopItem(e);
+  const hasLateUpkeep=repriced(entries[state.home])||Object.keys(state.equipment).some(n=>repriced(entries[n]));
+  if(hasLateUpkeep&&!dead()&&upkeep()>pay(state.job)){
    state.paused=true;state.voidEconomyReview=true;state.clock=Date.now();
   }
  }
- if(state.voidEconomyReview)upkeepNotice='Game paused: Void upkeep has changed. Review your property and equipment costs, then resume.';
+ if(state.voidEconomyReview)upkeepNotice='Game paused: Late-game upkeep has changed. Review your property and equipment costs, then resume.';
 }
 
 let launchView='menu';
@@ -543,6 +545,8 @@ function list(){
    const order=['Astral Body','All Seeing Eye','Alignment Resonance','Temporal Dimension','Brainwashing'];
    candidates.sort((a,b)=>order.indexOf(a.name)-order.indexOf(b.name));
   }
+  if(groups.includes('Advanced dark magic'))candidates.sort((a,b)=>a.requirements.Evil-b.requirements.Evil);
+  if(groups.includes('Advanced Angelic'))candidates.sort((a,b)=>a.requirements.Angelic-b.requirements.Angelic);
   if(groups.includes('Void Manipulation'))candidates.sort((a,b)=>a.requirements.Void-b.requirements.Void);
   if(tab==='Shop')candidates.sort((a,b)=>shopTier(a)-shopTier(b)||shopThreshold(a)-shopThreshold(b));
   let preview='';

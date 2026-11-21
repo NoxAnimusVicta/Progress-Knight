@@ -6,7 +6,7 @@ assert(screen.innerHTML.includes('New Game'));assert(screen.innerHTML.includes('
 state.happinessUntil=Date.now()+60000;state.acceleratingUntil=state.happinessUntil;
 assert.equal(happy(),1);assert.equal(daysPerSecond(Date.now()),5);migrateVoid(state);assert(!('happinessUntil' in state)&&!('acceleratingUntil' in state));
 assert.equal(catalog.filter(e=>e.group!=="City contracts"&&e.income&&!voidCatalog.includes(e)).length,20);
-assert.equal(catalog.filter(e=>e.group!=="Advanced arcana"&&e.group!=="Advanced Angelic"&&e.group!=="Augmentations"&&e.maxXp&&!e.income&&!voidCatalog.includes(e)).length,23);
+assert.equal(catalog.filter(e=>e.group!=="Advanced arcana"&&e.group!=="Advanced Angelic"&&e.group!=="Advanced dark magic"&&e.group!=="Augmentations"&&e.maxXp&&!e.income&&!voidCatalog.includes(e)).length,23);
 assert.equal(catalog.filter(e=>!e.rank&&!e.side&&!voidCatalog.includes(e)&&e.group!=="City housing"&&e.expense!==undefined).length,17);
 for(const e of catalog)assert.equal(typeof e.tile,'number');
 for(let i=0;i<1000&&level('Beggar')<10;i++)step(1);
@@ -106,7 +106,7 @@ for(const [key,heading] of [['Evil','Advanced dark magic'],['Angelic','Advanced 
  state={...newLife(),hero:'Magnus',voidPath:true,voidHeart:true};tab='Skills';assert(!list().includes('<h3>'+heading+'</h3>'));
  state[key]=key==='Void'?1:5000;assert(list().includes('<h3>'+heading+'</h3>'));assert(!list().includes('<h3>Advanced arcana</h3>'));
 }
-state.Angelic=4999;assert(remaining('Sacred Knowledge').length);state.Angelic=5000;assert.equal(remaining('Sacred Knowledge').length,0);state.Angelic=0;assert(remaining('Sacred Knowledge').length);
+state.Angelic=49;assert(remaining('Sacred Knowledge').length);state.Angelic=50;assert.equal(remaining('Sacred Knowledge').length,0);state.Angelic=0;assert(remaining('Sacred Knowledge').length);
 state={...newLife(),hero:'Magnus'};tab='Jobs';assert(!list().includes('skill:Astral Body'));assert(!list().includes('job:Astral scholar'));
 state.levels.Mage=10;assert(!list().includes('job:Astral scholar'));state.levels.Chairman=120;state.levels['Super immortality']=9;assert(!showAdvancedMagic());state.levels['Super immortality']=10;assert(list().includes('job:Astral scholar'));
 for(const name of ['Astral scholar','Astral Body','Archmage','All Seeing Eye','Chronomancer','Temporal Dimension','Imperator','Brainwashing']){
@@ -254,5 +254,19 @@ assert(price('Void Universe')+price('Void Dust')>pay('Void Wraith')*10);
 state={...newLife(),hero:'Magnus',voidHeart:true,Void:1600,job:'Abyss God',home:'Void Universe',levels:{'Abyss God':250,'All Seeing Eye':8000,Bargaining:4000,Brainwashing:8000,'Abyss Manipulation':8000}};
 for(const e of shopEntries.filter(voidShopItem))if(e.group==='Void equipment')state.equipment[e.name]=true;
 assert(upkeep()/pay(state.job)>.3&&upkeep()/pay(state.job)<.8);
+const alignedPairs=[['Dark Knowledge','Sacred Knowledge',50],['Infernal Influence','Celestial Influence',100],['Time Loop','Eternal Vigil',200],['Evil Incarnate','Grace Incarnate',300]];
+for(const [dark,light,gate] of alignedPairs){
+ assert.equal(entries[dark].effect,entries[light].effect);
+ for(const [name,side] of [[dark,'Evil'],[light,'Angelic']]){
+  state={...newLife(),hero:'Magnus',[side]:gate-1};assert(remaining(name).length);state[side]=gate;assert.equal(remaining(name).length,0);
+  assert(relicRequirements(side).some(([n])=>n===name));
+ }
+}
+state={...newLife(),hero:'Magnus',voidHeart:true,Void:800,levels:{'Void Embodiment':400}};
+assert.equal(voidGain(),2);const originalEvilEffect=entries['Evil control'].effect;entries['Evil control'].effect=99;assert.equal(voidGain(),2);entries['Evil control'].effect=originalEvilEffect;
+const homes=['Mansion','Ashen keep','Astral tower','Celestial citadel','Planar sanctum','Town Ruler','City Ruler','Nation Ruler','Pocket Dimension','Void Realm','Void Universe'];
+for(let i=1;i<homes.length;i++){assert(entries[homes[i]].effect>entries[homes[i-1]].effect);assert(entries[homes[i]].expense>entries[homes[i-1]].expense)}
+state={...newLife(),hero:'Magnus',voidEconomyVersion:1,job:'Chairman',home:'Planar sanctum',equipment:{Chronometer:true},coins:1e20};
+reviewVoidEconomy();assert(state.paused&&state.voidEconomyReview);assert.equal(state.voidEconomyVersion,2);assert.equal(state.coins,1e20);
 console.log('Verified base progression, orb collectibles and cumulative skill XP, Void jobs, Heart, legacy conversion and Void collection.');
 `,ctx);
