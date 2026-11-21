@@ -69,9 +69,9 @@ assert(state.voidHeart&&state.voidPath&&age()===14);assert.deepEqual(Object.keys
 tab='Shop';assert(!list().includes('Town Ruler'));tab='Jobs';assert(!list().includes('Corrupted')&&list().includes('Age 14/200'));tab='Skills';assert(!list().includes('skill:Absolute Wish'));
 assert.equal(voidCatalog.filter(e=>e.group==='The Void').length,8);assert.equal(voidCatalog.filter(e=>e.group==='Void Manipulation').length,8);
 for(const e of voidCatalog){for(const key of Object.keys(e.requirements))assert(entries[key]||['Age','Evil','Coins','Void'].includes(key))}
-state.days=199*365;assert(remaining('Corrupted').length);state.days=200*365;assert(remaining('Corrupted').length);state.levels.Imperator=99;assert(remaining('Corrupted').length);state.levels.Imperator=100;assert.equal(remaining('Corrupted').length,0);
-assert(remaining('Void Fiend').length);state.levels['Void Influence']=3000;state.levels['Void Slave']=200;assert.equal(remaining('Void Fiend').length,0);
-state.acquiredBasics['Planar sanctum']=true;state.acquiredBasics.Chronometer=true;state.shopEarnings['Void Realm']=shopThreshold(entries['Void Realm']);state.coins=shopThreshold(entries['Void Realm'])-1;assert(remaining('Void Realm').length);state.coins++;assert.equal(remaining('Void Realm').length,0);
+state.days=199*365;assert(remaining('Corrupted').length);state.days=200*365;assert(remaining('Corrupted').length);state.levels.Imperator=99;assert(remaining('Corrupted').length);state.levels.Imperator=100;state.Void=24;assert(remaining('Corrupted').length);state.Void=25;assert.equal(remaining('Corrupted').length,0);
+assert(remaining('Void Fiend').length);state.levels['Void Influence']=3000;state.levels['Void Slave']=200;state.Void=150;assert.equal(remaining('Void Fiend').length,0);
+state.Void=1000;state.levels['Void Reaver']=100;state.acquiredBasics['Planar sanctum']=true;state.acquiredBasics.Chronometer=true;state.shopEarnings['Void Realm']=shopThreshold(entries['Void Realm']);state.coins=shopThreshold(entries['Void Realm'])-1;assert(remaining('Void Realm').length);state.coins++;assert.equal(remaining('Void Realm').length,0);
 tab='Shop';state.equipment.Book=true;
 state.unlocked.Book=true;
 assert(list().includes('<b>Book</b><small>'+String.fromCharCode(215)+entries.Book.effect+' '+entries.Book.description+'</small>'));
@@ -166,6 +166,7 @@ for(const [basic,action] of [['Mansion','home'],['Library','gear']]){
 assert(!list().includes('Town Ruler')&&!list().includes('Void Armor'));
 shopTap('home','Planar sanctum');creditShopEarnings(1e18,215);recordShopUnlocks();assert(!state.shopEarnings['Town Ruler']&&!state.shopEarnings.Observatory);shopTap('gear','Chronometer');
 assert(state.acquiredBasics['Planar sanctum']&&state.acquiredBasics.Chronometer);
+state.Void=1600;for(const e of voidCatalog.filter(e=>e.group==='The Void'))state.levels[e.name]=1000;
 for(let i=0;i<7;i++){creditShopEarnings(1e18,215);recordShopUnlocks()}
 assert(list().includes('Town Ruler')&&list().includes('Void Armor'));assert.deepEqual(list().match(new RegExp('<h3>.*?</h3>','g')),['<h3>Properties</h3>','<h3>Equipment</h3>']);
 for(const hero of ['Magnus','Isabella']){
@@ -226,5 +227,23 @@ state={...newLife(),hero:'Magnus',voidHeart:true,levels:{'All Seeing Eye':2500,I
 assert(pay('Corrupted')>pay('Imperator'));
 state={...newLife(),hero:'Magnus',voidHeart:true,home:'Town Ruler',equipment:{Observatory:true},acquiredBasics:{Mansion:true,Library:true}};
 migrateVoid(state);assert.equal(state.home,'Town Ruler');assert(state.equipment.Observatory);assert(state.acquiredBasics['Planar sanctum']&&state.acquiredBasics.Chronometer);
+state={...newLife(),hero:'Magnus',voidHeart:true,voidPath:true,Void:999,coins:1e30,acquiredBasics:{Mansion:true,Library:true,'Planar sanctum':true,Chronometer:true}};
+for(const name of ['Corrupted','Void Slave','Void Fiend','Abyss Anomaly','Void Wraith'])state.levels[name]=1000;
+for(let i=0;i<10;i++){creditShopEarnings(1e30,1000);recordShopUnlocks()}
+for(const name of ['Void Realm','Void Universe','Void Orb','Void Dust']){assert(remaining(name).length);assert(!state.shopEarnings[name]);assert(!state.unlocked[name])}
+assert(nextVoidShop().includes('Void Reaver')&&nextVoidShop().includes('1,000'));
+assert(state.unlocked['Void Blade']);assert(state.unlocked['Pocket Dimension']);
+for(const [name,job,l,resource] of [['Void Realm','Void Reaver',100,1000],['Void Orb','Void Lord',100,1200],['Void Universe','Abyss God',100,1600],['Void Dust','Abyss God',250,1600]]){
+ state.Void=resource-1;state.levels[job]=l;
+ assert(voidMilestoneRequirements(entries[name]).length);
+ state.Void=resource;state.levels[job]=l-1;assert(voidMilestoneRequirements(entries[name]).length);
+ state.levels[job]=l;assert.equal(voidMilestoneRequirements(entries[name]).length,0);
+ creditShopEarnings(1e30,1000);recordShopUnlocks();assert.equal(remaining(name).length,0);
+}
+for(const e of voidCatalog.filter(e=>e.group==='The Void')){
+ state={...newLife(),hero:'Magnus',voidHeart:true,Void:e.requirements.Void-1,days:200*365};
+ for(const [key,value] of Object.entries(e.requirements))if(key!=='Void'&&key!=='Age')state.levels[key]=value;
+ assert(remaining(e.name).length);state.Void=e.requirements.Void;assert.equal(remaining(e.name).length,0);
+}
 console.log('Verified base progression, orb collectibles and cumulative skill XP, Void jobs, Heart, legacy conversion and Void collection.');
 `,ctx);
