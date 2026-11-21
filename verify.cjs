@@ -92,7 +92,7 @@ Object.assign(state,newLife(),{hero:'Magnus',Evil:1});assert.equal(pathTheme(),'
 state.Evil=0;state.Angelic=1;assert.equal(pathTheme(),'angelic');
 state.voidPath=true;assert.equal(pathTheme(),'');
 state.voidHeart=true;assert.equal(pathTheme(),'void');
-assert.equal(fmt(1e25),'10 septillion');assert.equal(fmt(1e15),'1 quadrillion');assert.equal(fmt(-1.25e18),'-1.25 quintillion');assert.equal(fmt(999999999),'1 billion');
+assert.equal(fmt(1e25),'10 Septillion');assert.equal(fmt(1e15),'1 Quadrillion');assert.equal(fmt(-1.25e18),'-1.25 Quintillion');assert.equal(fmt(999999999),'1 Billion');
 for(const chapter of [{},{voidPath:true,voidHeart:true},{voidPath:true,voidHeart:true,superHeart:true}]){
  state={...newLife(),hero:'Magnus',...chapter};state.days=lifespan()*365;state.levels[state.skill]=12;state.xp[state.skill]=42;
  render();assert.equal(tab,'Amulet');
