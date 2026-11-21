@@ -166,8 +166,9 @@ function migrateVoid(s){
 }
 migrateVoid(state);
 function level(name){return state.levels[name] || 0}
-function threshold(name){
- const entry=entries[name],l=level(name);
+function threshold(name){return thresholdAt(name,level(name))}
+function thresholdAt(name,l){
+ const entry=entries[name];
  const extended=entry.group==='Void Manipulation'||entry.group==='Advanced arcana'||entry.group==='The Void';
  const transition=entry.income?200:2000;
  const growth=extended?1.01**Math.min(l,transition)*1.003**Math.max(0,l-transition):1.01**l;
@@ -178,6 +179,7 @@ function effect(name){
   if(name==='Alignment Resonance')return 1+entries[name].effect*l/(250+l);
   if(['Bargaining','Intimidation','Healing Aura','Brainwashing','Abyss Manipulation'].includes(name))return Math.max(.1,1-log/Math.log(7)/10);
   if(['Immortality','Super immortality'].includes(name))return 1+log/Math.log(33);
+  if(name==='Temporal Dimension')return 1+1000*entries[name].effect*Math.log1p(l/1000);
   if(name==='Time warping')return 1+log/Math.log(13);
   if(['Blood meditation','Spiritual Meditation'].includes(name))return l*entries[name].effect;
   return 1+l*entries[name].effect;
@@ -478,7 +480,7 @@ function paintMotion(timestamp){
    while(progress>=limit){
      progress-=limit;
      shownLevel++;
-     limit=Math.round(entries[n].maxXp*(shownLevel+1)*1.01**shownLevel);
+     limit=thresholdAt(n,shownLevel);
    }
    const label=el.previousElementSibling;
    if(label)label.textContent='Lv. '+shownLevel;
@@ -626,8 +628,15 @@ function advance(){
  const now=Date.now(),elapsed=Math.max(0,(now-state.clock)/1000);state.clock=now;
  if(state.hero&&!state.paused&&!state.finished){
   const startDays=state.days;
-  let days=Math.min(elapsed,300)*daysPerSecond(now);
-  while(days>0&&!dead()){const slice=Math.min(5,days);step(slice);days-=slice}
+  // Bound catch-up work by elapsed real time, not the multiplied game speed.
+  // Recalculate speed each slice so training Temporal Dimension takes effect immediately.
+  let seconds=Math.min(elapsed,300);
+  const minQuantum=seconds>5?.25:.05;
+  while(seconds>1e-9&&!dead()){
+   const speed=daysPerSecond(now);
+   const slice=Math.min(Math.max(5/speed,minQuantum),seconds);
+   step(slice*speed);seconds-=slice;
+  }
   if(elapsed>300){
     const seconds=Math.min(30,elapsed-300);
     state.restedUntil=now+seconds*1000;
