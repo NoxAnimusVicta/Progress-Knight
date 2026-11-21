@@ -201,5 +201,18 @@ for(const n of ['Void Influence','Astral Body','Corrupted','Imperator']){
  state.levels[n]=boundary;const before=threshold(n);state.levels[n]++;assert(threshold(n)>before);
 }
 state={...newLife(),hero:'Magnus',Void:100,voidHeart:true};const gainBefore=voidGain();const xpBefore=rate('Beggar');state.superHeart=true;assert.equal(voidGain(),gainBefore*2);assert.equal(rate('Beggar'),xpBefore*2);
+state={...newLife(),hero:'Magnus'};
+for(const l of [0,100,500,3400,10000]){
+ state.levels['Temporal Dimension']=l;
+ assert.equal(effect('Temporal Dimension'),1+25*Math.log1p(l/1000));
+ assert.equal(threshold('Temporal Dimension'),thresholdAt('Temporal Dimension',l));
+}
+state={...newLife(),hero:'Magnus',paused:false,warp:false};launchView='playing';
+const speedTestStart=state.days;state.clock=Date.now()-1000;advance();assert(Math.abs(state.days-speedTestStart-5)<.1);
+state.paused=true;const pausedAge=state.days;state.clock=Date.now()-300000;advance();assert.equal(state.days,pausedAge);
+state={...newLife(),hero:'Magnus',levels:{'Time warping':1000,'Temporal Dimension':3400,'Time Loop':2000,'Eternal Vigil':2000,'Astral Body':1200,'Immortality':1500,'Super immortality':500}};
+const originalStep=step;let countedSteps=0;step=d=>{countedSteps++;originalStep(d)};
+state.clock=Date.now()-300000;advance();step=originalStep;
+assert(countedSteps<=1201);assert(Number.isFinite(state.days)&&Number.isFinite(state.coins));assert(state.days>14*365);
 console.log('Verified base progression, orb collectibles and cumulative skill XP, Void jobs, Heart, legacy conversion and Void collection.');
 `,ctx);
