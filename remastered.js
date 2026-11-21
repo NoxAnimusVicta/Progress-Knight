@@ -278,7 +278,7 @@ function nextVoidShop(){
  for(const [group,label] of [['Void properties','Next property'],['Void equipment','Next equipment']]){
    const next=shopEntries.find(e=>e.group===group&&remaining(e.name).length);
    if(next&&!state.acquiredBasics[next.prerequisite]){lines.push('<p>'+label+' · Select '+next.prerequisite+'</p>');continue}
-   if(next)lines.push('<p>'+label+' · '+next.name+'<br>'+state.coins.toLocaleString(undefined,{maximumFractionDigits:0})+' / '+shopThreshold(next).toLocaleString()+' coins</p>');
+   if(next)lines.push('<p>'+label+' · '+next.name+'<br>'+fmt(state.coins)+' / '+fmt(shopThreshold(next))+' coins</p>');
  }
  return lines.length?'<section class="card"><h3>Void shop unlocks</h3>'+lines.join('')+'</section>':'';
 }
@@ -299,7 +299,7 @@ function remaining(n){
   const missing=Object.entries(entries[n].requirements).flatMap(([key,target])=>{
     if(key==='Coins')target=shopThreshold(entries[n]);
     const value=key==='Age'?age():key==='Coins'?state.coins:['Void','Evil','Angelic'].includes(key)?state[key]:level(key);
-    return value>=target?[]:[key+' '+Math.floor(value).toLocaleString()+'/'+target.toLocaleString()];
+    return value>=target?[]:[key+' '+(key==='Coins'?fmt(value):Math.floor(value).toLocaleString())+'/'+(key==='Coins'?fmt(target):target.toLocaleString())];
   });
   if(!voidSkill&&!missing.length)state.unlocked[n]=true;
   return missing;
@@ -385,10 +385,14 @@ let upkeepNotice='',idleNotice='';
 let launchView='menu';
 let tab='Jobs',chosen='Magnus',pending='',statusText='';
 const screen=document.querySelector('#screen');
-const compactNumber=new Intl.NumberFormat('en',{notation:'compact',maximumFractionDigits:2});
+const numberUnits=['million','billion','trillion','quadrillion','quintillion','sextillion','septillion','octillion','nonillion','decillion','undecillion','duodecillion','tredecillion','quattuordecillion','quindecillion','sexdecillion','septendecillion','octodecillion','novemdecillion','vigintillion'];
+const namedNumber=new Intl.NumberFormat('en',{maximumFractionDigits:2});
 function fmt(value){
- if(Math.abs(value)>=1e15)return value.toExponential(2);
- return Math.abs(value)>=1e6?compactNumber.format(value):Math.floor(value).toLocaleString();
+ if(Math.abs(value)<1e6)return Math.floor(value).toLocaleString();
+ let unit=Math.min(numberUnits.length-1,Math.floor(Math.log10(Math.abs(value))/3)-2);
+ let scaled=value/10**(6+unit*3);
+ if(Math.abs(Number(scaled.toFixed(2)))>=1000&&unit<numberUnits.length-1){unit++;scaled=value/10**(6+unit*3)}
+ return namedNumber.format(scaled)+' '+numberUnits[unit];
 }
 function pathTheme(){
  if(state.voidHeart)return 'void';
